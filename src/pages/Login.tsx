@@ -15,7 +15,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await axios.post('https://safimayi-backend.onrender.com/api/login/', {
+      const response = await axios.post('https://safimayi-backend.onrender.com/api/users/login/', {
         telephone,
         password,
       });
