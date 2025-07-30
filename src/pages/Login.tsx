@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TextField, Button, Container, Typography, Box, Alert, Paper, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import logo from '../assets/logoblanc.png';
 
 const Login = () => {
   const [telephone, setTelephone] = useState('');
@@ -32,16 +33,14 @@ const Login = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(to right, #6a11cb, #2575fc)',
+        background: 'linear-gradient(to right, #002445, #002445)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
       }}
     >
-        <Typography variant="h4" gutterBottom align="center" style={{color:"white", fontWeight:'bold'}}>
-           Safi<span style={{color:"yellow"}}>Mayi</span>  System
-          </Typography>
+         <img src={logo} alt="SafiMayi Logo" width={200} />
 
       <Container maxWidth="sm">
         <Paper elevation={6} sx={{ p: 4, backgroundColor: '#fff', borderRadius: 2 }}>
@@ -76,7 +75,7 @@ const Login = () => {
               color="primary"
               fullWidth
               type="submit"
-              sx={{ mt: 2 }}
+              sx={{ mt: 2 ,backgroundColor: '#0486d9', '&:hover': { backgroundColor: '#004574ff' }}}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Se connecter'}
