@@ -37,11 +37,12 @@ const Login = () => {
         background: 'linear-gradient(to right, #002445, #002445)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
         flexDirection: 'column',
       }}
     >
-         <img src={logo} alt="SafiMayi Logo" width={200} />
+      <img src={logo} alt="SafiMayi Logo" width={250} />
+      
+         
 
       <Container maxWidth="sm">
         <Paper elevation={6} sx={{ p: 4, backgroundColor: '#fff', borderRadius: 2 }}>
