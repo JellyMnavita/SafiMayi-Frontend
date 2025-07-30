@@ -19,6 +19,7 @@ const Login = () => {
         telephone,
         password,
       });
+      
       localStorage.setItem('token', response.data.token);
       navigate('/dashboard');
     } catch (err) {
