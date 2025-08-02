@@ -1,22 +1,19 @@
-import { Button, Typography, Container } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 
-const Dashboard = () => {
-  const navigate = useNavigate();
+import { OverviewAnalyticsView as DashboardView } from '../sections/overview/view';
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
+// ----------------------------------------------------------------------
 
+export default function Page() {
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Typography variant="h4" gutterBottom>Bienvenue sur le dashboard</Typography>
-      <Button variant="outlined" color="error" onClick={logout}>
-        Se déconnecter
-      </Button>
-    </Container>
-  );
-};
+    <>
+      <title>{`Dashboard - SafiMayi`}</title>
+      <meta
+        name="description"
+        content="The starting point for your next project with Minimal UI Kit, built on the newest version of Material-UI ©, ready to be customized to your style"
+      />
+      <meta name="keywords" content="react,material,kit,application,dashboard,admin,template" />
 
-export default Dashboard;
+      <DashboardView />
+    </>
+  );
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TextField, Button, Container, Typography, Box, Alert, Paper, CircularProgress } from '@mui/material';
+import { TextField, Button, Container, Typography, Box, Alert, Paper, CircularProgress, Link } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import logo from '../assets/logoblanc.png';
@@ -42,8 +42,6 @@ const Login = () => {
     >
       <img src={logo} alt="SafiMayi Logo" width={250} />
       
-         
-
       <Container maxWidth="sm">
         <Paper elevation={6} sx={{ p: 4, backgroundColor: '#fff', borderRadius: 2 }}>
           <Typography variant="h4" gutterBottom align="center">
@@ -72,12 +70,17 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
             />
+            <Box sx={{ textAlign: 'right', mb: 2 }}>
+              <Link href="#" variant="body2" sx={{ color: '#0486d9' }}>
+                Mot de passe oublié ?
+              </Link>
+            </Box>
             <Button
               variant="contained"
               color="primary"
               fullWidth
               type="submit"
-              sx={{ mt: 2 ,backgroundColor: '#0486d9', '&:hover': { backgroundColor: '#004574ff' }}}
+              sx={{ mt: 2 ,backgroundColor: '#0486d9', '&:hover': { backgroundColor: '#004574ff' },height: '50px' }}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Se connecter'}
