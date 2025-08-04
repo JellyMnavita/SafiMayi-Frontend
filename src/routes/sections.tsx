@@ -11,20 +11,14 @@ import { AuthLayout } from '../layouts/auth';
 import { DashboardLayout } from '../layouts/dashboard';
 
 // ----------------------------------------------------------------------
-// @ts-ignore 
-export const DashboardPage = lazy(() => import('../pages/dashboard'));
-// @ts-ignore 
-export const BlogPage = lazy(() => import('../pages/blog'));
-// @ts-ignore 
-export const UserPage = lazy(() => import('../pages/user'));
-// @ts-ignore 
-export const SignInPage = lazy(() => import('../pages/sign-in'));
-// @ts-ignore 
-export const Login = lazy(() => import('../pages/Login'));
-// @ts-ignore 
-export const ProductsPage = lazy(() => import('../pages/products'));
-// @ts-ignore 
-export const Page404 = lazy(() => import('../pages/page-not-found'));
+
+export const DashboardPage = lazy(() => import('../pages/dashboard.tsx'));
+export const BlogPage = lazy(() => import('../pages/blog.tsx'));
+export const UserPage = lazy(() => import('../pages/user.tsx'));
+export const SignInPage = lazy(() => import('../pages/sign-in.tsx'));
+export const Login = lazy(() => import('../pages/Login.tsx'));
+export const ProductsPage = lazy(() => import('../pages/products.tsx'));
+export const Page404 = lazy(() => import('../pages/page-not-found.tsx'));
 
 const renderFallback = () => (
   <Box
