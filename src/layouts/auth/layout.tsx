@@ -121,6 +121,7 @@ export function AuthLayout({
       cssVars={{ '--layout-auth-content-width': '420px', ...cssVars }}
       sx={[
         (theme) => ({
+          theme:theme,
           position: 'relative',
           '&::before': backgroundStyles(),
         }),
