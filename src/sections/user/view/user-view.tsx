@@ -9,11 +9,11 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
-import { _users } from 'src/_mock';
-import { DashboardContent } from 'src/layouts/dashboard';
+import { _users } from '../../../_mock';
+import { DashboardContent } from '../../../layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { Iconify } from '../../../components/iconify';
+import { Scrollbar } from '../../../components/scrollbar';
 
 import { TableNoData } from '../table-no-data';
 import { UserTableRow } from '../user-table-row';
@@ -176,6 +176,7 @@ export function useTable() {
   }, []);
 
   const onChangePage = useCallback((event: unknown, newPage: number) => {
+    console.log(event)
     setPage(newPage);
   }, []);
 

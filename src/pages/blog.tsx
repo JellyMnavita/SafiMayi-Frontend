@@ -1,7 +1,7 @@
-import { _posts } from 'src/_mock';
-import { CONFIG } from 'src/config-global';
+import { _posts } from '../_mock';
+import { CONFIG } from '../config-global';
 
-import { BlogView } from 'src/sections/blog/view';
+import { BlogView } from '../sections/blog/view';
 
 // ----------------------------------------------------------------------
 
