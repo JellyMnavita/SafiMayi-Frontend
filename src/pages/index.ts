@@ -1,5 +1,6 @@
 // src/pages/index.ts
-export { default as DashboardPage } from './Dashboard';
+
+export { default as DashboardPage } from './dashboard';
 export { default as BlogPage } from './blog';
 export { default as UserPage } from './user';
 export { default as SignInPage } from './sign-in';
