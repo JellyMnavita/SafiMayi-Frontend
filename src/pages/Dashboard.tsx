@@ -3,7 +3,7 @@ import { OverviewAnalyticsView as DashboardView } from '../sections/overview/vie
 
 // ----------------------------------------------------------------------
 
-export default function Page() {
+export default function DashboardPage() {
   return (
     <>
       <title>{`Dashboard - SafiMayi`}</title>
