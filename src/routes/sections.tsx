@@ -10,15 +10,16 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 import { AuthLayout } from '../layouts/auth';
 import { DashboardLayout } from '../layouts/dashboard';
 
+
 // ----------------------------------------------------------------------
 
-export const DashboardPage = lazy(() => import('../pages/dashboard.tsx'));
-export const BlogPage = lazy(() => import('../pages/blog.tsx'));
-export const UserPage = lazy(() => import('../pages/user.tsx'));
-export const SignInPage = lazy(() => import('../pages/sign-in.tsx'));
-export const Login = lazy(() => import('../pages/Login.tsx'));
-export const ProductsPage = lazy(() => import('../pages/products.tsx'));
-export const Page404 = lazy(() => import('../pages/page-not-found.tsx'));
+export const DashboardPage = lazy(() => import('../pages/dashboard'));
+export const BlogPage = lazy(() => import('../pages/blog'));
+export const UserPage = lazy(() => import('../pages/user'));
+export const SignInPage = lazy(() => import('../pages/sign-in'));
+export const Login = lazy(() => import('../pages/Login'));
+export const ProductsPage = lazy(() => import('../pages/products'));
+export const Page404 = lazy(() => import('../pages/page-not-found'));
 
 const renderFallback = () => (
   <Box
