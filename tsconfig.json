@@ -9,28 +9,14 @@
     }
   ],
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "moduleResolution": "bundler",
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "incremental": true,
-    "skipLibCheck": true,
+    "module": "esnext",  // <-- Solution clé
+    "target": "es2020",
+    "lib": ["es2020", "dom", "dom.iterable"],
+    "moduleResolution": "node",
     "esModuleInterop": true,
-    "isolatedModules": true,
-    "baseUrl": ".",
-    "allowJs": true,
-    "resolveJsonModule": true,
-      "strict": true,
-    "noEmit": true,
-    "strictNullChecks": true,
+    "baseUrl": "./src",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
-  }
+  } 
 }
