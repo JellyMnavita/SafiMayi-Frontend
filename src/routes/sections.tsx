@@ -9,12 +9,12 @@ import { AuthLayout } from '../layouts/auth';
 import { DashboardLayout } from '../layouts/dashboard';
 
 // Import standard des pages
-import DashboardPage from '@/pages/dashboard';
-import BlogPage from '@/pages/blog';
-import UserPage from '@/pages/user';
-import SignInPage from '@/pages/sign-in';
-import ProductsPage from '@/pages/products';
-import Page404 from '@/pages/page-not-found';
+import DashboardPage from '../pages/dashboard';
+import BlogPage from '../pages/blog';
+import UserPage from '../pages/user';
+import SignInPage from '../pages/sign-in';
+import ProductsPage from '../pages/products';
+import Page404 from '../pages/page-not-found';
 
 const renderFallback = () => (
   <Box
