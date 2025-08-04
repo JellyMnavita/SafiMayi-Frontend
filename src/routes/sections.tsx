@@ -1,6 +1,4 @@
 import type { RouteObject } from 'react-router';
-
-import { lazy, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { varAlpha } from 'minimal-shared/utils';
 
@@ -10,15 +8,13 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 import { AuthLayout } from '../layouts/auth';
 import { DashboardLayout } from '../layouts/dashboard';
 
-
-// ----------------------------------------------------------------------
-export const DashboardPage = lazy(() => import('@/pages/dashboard'));
-export const BlogPage = lazy(() => import('@/pages/blog'));
-export const UserPage = lazy(() => import('@/pages/user'));
-export const SignInPage = lazy(() => import('@/pages/sign-in'));
-export const Login = lazy(() => import('@/pages/Login'));
-export const ProductsPage = lazy(() => import('@/pages/products'));
-export const Page404 = lazy(() => import('@/pages/page-not-found'));
+// Import standard des pages
+import DashboardPage from '@/pages/dashboard';
+import BlogPage from '@/pages/blog';
+import UserPage from '@/pages/user';
+import SignInPage from '@/pages/sign-in';
+import ProductsPage from '@/pages/products';
+import Page404 from '@/pages/page-not-found';
 
 const renderFallback = () => (
   <Box
@@ -44,9 +40,7 @@ export const routesSection: RouteObject[] = [
   {
     element: (
       <DashboardLayout>
-        <Suspense fallback={renderFallback()}>
-          <Outlet />
-        </Suspense>
+        <Outlet /> {/* Suppression du Suspense */}
       </DashboardLayout>
     ),
     children: [
