@@ -5,7 +5,7 @@ import axios from 'axios';
 import logo from '../assets/logoblanc.png';
 
 const Login = () => {
-  const [telephone, setTelephone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,14 +17,18 @@ const Login = () => {
     setLoading(true);
     try {
       const response = await axios.post('https://safimayi-backend.onrender.com/api/users/login/', {
-        telephone,
+        email,
         password,
       });
-      
-      localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
+      if (response.data.user.role !== 'agent') {
+        navigate('/404');
+      } else {
+        localStorage.setItem('token', response.data.token.access);
+        navigate('/dashboard');
+      }
+
     } catch (err) {
-      setError('Numéro ou mot de passe incorrect');
+      setError('Email ou mot de passe incorrect');
     } finally {
       setLoading(false);
     }
@@ -41,7 +45,7 @@ const Login = () => {
       }}
     >
       <img src={logo} alt="SafiMayi Logo" width={250} />
-      
+
       <Container maxWidth="sm">
         <Paper elevation={6} sx={{ p: 4, backgroundColor: '#fff', borderRadius: 2 }}>
           <Typography variant="h4" gutterBottom align="center">
@@ -52,12 +56,12 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             <TextField
-              label="Téléphone"
+              label="Email"
               variant="outlined"
               fullWidth
               margin="normal"
-              value={telephone}
-              onChange={(e) => setTelephone(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
             />
             <TextField
@@ -80,7 +84,7 @@ const Login = () => {
               color="primary"
               fullWidth
               type="submit"
-              sx={{ mt: 2 ,backgroundColor: '#0486d9', '&:hover': { backgroundColor: '#004574ff' },height: '50px' }}
+              sx={{ mt: 2, backgroundColor: '#0486d9', '&:hover': { backgroundColor: '#004574ff' }, height: '50px' }}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'Se connecter'}
