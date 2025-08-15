@@ -18,6 +18,7 @@ export const SignInPage = lazy(() => import('../pages').then(m => ({ default: m.
 export const Login = lazy(() => import('../pages').then(m => ({ default: m.Login })));
 export const ProductsPage = lazy(() => import('../pages').then(m => ({ default: m.ProductsPage })));
 export const Page404 = lazy(() => import('../pages').then(m => ({ default: m.Page404 })));
+export const CreateRfidPage = lazy(() => import('../pages').then(m => ({ default: m.CreateRfidPage })));
 
 const renderFallback = () => (
   <Box
@@ -49,8 +50,13 @@ export const routesSection: RouteObject[] = [
       </DashboardLayout>
     ),
     children: [
-      { index: true, element: <Login /> },
+      {
+        index: true, element: (
+          <AuthLayout><Login /></AuthLayout>
+        )
+      },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'createrfid', element: <CreateRfidPage /> },
       { path: 'user', element: <UserPage /> },
       { path: 'products', element: <ProductsPage /> },
       { path: 'blog', element: <BlogPage /> },
