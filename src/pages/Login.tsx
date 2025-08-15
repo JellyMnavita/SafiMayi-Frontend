@@ -20,6 +20,7 @@ const Login = () => {
         email,
         password,
       });
+      console.log(response);
       if (response.data.user.role !== 'agent') {
         navigate('/404');
       } else {
