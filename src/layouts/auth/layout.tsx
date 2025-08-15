@@ -119,14 +119,7 @@ export function AuthLayout({
        * @Styles
        *************************************** */
       cssVars={{ '--layout-auth-content-width': '420px', ...cssVars }}
-      sx={[
-        (theme) => ({
-          theme:theme,
-          position: 'relative',
-          '&::before': backgroundStyles(),
-        }),
-        ...(Array.isArray(sx) ? sx : [sx]),
-      ]}
+   
     >
       {renderMain()}
     </LayoutSection>
