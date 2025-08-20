@@ -133,13 +133,18 @@ export function CompteurView() {
     }
   };
 
-  // Supprimer
+  // Supprimer - CORRIGÉ
   const handleDelete = async (id: number) => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
         `https://safimayi-backend.onrender.com/api/compteur/compteurs/desactiver/${id}/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {}, 
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
       fetchCompteurs();
     } catch (error) {
