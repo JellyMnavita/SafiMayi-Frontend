@@ -10,7 +10,6 @@ import {
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
-
 interface Compteur {
   id: number;
   nom: string;
@@ -133,13 +132,13 @@ export function CompteurView() {
     }
   };
 
-  // Supprimer - CORRIGÉ
-  const handleDelete = async (id: number) => {
+  // Activer/Désactiver un compteur
+  const handleToggleActivation = async (id: number) => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `https://safimayi-backend.onrender.com/api/compteur/compteurs/desactiver/${id}/`,
-        {}, 
+        `https://safimayi-backend.onrender.com/api/compteur/compteurs/toggle-activation/${id}/`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -148,7 +147,7 @@ export function CompteurView() {
       );
       fetchCompteurs();
     } catch (error) {
-      console.error("Erreur lors de la suppression :", error);
+      console.error("Erreur lors du changement d'état :", error);
     }
   };
 
@@ -194,7 +193,7 @@ export function CompteurView() {
           >
             <MenuItem value="">Tous</MenuItem>
             <MenuItem value="true">Actifs</MenuItem>
-            <MenuItem value="false">Bannis</MenuItem>
+            <MenuItem value="false">Désactivés</MenuItem>
           </Select>
           <Button
             variant="outlined"
@@ -307,11 +306,11 @@ export function CompteurView() {
           </MenuItemMui>
           <MenuItemMui
             onClick={() => {
-              if (selectedCompteur) handleDelete(selectedCompteur.id);
+              if (selectedCompteur) handleToggleActivation(selectedCompteur.id);
               handleMenuClose();
             }}
           >
-            Supprimer
+            {selectedCompteur?.actif ? "Désactiver" : "Activer"}
           </MenuItemMui>
         </MenuList>
       </Menu>
@@ -357,7 +356,7 @@ export function CompteurView() {
             fullWidth
           >
             <MenuItem value="true">Actif</MenuItem>
-            <MenuItem value="false">Banni</MenuItem>
+            <MenuItem value="false">Désactivé</MenuItem>
           </Select>
         </DialogContent>
         <DialogActions>
