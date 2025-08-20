@@ -26,7 +26,7 @@ export const navData = [
   {
     title: 'Compteur',
     path: '/compteur',
-    icon: <img width="50" height="50" src="https://img.icons8.com/ios/50/self-service-kiosk.png" alt="self-service-kiosk"/>
+    icon: icon('ic-counter'),
   },
   {
     title: 'User',

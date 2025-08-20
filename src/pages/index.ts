@@ -8,3 +8,4 @@ export { default as Login } from './Login';
 export { default as ProductsPage } from './products';
 export { default as Page404 } from './page-not-found';
 export { default as CreateRfidPage } from './create-rfid';
+export { default as CompteurPage } from './compteur';

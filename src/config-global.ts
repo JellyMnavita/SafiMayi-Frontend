@@ -7,6 +7,6 @@ export type ConfigValue = {
 };
 
 export const CONFIG: ConfigValue = {
-  appName: 'Minimal UI',
+  appName: 'Safimayi',
   appVersion: packageJson.version,
 };
