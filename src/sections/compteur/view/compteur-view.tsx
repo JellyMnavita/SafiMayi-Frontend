@@ -187,7 +187,7 @@ export function CompteurView() {
                   </td>
                   <td className="p-2 border-b text-center">
                     <IconButton onClick={(e) => handleMenuOpen(e, compteur)}>
-                      <Iconify icon="mdi:dots-vertical" />
+                      <Iconify icon="eva:more-vertical-fill" />
                     </IconButton>
                   </td>
                 </tr>
