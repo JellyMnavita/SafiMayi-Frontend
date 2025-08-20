@@ -136,7 +136,7 @@ export function CompteurView() {
   const handleDelete = async (id: number) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(
+      await axios.post(
         `https://safimayi-backend.onrender.com/api/compteur/compteurs/desactiver/${id}/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -240,7 +240,7 @@ export function CompteurView() {
                             </span>
                           ) : (
                             <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Banni
+                              Désactivé
                             </span>
                           )}
                         </td>
