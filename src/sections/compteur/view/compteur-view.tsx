@@ -10,6 +10,7 @@ import {
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
+
 interface Compteur {
   id: number;
   nom: string;
@@ -145,7 +146,7 @@ export function CompteurView() {
       console.error("Erreur lors de la suppression :", error);
     }
   };
-git 
+
   return (
     <DashboardContent>
       <Box sx={{ mb: 5, display: "flex", alignItems: "center" }}>
