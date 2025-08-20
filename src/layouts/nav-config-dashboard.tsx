@@ -15,13 +15,18 @@ export type NavItem = {
 export const navData = [
   {
     title: 'Dashboard',
-    path: '/',
+    path: '/dashboard',
     icon: icon('ic-analytics'),
   },
     {
     title: 'Créer carte RFID',
     path: '/createrfid',
     icon: icon('ic-cart'),
+  },
+  {
+    title: 'Compteur',
+    path: '/compteur',
+    icon: <img width="50" height="50" src="https://img.icons8.com/ios/50/self-service-kiosk.png" alt="self-service-kiosk"/>
   },
   {
     title: 'User',
