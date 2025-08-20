@@ -46,14 +46,12 @@ const CreateRFIDCard = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(to right, #002445, #002445)',
         display: 'flex',
         alignItems: 'center',
         flexDirection: 'column',
         paddingTop: 4,
       }}
     >
-      <img src={logo} alt="SafiMayi Logo" width={250} />
       
       <Container maxWidth="sm">
         <Paper elevation={6} sx={{ p: 4, backgroundColor: '#fff', borderRadius: 2 }}>
