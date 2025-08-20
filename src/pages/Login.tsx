@@ -21,7 +21,7 @@ const Login = () => {
         password,
       });
       console.log(response);
-      if (response.data.user.role !== 'agent') {
+      if (response.data.user.role == 'agent' || response.data.user.role == 'admin') {
         navigate('/404');
       } else {
         localStorage.setItem('token', response.data.token.access);
