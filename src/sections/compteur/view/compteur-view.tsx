@@ -9,6 +9,10 @@ import TextField from "@mui/material/TextField";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Pagination from "@mui/material/Pagination";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuList from "@mui/material/MenuList";
+import MenuItemMui from "@mui/material/MenuItem";
 
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -34,6 +38,20 @@ export function CompteurView() {
   const [searchCode, setSearchCode] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
 
+  // Menu d’action (3 points)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedCompteur, setSelectedCompteur] = useState<Compteur | null>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, compteur: Compteur) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedCompteur(compteur);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedCompteur(null);
+  };
+
   useEffect(() => {
     const fetchCompteurs = async () => {
       try {
@@ -56,7 +74,6 @@ export function CompteurView() {
           }
         );
 
-        // Si l’API retourne un format paginé { results, count }
         setCompteurs(response.data.results || response.data);
         setTotal(response.data.count || response.data.length);
       } catch (error) {
@@ -133,11 +150,11 @@ export function CompteurView() {
         </Box>
       </Card>
 
-      {/* Tableau */}
+      {/* Tableau responsive */}
       <Card>
-        <div className="p-4 bg-white shadow-md rounded-md">
+        <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
           <h2 className="text-xl font-semibold mb-4">Liste des Compteurs</h2>
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse min-w-[700px]">
             <thead>
               <tr className="bg-gray-100 text-left text-sm">
                 <th className="p-2 border-b">Nom</th>
@@ -145,6 +162,7 @@ export function CompteurView() {
                 <th className="p-2 border-b">Site forage</th>
                 <th className="p-2 border-b">Date d'installation</th>
                 <th className="p-2 border-b">Status</th>
+                <th className="p-2 border-b text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -167,6 +185,11 @@ export function CompteurView() {
                       </span>
                     )}
                   </td>
+                  <td className="p-2 border-b text-center">
+                    <IconButton onClick={(e) => handleMenuOpen(e, compteur)}>
+                      <Iconify icon="mdi:dots-vertical" />
+                    </IconButton>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -179,6 +202,8 @@ export function CompteurView() {
               justifyContent: "space-between",
               alignItems: "center",
               mt: 2,
+              flexWrap: "wrap",
+              gap: 2,
             }}
           >
             <Typography variant="body2">
@@ -193,6 +218,32 @@ export function CompteurView() {
           </Box>
         </div>
       </Card>
+
+      {/* Menu contextuel (modifier/supprimer) */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuList>
+          <MenuItemMui
+            onClick={() => {
+              console.log("Modifier", selectedCompteur);
+              handleMenuClose();
+            }}
+          >
+            Modifier
+          </MenuItemMui>
+          <MenuItemMui
+            onClick={() => {
+              console.log("Supprimer", selectedCompteur);
+              handleMenuClose();
+            }}
+          >
+            Supprimer
+          </MenuItemMui>
+        </MenuList>
+      </Menu>
     </DashboardContent>
   );
 }
