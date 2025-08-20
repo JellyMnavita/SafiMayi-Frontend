@@ -145,7 +145,7 @@ export function CompteurView() {
       console.error("Erreur lors de la suppression :", error);
     }
   };
-
+git 
   return (
     <DashboardContent>
       <Box sx={{ mb: 5, display: "flex", alignItems: "center" }}>
