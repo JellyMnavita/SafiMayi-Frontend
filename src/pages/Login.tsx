@@ -20,9 +20,8 @@ const Login = () => {
         email,
         password,
       });
-      console.log(response);
+  
       if (response.data.user.role !== "agent" && response.data.user.role !== "admin") {
-        console.log("Unauthorized access");
         navigate('/404');
       } else {
         localStorage.setItem('token', response.data.token.access);
