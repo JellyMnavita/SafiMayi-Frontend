@@ -126,7 +126,7 @@ export function RFIDView() {
       );
 
       await axios.post(
-        `https://safimayi-backend.onrender.com/api/rfid-cards/toggle/`,
+        `https://safimayi-backend.onrender.com/api/rfid/toggle/`,
         { uid: code_uid },
         { headers: { Authorization: `Bearer ${token}` } }
       );
