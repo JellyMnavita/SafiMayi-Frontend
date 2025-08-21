@@ -8,6 +8,7 @@ import {
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
+
 interface RFID {
   id: number;
   code_uid: string;
