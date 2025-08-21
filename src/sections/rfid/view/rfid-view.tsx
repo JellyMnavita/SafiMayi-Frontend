@@ -102,17 +102,35 @@ export function RFIDView() {
   };
 
   // Toggle activation
-  const handleToggleActivation = async (id: number) => {
+  const handleToggleActivation = async (code_uid: string) => {
     try {
       const token = localStorage.getItem("token");
+
+      // Mise à jour optimiste de l'UI
+      setRfids(prevRfids =>
+        prevRfids.map(rfid =>
+          rfid.code_uid === code_uid
+            ? { ...rfid, active: !rfid.active }
+            : rfid
+        )
+      );
+
       await axios.post(
-        `https://safimayi-backend.onrender.com/api/rfid/create/${id}/`,
-        {},
+        `https://safimayi-backend.onrender.com/api/rfid-cards/toggle/`,
+        { uid: code_uid },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      // Recharger pour synchroniser avec le backend
       fetchRfids();
+
     } catch (error) {
-      console.error("Erreur activation :", error);
+      console.error("Erreur lors de l'activation/désactivation :", error);
+
+      // Annuler la mise à jour optimiste en cas d'erreur
+      fetchRfids();
+
+      alert("Erreur lors de la modification du statut de la carte");
     }
   };
 
@@ -215,7 +233,7 @@ export function RFIDView() {
           </MenuItemMui>
           <MenuItemMui
             onClick={() => {
-              if (selectedRfid) handleToggleActivation(selectedRfid.id);
+              if (selectedRfid) handleToggleActivation(selectedRfid.code_uid);
               handleMenuClose();
             }}
           >
