@@ -18,18 +18,13 @@ export const navData = [
     path: '/dashboard',
     icon: icon('ic-analytics'),
   },
-    {
-    title: 'Créer carte RFID',
-    path: '/createrfid',
-    icon: icon('ic-cart'),
-  },
   {
     title: 'Compteur',
     path: '/compteur',
     icon: icon('ic-counter'),
   },
   {
-    title: 'RFID',
+    title: 'Carte RFID',
     path: '/rfid',
     icon: icon('ic-cart'),
   },
