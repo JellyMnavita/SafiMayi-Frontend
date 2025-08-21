@@ -20,7 +20,7 @@ export const ProductsPage = lazy(() => import('../pages').then(m => ({ default: 
 export const Page404 = lazy(() => import('../pages').then(m => ({ default: m.Page404 })));
 export const CreateRfidPage = lazy(() => import('../pages').then(m => ({ default: m.CreateRfidPage })));
 export const CompteurPage = lazy(() => import('../pages').then(m => ({ default: m.CompteurPage })));
-
+export const RfidPage = lazy(() => import('../pages').then(m => ({ default: m.RfidPage })));
 const renderFallback = () => (
   <Box
     sx={{
