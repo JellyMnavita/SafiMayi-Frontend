@@ -29,6 +29,11 @@ export const navData = [
     icon: icon('ic-counter'),
   },
   {
+    title: 'RFID',
+    path: '/rfid',
+    icon: icon('ic-cart'),
+  },
+  {
     title: 'User',
     path: '/user',
     icon: icon('ic-user'),
