@@ -8,7 +8,6 @@ import {
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
-
 interface RFID {
   id: number;
   code_uid: string;
@@ -82,22 +81,33 @@ export function RFIDView() {
     setRfids(filtered);
   }, [searchCode, searchTel, statusFilter, allRfid]);
 
-  // Save
+  // Save (Ajout et Modification)
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
+      
       if (formData.id) {
+        // Modification
         await axios.put(
           `https://safimayi-backend.onrender.com/api/rfid/create/${formData.id}/`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+      } else {
+        // Création
+        await axios.post(
+          `https://safimayi-backend.onrender.com/api/rfid/create/`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       }
+      
       fetchRfids();
       setOpenDialog(false);
       setFormData({});
     } catch (error) {
       console.error("Erreur sauvegarde :", error);
+      alert("Erreur lors de la sauvegarde de la carte RFID");
     }
   };
 
@@ -136,10 +146,22 @@ export function RFIDView() {
 
   return (
     <DashboardContent>
+      {/* Titre et bouton d'ajout */}
       <Box sx={{ mb: 5, display: "flex", alignItems: "center" }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Cartes RFID
         </Typography>
+        <Button
+          variant="contained"
+          color="inherit"
+          startIcon={<Iconify icon="mingcute:add-line" />}
+          onClick={() => {
+            setFormData({});
+            setOpenDialog(true);
+          }}
+        >
+          Ajouter une carte RFID
+        </Button>
       </Box>
 
       {/* Filtres */}
@@ -251,6 +273,7 @@ export function RFIDView() {
             value={formData.code_uid || ""}
             onChange={(e) => setFormData({ ...formData, code_uid: e.target.value })}
             fullWidth
+            required
           />
           <TextField
             label="Téléphone"
