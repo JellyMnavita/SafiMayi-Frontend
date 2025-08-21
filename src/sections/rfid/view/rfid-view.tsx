@@ -95,7 +95,7 @@ export function RFIDView() {
       } else {
         // Création
         await axios.post(
-          `https://safimayi-backend.onrender.com/api/rfid/create/`,
+          `https://safimayi-backend.onrender.com/api/rfid/`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
