@@ -85,11 +85,10 @@ export function RFIDView() {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      
       if (formData.id) {
         // Modification
         await axios.put(
-          `https://safimayi-backend.onrender.com/api/rfid/${formData.code_uid}/`,
+          `https://safimayi-backend.onrender.com/api/rfid/update/${formData.code_uid}/`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
