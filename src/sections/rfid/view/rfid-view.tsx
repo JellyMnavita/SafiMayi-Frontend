@@ -89,7 +89,7 @@ export function RFIDView() {
       if (formData.id) {
         // Modification
         await axios.put(
-          `https://safimayi-backend.onrender.com/api/rfid/create/${formData.id}/`,
+          `https://safimayi-backend.onrender.com/api/rfid/${formData.code_uid}/`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
