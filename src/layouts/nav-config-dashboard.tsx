@@ -29,22 +29,10 @@ export const navData = [
     icon: icon('ic-cart'),
   },
   {
-    title: 'User',
+    title: 'Utilisateurs',
     path: '/user',
     icon: icon('ic-user'),
   },
-  {
-    title: 'Product',
-    path: '/products',
-    icon: icon('ic-cart'),
-    info: (
-      <Label color="error" variant="inverted">
-        +3
-      </Label>
-    ),
-  },
- 
-  
   {
     title: 'Not found',
     path: '/404',

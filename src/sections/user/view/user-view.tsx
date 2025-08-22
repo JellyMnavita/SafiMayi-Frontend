@@ -82,13 +82,13 @@ export function UserView() {
         }}
       >
         <Typography variant="h5" fontWeight={600}>
-          Users
+          Utilisateurs
         </Typography>
         <Button
           variant="contained"
           startIcon={<Icon icon="mingcute:add-line" />}
         >
-          New user
+          Nouvel utilisateur
         </Button>
       </Box>
 
@@ -112,13 +112,13 @@ export function UserView() {
             <table className="w-full border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-gray-50 text-left text-sm">
-                  <th className="p-2">Name</th>
+                  <th className="p-2">Nom</th>
                   <th className="p-2">Email</th>
-                  <th className="p-2">Phone</th>
-                  <th className="p-2">Role</th>
-                  <th className="p-2">Verified</th>
-                  <th className="p-2">Status</th>
-                  <th className="p-2 text-center">Actions</th>
+                  <th className="p-2">Téléphone</th>
+                  <th className="p-2">Rôle</th>
+                  <th className="p-2">Vérifié</th>
+                  <th className="p-2">Statut</th>
+                  <th className="p-2 text-center"></th>
                 </tr>
               </thead>
               <tbody>
