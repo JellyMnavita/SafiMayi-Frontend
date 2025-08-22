@@ -9,6 +9,11 @@ import {
   Button,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Select,
 } from "@mui/material";
 import { Icon } from "@iconify/react";
 
@@ -28,26 +33,29 @@ export function UserView() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+  // Dialog (create/edit)
+  const [openDialog, setOpenDialog] = useState(false);
+  const [formData, setFormData] = useState<Partial<User>>({});
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        "https://safimayi-backend.onrender.com/api/users/create-list/",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setUsers(res.data);
+    } catch (err) {
+      console.error("Erreur lors du chargement des utilisateurs", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        const res = await axios.get(
-          "https://safimayi-backend.onrender.com/api/users/create-list/",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setUsers(res.data);
-      } catch (err) {
-        console.error("Erreur lors du chargement des utilisateurs", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
 
@@ -64,6 +72,34 @@ export function UserView() {
     setSelectedUser(null);
   };
 
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (formData.id) {
+        // Edition
+        await axios.put(
+          `https://safimayi-backend.onrender.com/api/users/${formData.id}/`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // Création
+        await axios.post(
+          "https://safimayi-backend.onrender.com/api/users/",
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      fetchUsers();
+      setOpenDialog(false);
+      setFormData({});
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde :", error);
+    }
+  };
+
   const filteredUsers = users.filter(
     (u) =>
       u.nom.toLowerCase().includes(search.toLowerCase()) ||
@@ -73,6 +109,7 @@ export function UserView() {
 
   return (
     <Box>
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -87,13 +124,17 @@ export function UserView() {
         <Button
           variant="contained"
           startIcon={<Icon icon="mingcute:add-line" />}
+          onClick={() => {
+            setFormData({});
+            setOpenDialog(true);
+          }}
         >
           Nouvel utilisateur
         </Button>
       </Box>
 
+      {/* Table */}
       <Card sx={{ p: 2 }}>
-        {/* Search bar */}
         <Box sx={{ mb: 2 }}>
           <TextField
             placeholder="Search user..."
@@ -106,7 +147,7 @@ export function UserView() {
         </Box>
 
         {loading ? (
-          <Typography>Loading...</Typography>
+          <Typography>Chargement...</Typography>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse min-w-[700px]">
@@ -145,7 +186,7 @@ export function UserView() {
                         </span>
                       ) : (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                          Banned
+                          Banni
                         </span>
                       )}
                     </td>
@@ -170,21 +211,78 @@ export function UserView() {
       >
         <MenuItem
           onClick={() => {
-            console.log("Edit user", selectedUser);
+            setFormData(selectedUser || {});
+            setOpenDialog(true);
             handleMenuClose();
           }}
         >
-          Edit
+          Modifier
         </MenuItem>
         <MenuItem
           onClick={() => {
-            console.log("Delete user", selectedUser);
+            console.log("TODO: delete user", selectedUser);
             handleMenuClose();
           }}
         >
-          Delete
+          Supprimer
         </MenuItem>
       </Menu>
+
+      {/* Dialog Ajout / Edition */}
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          {formData.id ? "Modifier l’utilisateur" : "Nouvel utilisateur"}
+        </DialogTitle>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+        >
+          <TextField
+            label="Nom"
+            value={formData.nom || ""}
+            onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+            fullWidth
+          />
+          <TextField
+            label="Email"
+            type="email"
+            value={formData.email || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+            fullWidth
+          />
+          <TextField
+            label="Téléphone"
+            value={formData.telephone || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, telephone: e.target.value })
+            }
+            fullWidth
+          />
+          <Select
+            value={formData.role || "client"}
+            onChange={(e) =>
+              setFormData({ ...formData, role: e.target.value })
+            }
+            fullWidth
+          >
+            <MenuItem value="client">Client</MenuItem>
+            <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="agent">Agent</MenuItem>
+          </Select>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
+          <Button variant="contained" onClick={handleSave}>
+            Enregistrer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
