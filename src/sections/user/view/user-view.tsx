@@ -21,7 +21,7 @@ interface User {
   state: boolean;
 }
 
-export function UsersView() {
+export function UserView() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

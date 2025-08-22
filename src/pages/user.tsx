@@ -1,14 +1,13 @@
 import { CONFIG } from '../config-global';
 
-import { UserView } from '../sections/usert/view';
+import { UserView } from '../sections/user/view';
 
 // ----------------------------------------------------------------------
 
 export default function Page() {
   return (
     <>
-      <title>{`Users - ${CONFIG.appName}`}</title>
-
+      <title>{`Utilisateurs - ${CONFIG.appName}`}</title>
       <UserView />
     </>
   );
