@@ -1,204 +1,190 @@
-import { useState, useCallback } from 'react';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  Box,
+  Card,
+  Typography,
+  TextField,
+  IconButton,
+  Button,
+  Menu,
+  MenuItem,
+} from "@mui/material";
+import { Icon } from "@iconify/react";
 
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Table from '@mui/material/Table';
-import Button from '@mui/material/Button';
-import TableBody from '@mui/material/TableBody';
-import Typography from '@mui/material/Typography';
-import TableContainer from '@mui/material/TableContainer';
-import TablePagination from '@mui/material/TablePagination';
+interface User {
+  id: number;
+  nom: string;
+  telephone: string;
+  email: string;
+  role: string;
+  state: boolean;
+}
 
-import { _users } from '../../../_mock';
-import { DashboardContent } from '../../../layouts/dashboard';
+export function UsersView() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-import { Iconify } from '../../../components/iconify';
-import { Scrollbar } from '../../../components/scrollbar';
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          "https://safimayi-backend.onrender.com/api/users/create-list/",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setUsers(res.data);
+      } catch (err) {
+        console.error("Erreur lors du chargement des utilisateurs", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
 
-import { TableNoData } from '../table-no-data';
-import { UserTableRow } from '../user-table-row';
-import { UserTableHead } from '../user-table-head';
-import { TableEmptyRows } from '../table-empty-rows';
-import { UserTableToolbar } from '../user-table-toolbar';
-import { emptyRows, applyFilter, getComparator } from '../utils';
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    user: User
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedUser(user);
+  };
 
-import type { UserProps } from '../user-table-row';
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedUser(null);
+  };
 
-// ----------------------------------------------------------------------
-
-export function UserView() {
-  const table = useTable();
-
-  const [filterName, setFilterName] = useState('');
-
-  const dataFiltered: UserProps[] = applyFilter({
-    inputData: _users,
-    comparator: getComparator(table.order, table.orderBy),
-    filterName,
-  });
-
-  const notFound = !dataFiltered.length && !!filterName;
+  const filteredUsers = users.filter(
+    (u) =>
+      u.nom.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.telephone.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <DashboardContent>
+    <Box>
       <Box
         sx={{
-          mb: 5,
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          justifyContent: "space-between",
+          mb: 3,
+          alignItems: "center",
         }}
       >
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
+        <Typography variant="h5" fontWeight={600}>
           Users
         </Typography>
         <Button
           variant="contained"
-          color="inherit"
-          startIcon={<Iconify icon="mingcute:add-line" />}
+          startIcon={<Icon icon="mingcute:add-line" />}
         >
           New user
         </Button>
       </Box>
 
-      <Card>
-        <UserTableToolbar
-          numSelected={table.selected.length}
-          filterName={filterName}
-          onFilterName={(event: React.ChangeEvent<HTMLInputElement>) => {
-            setFilterName(event.target.value);
-            table.onResetPage();
-          }}
-        />
+      <Card sx={{ p: 2 }}>
+        {/* Search bar */}
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            placeholder="Search user..."
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </Box>
 
-        <Scrollbar>
-          <TableContainer sx={{ overflow: 'unset' }}>
-            <Table sx={{ minWidth: 800 }}>
-              <UserTableHead
-                order={table.order}
-                orderBy={table.orderBy}
-                rowCount={_users.length}
-                numSelected={table.selected.length}
-                onSort={table.onSort}
-                onSelectAllRows={(checked) =>
-                  table.onSelectAllRows(
-                    checked,
-                    _users.map((user) => user.id)
-                  )
-                }
-                headLabel={[
-                  { id: 'name', label: 'Name' },
-                  { id: 'company', label: 'Company' },
-                  { id: 'role', label: 'Role' },
-                  { id: 'isVerified', label: 'Verified', align: 'center' },
-                  { id: 'status', label: 'Status' },
-                  { id: '' },
-                ]}
-              />
-              <TableBody>
-                {dataFiltered
-                  .slice(
-                    table.page * table.rowsPerPage,
-                    table.page * table.rowsPerPage + table.rowsPerPage
-                  )
-                  .map((row) => (
-                    <UserTableRow
-                      key={row.id}
-                      row={row}
-                      selected={table.selected.includes(row.id)}
-                      onSelectRow={() => table.onSelectRow(row.id)}
-                    />
-                  ))}
-
-                <TableEmptyRows
-                  height={68}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, _users.length)}
-                />
-
-                {notFound && <TableNoData searchQuery={filterName} />}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Scrollbar>
-
-        <TablePagination
-          component="div"
-          page={table.page}
-          count={_users.length}
-          rowsPerPage={table.rowsPerPage}
-          onPageChange={table.onChangePage}
-          rowsPerPageOptions={[5, 10, 25]}
-          onRowsPerPageChange={table.onChangeRowsPerPage}
-        />
+        {loading ? (
+          <Typography>Loading...</Typography>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse min-w-[700px]">
+              <thead>
+                <tr className="bg-gray-50 text-left text-sm">
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Email</th>
+                  <th className="p-2">Phone</th>
+                  <th className="p-2">Role</th>
+                  <th className="p-2">Verified</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50 text-sm">
+                    <td className="p-2 font-medium">{user.nom}</td>
+                    <td className="p-2">{user.email}</td>
+                    <td className="p-2">{user.telephone}</td>
+                    <td className="p-2 capitalize">{user.role}</td>
+                    <td className="p-2">
+                      {user.state ? (
+                        <Icon
+                          icon="mdi:check-circle"
+                          className="text-green-500"
+                        />
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {user.state ? (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
+                          Banned
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-2 text-center">
+                      <IconButton onClick={(e) => handleMenuOpen(e, user)}>
+                        <Icon icon="mdi:dots-vertical" />
+                      </IconButton>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
-    </DashboardContent>
+
+      {/* Menu contextuel */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem
+          onClick={() => {
+            console.log("Edit user", selectedUser);
+            handleMenuClose();
+          }}
+        >
+          Edit
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            console.log("Delete user", selectedUser);
+            handleMenuClose();
+          }}
+        >
+          Delete
+        </MenuItem>
+      </Menu>
+    </Box>
   );
-}
-
-// ----------------------------------------------------------------------
-
-export function useTable() {
-  const [page, setPage] = useState(0);
-  const [orderBy, setOrderBy] = useState('name');
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
-
-  const onSort = useCallback(
-    (id: string) => {
-      const isAsc = orderBy === id && order === 'asc';
-      setOrder(isAsc ? 'desc' : 'asc');
-      setOrderBy(id);
-    },
-    [order, orderBy]
-  );
-
-  const onSelectAllRows = useCallback((checked: boolean, newSelecteds: string[]) => {
-    if (checked) {
-      setSelected(newSelecteds);
-      return;
-    }
-    setSelected([]);
-  }, []);
-
-  const onSelectRow = useCallback(
-    (inputValue: string) => {
-      const newSelected = selected.includes(inputValue)
-        ? selected.filter((value) => value !== inputValue)
-        : [...selected, inputValue];
-
-      setSelected(newSelected);
-    },
-    [selected]
-  );
-
-  const onResetPage = useCallback(() => {
-    setPage(0);
-  }, []);
-
-  const onChangePage = useCallback((event: unknown, newPage: number) => {
-    console.log(event)
-    setPage(newPage);
-  }, []);
-
-  const onChangeRowsPerPage = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setRowsPerPage(parseInt(event.target.value, 10));
-      onResetPage();
-    },
-    [onResetPage]
-  );
-
-  return {
-    page,
-    order,
-    onSort,
-    orderBy,
-    selected,
-    rowsPerPage,
-    onSelectRow,
-    onResetPage,
-    onChangePage,
-    onSelectAllRows,
-    onChangeRowsPerPage,
-  };
 }
