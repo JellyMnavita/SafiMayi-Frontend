@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem,
   IconButton, Menu, MenuList, MenuItem as MenuItemMui,
-  Dialog, DialogTitle, DialogContent, DialogActions, Grid
+  Dialog, DialogTitle, DialogContent, DialogActions, Grid, Tabs, Tab
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -32,7 +32,8 @@ export function RFIDView() {
 
   // Dialog
   const [openDialog, setOpenDialog] = useState(false);
-  const [formData, setFormData] = useState<Partial<RFID>>({});
+  const [mode, setMode] = useState<"single" | "multiple" | "auto">("single");
+  const [formData, setFormData] = useState<any>({}); // peut être une carte ou plusieurs
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, rfid: RFID) => {
     setAnchorEl(event.currentTarget);
@@ -81,26 +82,42 @@ export function RFIDView() {
     setRfids(filtered);
   }, [searchCode, searchTel, statusFilter, allRfid]);
 
-  // Save (Ajout et Modification)
+  // Save
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (formData.id) {
-        // Modification
-        await axios.put(
-          `https://safimayi-backend.onrender.com/api/rfid/update/${formData.code_uid}/`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        // Création
+
+      if (mode === "single") {
         await axios.post(
           `https://safimayi-backend.onrender.com/api/rfid/`,
-          formData,
+          {
+            code_uid: formData.code_uid,
+            telephone: formData.telephone,
+          },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-      
+
+      if (mode === "multiple") {
+        await axios.post(
+          `https://safimayi-backend.onrender.com/api/rfid/`,
+          formData.list || [],
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      if (mode === "auto") {
+        await axios.post(
+          `https://safimayi-backend.onrender.com/api/rfid/`,
+          {
+            prefix: formData.prefix,
+            nombre: formData.nombre,
+            telephone: formData.telephone,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
       fetchRfids();
       setOpenDialog(false);
       setFormData({});
@@ -115,7 +132,6 @@ export function RFIDView() {
     try {
       const token = localStorage.getItem("token");
 
-      // Mise à jour optimiste de l'UI
       setRfids(prevRfids =>
         prevRfids.map(rfid =>
           rfid.code_uid === code_uid
@@ -130,15 +146,11 @@ export function RFIDView() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Recharger pour synchroniser avec le backend
       fetchRfids();
 
     } catch (error) {
       console.error("Erreur lors de l'activation/désactivation :", error);
-
-      // Annuler la mise à jour optimiste en cas d'erreur
       fetchRfids();
-
       alert("Erreur lors de la modification du statut de la carte");
     }
   };
@@ -156,13 +168,13 @@ export function RFIDView() {
           startIcon={<Iconify icon="mingcute:add-line" />}
           onClick={() => {
             setFormData({});
+            setMode("single");
             setOpenDialog(true);
           }}
         >
           Ajouter une carte RFID
         </Button>
       </Box>
-
       {/* Filtres */}
       <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -200,7 +212,6 @@ export function RFIDView() {
           </Button>
         </Box>
       </Card>
-
       {/* Cards */}
       <Grid container spacing={2}>
         {loading ? (
@@ -263,33 +274,70 @@ export function RFIDView() {
         </MenuList>
       </Menu>
 
+
       {/* Dialog Ajout / Édition */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{formData.id ? "Modifier RFID" : "Ajouter RFID"}</DialogTitle>
+        <DialogTitle>Nouvelle carte RFID</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          <TextField
-            label="Code UID"
-            value={formData.code_uid || ""}
-            onChange={(e) => setFormData({ ...formData, code_uid: e.target.value })}
-            fullWidth
-            required
-          />
-          <TextField
-            label="Téléphone"
-            value={formData.telephone || ""}
-            onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-            fullWidth
-          />
-          <Select
-            value={formData.active ? "true" : "false"}
-            onChange={(e) =>
-              setFormData({ ...formData, active: e.target.value === "true" })
-            }
-            fullWidth
-          >
-            <MenuItem value="true">Actif</MenuItem>
-            <MenuItem value="false">Désactivé</MenuItem>
-          </Select>
+          <Tabs value={mode} onChange={(e, v) => setMode(v)}>
+            <Tab label="Simple" value="single" />
+            <Tab label="Multiple" value="multiple" />
+            <Tab label="Auto" value="auto" />
+          </Tabs>
+
+          {mode === "single" && (
+            <>
+              <TextField
+                label="Code UID"
+                value={formData.code_uid || ""}
+                onChange={(e) => setFormData({ ...formData, code_uid: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Téléphone"
+                value={formData.telephone || ""}
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                fullWidth
+              />
+            </>
+          )}
+
+          {mode === "multiple" && (
+            <TextField
+              label="JSON Liste [{code_uid, telephone}, ...]"
+              value={JSON.stringify(formData.list || [])}
+              onChange={(e) =>
+                setFormData({ ...formData, list: JSON.parse(e.target.value || "[]") })
+              }
+              multiline
+              rows={4}
+              fullWidth
+            />
+          )}
+
+          {mode === "auto" && (
+            <>
+              <TextField
+                label="Préfixe"
+                value={formData.prefix || "RFID"}
+                onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Nombre de cartes"
+                type="number"
+                value={formData.nombre || 1}
+                onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
+                fullWidth
+              />
+              <TextField
+                label="Téléphone"
+                value={formData.telephone || ""}
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                fullWidth
+              />
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
