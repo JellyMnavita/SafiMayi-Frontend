@@ -148,9 +148,11 @@ export function CompteurView() {
         const generatedCompteurs = [];
         for (let i = start; i <= end; i++) {
           generatedCompteurs.push({
-          
+            nom: `Compteur-${i}`,   
             code_serie: i.toString(),
-
+            siteforage: null,
+            date_installation: null,
+            actif: false,
           });
         }
 
