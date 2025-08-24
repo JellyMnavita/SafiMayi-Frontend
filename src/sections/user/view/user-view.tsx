@@ -86,7 +86,7 @@ export function UserView() {
       } else {
         // Création
         await axios.post(
-          "https://safimayi-backend.onrender.com/api/users/",
+          "https://safimayi-backend.onrender.com/api/create-list/",
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
