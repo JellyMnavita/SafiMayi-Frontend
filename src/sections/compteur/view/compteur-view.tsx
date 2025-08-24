@@ -421,8 +421,7 @@ export function CompteurView() {
           {mode === "auto" && (
             <>
               <TextField label="Nom générique" value={autoForm.nom} onChange={(e) => setAutoForm({ ...autoForm, nom: e.target.value })} fullWidth />
-              <TextField label="Site forage" type="number" value={autoForm.siteforage} onChange={(e) => setAutoForm({ ...autoForm, siteforage: Number(e.target.value) })} fullWidth />
-              <TextField label="Date d'installation" type="date" value={autoForm.date_installation} onChange={(e) => setAutoForm({ ...autoForm, date_installation: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+              <TextField label="Date de fabrication" type="date" value={autoForm.date_installation} onChange={(e) => setAutoForm({ ...autoForm, date_installation: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
               <TextField label="Code série début" type="number" value={autoForm.code_start} onChange={(e) => setAutoForm({ ...autoForm, code_start: e.target.value })} fullWidth />
               <TextField label="Code série fin" type="number" value={autoForm.code_end} onChange={(e) => setAutoForm({ ...autoForm, code_end: e.target.value })} fullWidth />
             </>
