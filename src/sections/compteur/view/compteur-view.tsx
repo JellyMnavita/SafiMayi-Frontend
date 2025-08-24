@@ -1,10 +1,11 @@
+// Remplace ton code par celui-ci
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, InputLabel, FormControl
 } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -24,11 +25,21 @@ export function CompteurView() {
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Ajout d'un état pour savoir si on est en "bulk" ou "simple"
-  const [bulkMode, setBulkMode] = useState<boolean>(false);
+  // Mode création : single | manual | auto
+  const [mode, setMode] = useState<"single" | "manual" | "auto">("single");
+
+  // States pour chaque mode
+  const [formData, setFormData] = useState<Partial<Compteur>>({});
   const [bulkCompteurs, setBulkCompteurs] = useState<Partial<Compteur>[]>([
     { nom: "", code_serie: "", siteforage: 0, actif: true, date_installation: "" }
   ]);
+  const [autoForm, setAutoForm] = useState({
+    nom: "",
+    siteforage: 0,
+    date_installation: "",
+    code_start: "",
+    code_end: ""
+  });
 
   // Pagination
   const [page, setPage] = useState<number>(1);
@@ -43,9 +54,8 @@ export function CompteurView() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedCompteur, setSelectedCompteur] = useState<Compteur | null>(null);
 
-  // Dialog (ajout / édition)
+  // Dialog
   const [openDialog, setOpenDialog] = useState(false);
-  const [formData, setFormData] = useState<Partial<Compteur>>({});
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, compteur: Compteur) => {
     setAnchorEl(event.currentTarget);
@@ -53,7 +63,7 @@ export function CompteurView() {
   };
   const handleMenuClose = () => setAnchorEl(null);
 
-  // Charger les compteurs une seule fois
+  // Charger les compteurs
   const fetchCompteurs = async () => {
     try {
       setLoading(true);
@@ -99,13 +109,13 @@ export function CompteurView() {
     }
 
     setCompteurs(filtered);
-    setPage(1); // reset page après filtrage
+    setPage(1);
   }, [searchNom, searchCode, statusFilter, allCompteurs]);
 
   // Pagination locale
   const paginatedData = compteurs.slice((page - 1) * pageSize, page * pageSize);
 
-  // Ajouter ou modifier un compteur
+  // Sauvegarde (création / update)
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -117,11 +127,18 @@ export function CompteurView() {
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-      } else if (bulkMode) {
-        // Création multiple
+      } else if (mode === "manual") {
+        // Création multiple manuelle
         await axios.post(
           `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
-          bulkCompteurs,
+          { compteurs: bulkCompteurs },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else if (mode === "auto") {
+        // Création automatique
+        await axios.post(
+          `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
+          autoForm,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
@@ -137,25 +154,21 @@ export function CompteurView() {
       setOpenDialog(false);
       setFormData({});
       setBulkCompteurs([{ nom: "", code_serie: "", siteforage: 0, actif: true, date_installation: "" }]);
-      setBulkMode(false);
+      setAutoForm({ nom: "", siteforage: 0, date_installation: "", code_start: "", code_end: "" });
+      setMode("single");
     } catch (error) {
       console.error("Erreur lors de la sauvegarde :", error);
     }
   };
 
-
-  // Activer/Désactiver un compteur
+  // Toggle activation
   const handleToggleActivation = async (id: number) => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
         `https://safimayi-backend.onrender.com/api/compteur/compteurs/toggle-activation/${id}/`,
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchCompteurs();
     } catch (error) {
@@ -175,13 +188,13 @@ export function CompteurView() {
           startIcon={<Iconify icon="mingcute:add-line" />}
           onClick={() => {
             setFormData({});
+            setMode("single");
             setOpenDialog(true);
           }}
         >
           Ajouter un compteur
         </Button>
       </Box>
-
       {/* Filtres */}
       <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -327,127 +340,78 @@ export function CompteurView() {
         </MenuList>
       </Menu>
 
-      {/* Dialog Ajout / Édition */}
+     {/* Dialog Ajout / Édition */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>
-          {formData.id
-            ? "Modifier le compteur"
-            : bulkMode
-              ? "Ajouter plusieurs compteurs"
-              : "Ajouter un compteur"}
+          {formData.id ? "Modifier le compteur" : "Ajouter un compteur"}
         </DialogTitle>
 
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          {!bulkMode ? (
-            <>
-              {/* 🔹 Formulaire simple (comme avant) */}
-              <TextField
-                label="Nom"
-                value={formData.nom || ""}
-                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Code série"
-                value={formData.code_serie || ""}
-                onChange={(e) => setFormData({ ...formData, code_serie: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Site forage"
-                type="number"
-                value={formData.siteforage || ""}
-                onChange={(e) => setFormData({ ...formData, siteforage: Number(e.target.value) })}
-                fullWidth
-              />
-              <TextField
-                label="Date d'installation"
-                type="date"
-                value={formData.date_installation || ""}
-                onChange={(e) => setFormData({ ...formData, date_installation: e.target.value })}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-              <Select
-                value={formData.actif ? "true" : "false"}
-                onChange={(e) =>
-                  setFormData({ ...formData, actif: e.target.value === "true" })
-                }
-                fullWidth
-              >
-                <MenuItem value="true">Actif</MenuItem>
-                <MenuItem value="false">Désactivé</MenuItem>
+          {!formData.id && (
+            <FormControl fullWidth>
+              <InputLabel>Mode de création</InputLabel>
+              <Select value={mode} onChange={(e) => setMode(e.target.value as any)}>
+                <MenuItem value="single">Un seul compteur</MenuItem>
+                <MenuItem value="manual">Plusieurs compteurs manuels</MenuItem>
+                <MenuItem value="auto">Plusieurs compteurs automatiques</MenuItem>
               </Select>
-            </>
-          ) : (
+            </FormControl>
+          )}
+
+          {/* Mode single */}
+          {mode === "single" && (
             <>
-              {/* 🔹 Formulaire multiple */}
+              <TextField label="Nom" value={formData.nom || ""} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} fullWidth />
+              <TextField label="Code série" value={formData.code_serie || ""} onChange={(e) => setFormData({ ...formData, code_serie: e.target.value })} fullWidth />
+              <TextField label="Site forage" type="number" value={formData.siteforage || ""} onChange={(e) => setFormData({ ...formData, siteforage: Number(e.target.value) })} fullWidth />
+              <TextField label="Date d'installation" type="date" value={formData.date_installation || ""} onChange={(e) => setFormData({ ...formData, date_installation: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+            </>
+          )}
+
+          {/* Mode manual */}
+          {mode === "manual" && (
+            <>
               {bulkCompteurs.map((c, index) => (
                 <Box key={index} sx={{ border: "1px solid #ddd", p: 2, mb: 2, borderRadius: 1 }}>
-                  <TextField
-                    label="Nom"
-                    value={c.nom || ""}
-                    onChange={(e) => {
-                      const newList = [...bulkCompteurs];
-                      newList[index].nom = e.target.value;
-                      setBulkCompteurs(newList);
-                    }}
-                    fullWidth
-                    sx={{ mb: 1 }}
-                  />
-                  <TextField
-                    label="Code série"
-                    value={c.code_serie || ""}
-                    onChange={(e) => {
-                      const newList = [...bulkCompteurs];
-                      newList[index].code_serie = e.target.value;
-                      setBulkCompteurs(newList);
-                    }}
-                    fullWidth
-                    sx={{ mb: 1 }}
-                  />
-                  <TextField
-                    label="Site forage"
-                    type="number"
-                    value={c.siteforage || ""}
-                    onChange={(e) => {
-                      const newList = [...bulkCompteurs];
-                      newList[index].siteforage = Number(e.target.value);
-                      setBulkCompteurs(newList);
-                    }}
-                    fullWidth
-                    sx={{ mb: 1 }}
-                  />
-                  <Button
-                    color="error"
-                    onClick={() => setBulkCompteurs(bulkCompteurs.filter((_, i) => i !== index))}
-                  >
-                    Supprimer
-                  </Button>
+                  <TextField label="Nom" value={c.nom || ""} onChange={(e) => {
+                    const list = [...bulkCompteurs];
+                    list[index].nom = e.target.value;
+                    setBulkCompteurs(list);
+                  }} fullWidth sx={{ mb: 1 }} />
+                  <TextField label="Code série" value={c.code_serie || ""} onChange={(e) => {
+                    const list = [...bulkCompteurs];
+                    list[index].code_serie = e.target.value;
+                    setBulkCompteurs(list);
+                  }} fullWidth sx={{ mb: 1 }} />
+                  <TextField label="Site forage" type="number" value={c.siteforage || ""} onChange={(e) => {
+                    const list = [...bulkCompteurs];
+                    list[index].siteforage = Number(e.target.value);
+                    setBulkCompteurs(list);
+                  }} fullWidth sx={{ mb: 1 }} />
+                  <Button color="error" onClick={() => setBulkCompteurs(bulkCompteurs.filter((_, i) => i !== index))}>Supprimer</Button>
                 </Box>
               ))}
-              <Button
-                variant="outlined"
-                onClick={() =>
-                  setBulkCompteurs([...bulkCompteurs, { nom: "", code_serie: "", siteforage: 0, actif: true }])
-                }
-              >
+              <Button variant="outlined" onClick={() => setBulkCompteurs([...bulkCompteurs, { nom: "", code_serie: "", siteforage: 0, actif: true }])}>
                 + Ajouter un compteur
               </Button>
+            </>
+          )}
+
+          {/* Mode auto */}
+          {mode === "auto" && (
+            <>
+              <TextField label="Nom générique" value={autoForm.nom} onChange={(e) => setAutoForm({ ...autoForm, nom: e.target.value })} fullWidth />
+              <TextField label="Site forage" type="number" value={autoForm.siteforage} onChange={(e) => setAutoForm({ ...autoForm, siteforage: Number(e.target.value) })} fullWidth />
+              <TextField label="Date d'installation" type="date" value={autoForm.date_installation} onChange={(e) => setAutoForm({ ...autoForm, date_installation: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
+              <TextField label="Code série début" type="number" value={autoForm.code_start} onChange={(e) => setAutoForm({ ...autoForm, code_start: e.target.value })} fullWidth />
+              <TextField label="Code série fin" type="number" value={autoForm.code_end} onChange={(e) => setAutoForm({ ...autoForm, code_end: e.target.value })} fullWidth />
             </>
           )}
         </DialogContent>
 
         <DialogActions>
-          {!formData.id && (
-            <Button onClick={() => setBulkMode(!bulkMode)}>
-              {bulkMode ? "Mode simple" : "Mode multiple"}
-            </Button>
-          )}
           <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
-          <Button variant="contained" onClick={handleSave}>
-            Enregistrer
-          </Button>
+          <Button variant="contained" onClick={handleSave}>Enregistrer</Button>
         </DialogActions>
       </Dialog>
     </DashboardContent>
