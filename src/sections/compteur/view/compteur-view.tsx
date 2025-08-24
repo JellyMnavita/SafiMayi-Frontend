@@ -131,7 +131,7 @@ export function CompteurView() {
         // Création multiple manuelle
         await axios.post(
           `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
-          { compteurs: bulkCompteurs },
+          bulkCompteurs,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else if (mode === "auto") {
@@ -149,7 +149,7 @@ export function CompteurView() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-
+ 
       fetchCompteurs();
       setOpenDialog(false);
       setFormData({});
