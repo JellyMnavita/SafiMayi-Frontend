@@ -268,7 +268,7 @@ export function CompteurView() {
                     <th className="p-2 border-b">Nom</th>
                     <th className="p-2 border-b">Code série</th>
                     <th className="p-2 border-b">Site forage</th>
-                    <th className="p-2 border-b">Date d'installation</th>
+                    <th className="p-2 border-b">Date de Fabrication</th>
                     <th className="p-2 border-b">Status</th>
                     <th className="p-2 border-b text-center">Actions</th>
                   </tr>
