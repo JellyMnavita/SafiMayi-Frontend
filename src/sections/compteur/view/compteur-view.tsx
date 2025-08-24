@@ -135,10 +135,30 @@ export function CompteurView() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else if (mode === "auto") {
-        // Création automatique
+        // Création automatique côté frontend
+        const { nom, siteforage, date_installation, code_start, code_end } = autoForm;
+        const start = parseInt(code_start, 10);
+        const end = parseInt(code_end, 10);
+
+        if (isNaN(start) || isNaN(end) || end < start) {
+          alert("Veuillez entrer un intervalle valide de codes.");
+          return;
+        }
+
+        const generatedCompteurs = [];
+        for (let i = start; i <= end; i++) {
+          generatedCompteurs.push({
+            nom: `${nom}-${i}`,   
+            code_serie: i.toString(),
+            siteforage,
+            date_installation,
+            actif: true,
+          });
+        }
+
         await axios.post(
           `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
-          autoForm,
+          generatedCompteurs,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
@@ -149,7 +169,7 @@ export function CompteurView() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
- 
+
       fetchCompteurs();
       setOpenDialog(false);
       setFormData({});
@@ -340,7 +360,7 @@ export function CompteurView() {
         </MenuList>
       </Menu>
 
-     {/* Dialog Ajout / Édition */}
+      {/* Dialog Ajout / Édition */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>
           {formData.id ? "Modifier le compteur" : "Ajouter un compteur"}
