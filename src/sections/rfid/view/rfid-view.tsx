@@ -67,14 +67,16 @@ export function RFIDView() {
   useEffect(() => {
     let filtered = [...allRfid];
     if (searchCode) {
-      filtered = filtered.filter((c) =>
-        c.code_uid.toLowerCase().includes(searchCode.toLowerCase())
-      );
+      filtered = filtered.filter((c) =>{
+        if(!c.code_uid) return false;
+        return c.code_uid.toLowerCase().includes(searchCode.toLowerCase());
+      });
     }
     if (searchTel) {
-      filtered = filtered.filter((c) =>
-        c.telephone.toLowerCase().includes(searchTel.toLowerCase())
-      );
+      filtered = filtered.filter((c) =>{
+        if(!c.telephone) return false;
+        return c.telephone.toLowerCase().includes(searchTel.toLowerCase());
+      });
     }
     if (statusFilter) {
       filtered = filtered.filter((c) => String(c.active) === statusFilter);
@@ -284,8 +286,6 @@ export function RFIDView() {
           </MenuItemMui>
         </MenuList>
       </Menu>
-
-
       {/* Dialog Ajout / Édition */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>
