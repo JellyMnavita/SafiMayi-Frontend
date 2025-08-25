@@ -332,6 +332,8 @@ export function RFIDView() {
             </>
           )}
 
+        { !formData.id  &&
+        <>
           {mode === "multiple" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {(formData.list || []).map((item: any, index: number) => (
@@ -411,6 +413,9 @@ export function RFIDView() {
               />
             </>
           )}
+        </>
+        }
+
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
