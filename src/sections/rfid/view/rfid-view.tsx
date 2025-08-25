@@ -133,6 +133,7 @@ export function RFIDView() {
               { headers: { Authorization: `Bearer ${token}` } }
             );
           }
+          
 
           fetchRfids();
           setOpenDialog(false);
