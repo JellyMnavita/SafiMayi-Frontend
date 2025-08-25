@@ -93,7 +93,7 @@ export function RFIDView() {
         if (formData.id) {
           // Edition
           await axios.put(
-            `https://safimayi-backend.onrender.com/api/rfid/update/${formData.code_uid}/`,
+            `https://safimayi-backend.onrender.com/api/rfid/update/${formData.id}/`,
             {
               active: formData.active,
               telephone: formData.telephone,
