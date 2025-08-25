@@ -128,9 +128,7 @@ export function RFIDView() {
             await axios.post(
               `https://safimayi-backend.onrender.com/api/rfid/`,
               {
-                prefix: formData.prefix,
-                nombre: formData.nombre,
-                telephone: formData.telephone,
+                nombre: formData.nombre ,
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -392,12 +390,7 @@ export function RFIDView() {
 
           {mode === "auto" && (
             <>
-              <TextField
-                label="Préfixe"
-                value={formData.prefix || "RFID"}
-                onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
-                fullWidth
-              />
+              
               <TextField
                 label="Nombre de cartes"
                 type="number"
@@ -405,12 +398,7 @@ export function RFIDView() {
                 onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
                 fullWidth
               />
-              <TextField
-                label="Téléphone"
-                value={formData.telephone || ""}
-                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                fullWidth
-              />
+             
             </>
           )}
         </>
