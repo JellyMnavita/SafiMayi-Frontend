@@ -87,63 +87,47 @@ export function RFIDView() {
     try {
       const token = localStorage.getItem("token");
 
-      // Save
-      const handleSave = async () => {
-        try {
-          const token = localStorage.getItem("token");
-
-          if (mode === "single") {
-            if (formData.id) {
-              // Edition
-              await axios.put(
-                `https://safimayi-backend.onrender.com/api/rfid/${formData.id}/`,
-                {
-                  code_uid: formData.code_uid,
-                  telephone: formData.telephone,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-            } else {
-              // Création
-              await axios.post(
-                `https://safimayi-backend.onrender.com/api/rfid/`,
-                {
-                  code_uid: formData.code_uid,
-                  telephone: formData.telephone,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-            }
-          }
-
-          if (mode === "multiple") {
-            await axios.post(
-              `https://safimayi-backend.onrender.com/api/rfid/`,
-              formData.list || [],
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          }
-
-          if (mode === "auto") {
-            await axios.post(
-              `https://safimayi-backend.onrender.com/api/rfid/`,
-              {
-                nombre: formData.nombre ,
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          }
-          
-
-          fetchRfids();
-          setOpenDialog(false);
-          setFormData({});
-        } catch (error) {
-          console.error("Erreur sauvegarde :", error);
-          alert("Erreur lors de la sauvegarde de la carte RFID");
+      if (mode === "single") {
+        if (formData.id) {
+          // Edition
+          await axios.put(
+            `https://safimayi-backend.onrender.com/api/rfid/${formData.id}/`,
+            {
+              code_uid: formData.code_uid,
+              telephone: formData.telephone,
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } else {
+          // Création
+          await axios.post(
+            `https://safimayi-backend.onrender.com/api/rfid/`,
+            {
+              code_uid: formData.code_uid,
+              telephone: formData.telephone,
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
         }
-      };
+      }
 
+      if (mode === "multiple") {
+        await axios.post(
+          `https://safimayi-backend.onrender.com/api/rfid/`,
+          formData.list || [],
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      if (mode === "auto") {
+        await axios.post(
+          `https://safimayi-backend.onrender.com/api/rfid/`,
+          {
+            nombre: formData.nombre,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
 
       fetchRfids();
       setOpenDialog(false);
@@ -277,7 +261,6 @@ export function RFIDView() {
           <Typography>Aucune carte RFID trouvée</Typography>
         )}
       </Grid>
-
       {/* Menu contextuel */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuList>
@@ -286,9 +269,10 @@ export function RFIDView() {
               setFormData(selectedRfid || {});
               setOpenDialog(true);
               handleMenuClose();
+              setMode("single");
             }}
           >
-            Modifier
+            Configurer
           </MenuItemMui>
           <MenuItemMui
             onClick={() => {
@@ -310,8 +294,8 @@ export function RFIDView() {
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
           <Tabs value={mode} onChange={(e, v) => setMode(v)}>
             <Tab label="Simple" value="single" />
-            <Tab label="Multiple" value="multiple" />
-            <Tab label="Auto" value="auto" />
+            {!formData.id && <Tab label="Multiple" value="multiple" />}
+            {!formData.id && <Tab label="Auto" value="auto" />}
           </Tabs>
 
           {mode === "single" && (
@@ -331,79 +315,79 @@ export function RFIDView() {
             </>
           )}
 
-        { !formData.id  &&
-        <>
-          {mode === "multiple" && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {(formData.list || []).map((item: any, index: number) => (
-                <Box
-                  key={index}
-                  sx={{ display: "flex", gap: 2, alignItems: "center" }}
-                >
-                  <TextField
-                    label="Code UID"
-                    value={item.code_uid || ""}
-                    onChange={(e) => {
-                      const newList = [...(formData.list || [])];
-                      newList[index] = { ...newList[index], code_uid: e.target.value };
-                      setFormData({ ...formData, list: newList });
-                    }}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Téléphone"
-                    value={item.telephone || ""}
-                    onChange={(e) => {
-                      const newList = [...(formData.list || [])];
-                      newList[index] = { ...newList[index], telephone: e.target.value };
-                      setFormData({ ...formData, list: newList });
-                    }}
-                    fullWidth
-                  />
-                  <IconButton
-                    color="error"
-                    onClick={() => {
-                      const newList = [...(formData.list || [])];
-                      newList.splice(index, 1);
-                      setFormData({ ...formData, list: newList });
-                    }}
-                  >
-                    <Iconify icon="solar:trash-bin-trash-bold" />
-                  </IconButton>
-                </Box>
-              ))}
-
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    list: [...(formData.list || []), { code_uid: "", telephone: "" }],
-                  })
-                }
-              >
-                + Ajouter une carte
-              </Button>
-            </Box>
-          )}
-
-
-          {mode === "auto" && (
+          {!formData.id &&
             <>
-              
-              <TextField
-                label="Nombre de cartes"
-                type="number"
-                value={formData.nombre || 1}
-                onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
-                fullWidth
-              />
-             
+              {mode === "multiple" && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {(formData.list || []).map((item: any, index: number) => (
+                    <Box
+                      key={index}
+                      sx={{ display: "flex", gap: 2, alignItems: "center" }}
+                    >
+                      <TextField
+                        label="Code UID"
+                        value={item.code_uid || ""}
+                        onChange={(e) => {
+                          const newList = [...(formData.list || [])];
+                          newList[index] = { ...newList[index], code_uid: e.target.value };
+                          setFormData({ ...formData, list: newList });
+                        }}
+                        fullWidth
+                      />
+                      <TextField
+                        label="Téléphone"
+                        value={item.telephone || ""}
+                        onChange={(e) => {
+                          const newList = [...(formData.list || [])];
+                          newList[index] = { ...newList[index], telephone: e.target.value };
+                          setFormData({ ...formData, list: newList });
+                        }}
+                        fullWidth
+                      />
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          const newList = [...(formData.list || [])];
+                          newList.splice(index, 1);
+                          setFormData({ ...formData, list: newList });
+                        }}
+                      >
+                        <Iconify icon="solar:trash-bin-trash-bold" />
+                      </IconButton>
+                    </Box>
+                  ))}
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        list: [...(formData.list || []), { code_uid: "", telephone: "" }],
+                      })
+                    }
+                  >
+                    + Ajouter une carte
+                  </Button>
+                </Box>
+              )}
+
+
+              {mode === "auto" && (
+                <>
+
+                  <TextField
+                    label="Nombre de cartes"
+                    type="number"
+                    value={formData.nombre || 1}
+                    onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
+                    fullWidth
+                  />
+
+                </>
+              )}
             </>
-          )}
-        </>
-        }
+          }
 
         </DialogContent>
         <DialogActions>
