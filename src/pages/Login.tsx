@@ -45,9 +45,9 @@ const Login = () => {
         flexDirection: 'column',
       }}
     >
-      <img src={logo} alt="SafiMayi Logo" width={250} />
+      <img src={logo}   alt="SafiMayi Logo" width={250} />
 
-      <Container maxWidth="sm">
+      <Container sx={{mt: 0}} maxWidth="sm">
         <Paper elevation={6} sx={{ p: 4, backgroundColor: '#fff', borderRadius: 2 }}>
           <Typography variant="h4" gutterBottom align="center">
             Connexion
