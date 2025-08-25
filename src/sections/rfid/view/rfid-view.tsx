@@ -303,16 +303,58 @@ export function RFIDView() {
           )}
 
           {mode === "multiple" && (
-            <TextField
-              label="JSON Liste [{code_uid, telephone}, ...]"
-              value={JSON.stringify(formData.list || [])}
-              onChange={(e) =>
-                setFormData({ ...formData, list: JSON.parse(e.target.value || "[]") })
-              }
-              multiline
-              rows={4}
-              fullWidth
-            />
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {(formData.list || []).map((item: any, index: number) => (
+                <Box
+                  key={index}
+                  sx={{ display: "flex", gap: 2, alignItems: "center" }}
+                >
+                  <TextField
+                    label="Code UID"
+                    value={item.code_uid || ""}
+                    onChange={(e) => {
+                      const newList = [...(formData.list || [])];
+                      newList[index] = { ...newList[index], code_uid: e.target.value };
+                      setFormData({ ...formData, list: newList });
+                    }}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Téléphone"
+                    value={item.telephone || ""}
+                    onChange={(e) => {
+                      const newList = [...(formData.list || [])];
+                      newList[index] = { ...newList[index], telephone: e.target.value };
+                      setFormData({ ...formData, list: newList });
+                    }}
+                    fullWidth
+                  />
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => {
+                      const newList = [...(formData.list || [])];
+                      newList.splice(index, 1);
+                      setFormData({ ...formData, list: newList });
+                    }}
+                  >
+                    Supprimer
+                  </Button>
+                </Box>
+              ))}
+
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    list: [...(formData.list || []), { code_uid: "", telephone: "" }],
+                  })
+                }
+              >
+                + Ajouter une carte
+              </Button>
+            </Box>
           )}
 
           {mode === "auto" && (
