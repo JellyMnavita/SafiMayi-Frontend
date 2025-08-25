@@ -87,36 +87,64 @@ export function RFIDView() {
     try {
       const token = localStorage.getItem("token");
 
-      if (mode === "single") {
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/rfid/`,
-          {
-            code_uid: formData.code_uid,
-            telephone: formData.telephone,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
+      // Save
+      const handleSave = async () => {
+        try {
+          const token = localStorage.getItem("token");
 
-      if (mode === "multiple") {
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/rfid/`,
-          formData.list || [],
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
+          if (mode === "single") {
+            if (formData.id) {
+              // Edition
+              await axios.put(
+                `https://safimayi-backend.onrender.com/api/rfid/${formData.id}/`,
+                {
+                  code_uid: formData.code_uid,
+                  telephone: formData.telephone,
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+            } else {
+              // Création
+              await axios.post(
+                `https://safimayi-backend.onrender.com/api/rfid/`,
+                {
+                  code_uid: formData.code_uid,
+                  telephone: formData.telephone,
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+            }
+          }
 
-      if (mode === "auto") {
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/rfid/`,
-          {
-            prefix: formData.prefix,
-            nombre: formData.nombre,
-            telephone: formData.telephone,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
+          if (mode === "multiple") {
+            await axios.post(
+              `https://safimayi-backend.onrender.com/api/rfid/`,
+              formData.list || [],
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          }
+
+          if (mode === "auto") {
+            await axios.post(
+              `https://safimayi-backend.onrender.com/api/rfid/`,
+              {
+                prefix: formData.prefix,
+                nombre: formData.nombre,
+                telephone: formData.telephone,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          }
+
+          fetchRfids();
+          setOpenDialog(false);
+          setFormData({});
+        } catch (error) {
+          console.error("Erreur sauvegarde :", error);
+          alert("Erreur lors de la sauvegarde de la carte RFID");
+        }
+      };
+
 
       fetchRfids();
       setOpenDialog(false);
@@ -277,7 +305,9 @@ export function RFIDView() {
 
       {/* Dialog Ajout / Édition */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Nouvelle carte RFID</DialogTitle>
+        <DialogTitle>
+          {formData.id ? "Éditer la carte RFID" : "Nouvelle carte RFID"}
+        </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
           <Tabs value={mode} onChange={(e, v) => setMode(v)}>
             <Tab label="Simple" value="single" />
@@ -329,8 +359,7 @@ export function RFIDView() {
                     }}
                     fullWidth
                   />
-                  <Button
-                    variant="outlined"
+                  <IconButton
                     color="error"
                     onClick={() => {
                       const newList = [...(formData.list || [])];
@@ -338,13 +367,14 @@ export function RFIDView() {
                       setFormData({ ...formData, list: newList });
                     }}
                   >
-                    Supprimer
-                  </Button>
+                    <Iconify icon="solar:trash-bin-trash-bold" />
+                  </IconButton>
                 </Box>
               ))}
 
               <Button
                 variant="outlined"
+                size="small"
                 onClick={() =>
                   setFormData({
                     ...formData,
@@ -356,6 +386,7 @@ export function RFIDView() {
               </Button>
             </Box>
           )}
+
 
           {mode === "auto" && (
             <>
