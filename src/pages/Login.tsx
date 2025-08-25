@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { TextField, Button, Container, Typography, Box, Alert, Paper, CircularProgress, Link } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import logo from '../assets/logoblanc.png';
+import logo from '../assets/logowhite.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
