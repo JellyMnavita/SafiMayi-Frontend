@@ -95,11 +95,15 @@ export function RFIDView() {
           await axios.put(
             `https://safimayi-backend.onrender.com/api/rfid/update/${formData.id}/`,
             {
-              active: formData.active,
               telephone: formData.telephone,
+              code_uid: formData.code_uid,  
             },
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          console.log({
+              telephone: formData.telephone,
+              code_uid: formData.code_uid,  
+            });
         } else {
           // Création
           await axios.post(
