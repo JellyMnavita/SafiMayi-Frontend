@@ -100,10 +100,7 @@ export function RFIDView() {
             },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          console.log({
-              telephone: formData.telephone,
-              code_uid: formData.code_uid,  
-            });
+
         } else {
           // Création
           await axios.post(
