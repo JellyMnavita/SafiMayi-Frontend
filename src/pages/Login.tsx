@@ -24,7 +24,7 @@ const Login = () => {
       if (response.data.user.role !== "agent" && response.data.user.role !== "admin") {
         navigate('/404');
       } else {
-        localStorage.setItem('token', response.data.token.access);
+        localStorage.setItem('token', response.data.access);
         navigate('/dashboard');
       }
 
