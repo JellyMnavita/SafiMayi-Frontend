@@ -33,6 +33,11 @@ export const navData = [
     path: '/user',
     icon: icon('ic-user'),
   },
+  {
+    title: 'Logout',
+    path: '/',
+    icon: icon('ic-logout'),
+  },
 /*   {
     title: 'Not found',
     path: '/404',
