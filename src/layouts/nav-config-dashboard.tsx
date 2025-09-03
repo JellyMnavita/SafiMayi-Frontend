@@ -33,9 +33,9 @@ export const navData = [
     path: '/user',
     icon: icon('ic-user'),
   },
-  {
+/*   {
     title: 'Not found',
     path: '/404',
     icon: icon('ic-disabled'),
-  },
+  }, */
 ];
