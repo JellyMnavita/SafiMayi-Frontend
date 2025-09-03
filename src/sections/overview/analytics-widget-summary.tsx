@@ -1,6 +1,5 @@
 import type { CardProps } from '@mui/material/Card';
 import type { PaletteColorKey } from '../../theme/core';
-import type { ChartOptions } from '../../components/chart';
 
 import { varAlpha } from 'minimal-shared/utils';
 
@@ -9,24 +8,16 @@ import Card from '@mui/material/Card';
 import { useTheme } from '@mui/material/styles';
 
 import { fNumber, fPercent, fShortenNumber } from '../../utils/format-number';
-
-import { Iconify } from '../../components/iconify';
 import { SvgColor } from '../../components/svg-color';
-import { Chart, useChart } from '../../components/chart';
 
 // ----------------------------------------------------------------------
 
 type Props = CardProps & {
   title: string;
   total: number;
-  percent: number;
   color?: PaletteColorKey;
   icon: React.ReactNode;
-  chart: {
-    series: number[];
-    categories: string[];
-    options?: ChartOptions;
-  };
+
 };
 
 export function AnalyticsWidgetSummary({
@@ -34,32 +25,10 @@ export function AnalyticsWidgetSummary({
   icon,
   title,
   total,
-  chart,
-  percent,
   color = 'primary',
   ...other
 }: Props) {
   const theme = useTheme();
-
-  const renderTrending = () => (
-    <Box
-      sx={{
-        top: 16,
-        gap: 0.5,
-        right: 16,
-        display: 'flex',
-        position: 'absolute',
-        alignItems: 'center',
-      }}
-    >
-      <Iconify width={20} icon={percent < 0 ? 'eva:trending-down-fill' : 'eva:trending-up-fill'} />
-      <Box component="span" sx={{ typography: 'subtitle2' }}>
-        {percent > 0 && '+'}
-        {fPercent(percent)}
-      </Box>
-    </Box>
-  );
-
   return (
     <Card
       sx={[
@@ -77,7 +46,7 @@ export function AnalyticsWidgetSummary({
     >
       <Box sx={{ width: 48, height: 48, mb: 3 }}>{icon}</Box>
 
-      {renderTrending()}
+      {/* {renderTrending()} */}
 
       <Box
         sx={{
