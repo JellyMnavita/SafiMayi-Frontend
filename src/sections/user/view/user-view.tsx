@@ -160,7 +160,7 @@ export function UserView() {
             size="small"
           />
           <FormControl size="small">
-            <InputLabel>Rôle</InputLabel>
+         
             <Select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -296,7 +296,7 @@ export function UserView() {
         <DialogTitle>
           {formData.id ? "Modifier l’utilisateur" : "Nouvel utilisateur"}
         </DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
           <TextField
             label="Nom"
             value={formData.nom || ""}
