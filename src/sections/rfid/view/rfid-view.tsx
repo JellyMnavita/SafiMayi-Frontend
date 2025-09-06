@@ -32,7 +32,7 @@ export function RFIDView() {
 
   // Dialog
   const [openDialog, setOpenDialog] = useState(false);
-  const [mode, setMode] = useState<"single" | "multiple" | "auto" | "vente">("single");
+  const [mode, setMode] = useState<"single" | "multiple" | "auto" >("single");
   const [formData, setFormData] = useState<any>({}); // peut être une carte ou plusieurs
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, rfid: RFID) => {
@@ -298,7 +298,6 @@ export function RFIDView() {
               <Tab label="Simple" value="single" />
               {!formData.id && <Tab label="Multiple" value="multiple" />}
               {!formData.id && <Tab label="Auto" value="auto" />}
-              {!formData.id && <Tab label="Vente" value="vente" />}
             </Tabs>
           </Tabs>
 
@@ -318,36 +317,7 @@ export function RFIDView() {
               />
             </>
           )}
-          {mode === "vente" && (
-            <>
-              <TextField
-                label="Code UID"
-                value={formData.code_uid || ""}
-                onChange={(e) => setFormData({ ...formData, code_uid: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Téléphone du client"
-                value={formData.telephone || ""}
-                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                fullWidth
-              />
-              <TextField
-                label="Montant payé"
-                type="number"
-                value={formData.montant || ""}
-                onChange={(e) => setFormData({ ...formData, montant: Number(e.target.value) })}
-                fullWidth
-              />
-              <TextField
-                label="Litres à créditer"
-                type="number"
-                value={formData.litres || ""}
-                onChange={(e) => setFormData({ ...formData, litres: Number(e.target.value) })}
-                fullWidth
-              />
-            </>
-          )}
+       
           {!formData.id &&
             <>
               {mode === "multiple" && (

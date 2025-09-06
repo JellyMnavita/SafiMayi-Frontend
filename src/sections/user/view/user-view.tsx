@@ -317,7 +317,7 @@ export function UserView() {
             fullWidth
           />
           <FormControl fullWidth>
-            <InputLabel>Rôle</InputLabel>
+            
             <Select
               value={formData.role || "client"}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
