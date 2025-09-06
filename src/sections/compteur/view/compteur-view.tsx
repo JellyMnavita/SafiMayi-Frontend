@@ -70,7 +70,7 @@ export function CompteurView() {
       const token = localStorage.getItem("token");
 
       const response = await axios.get(
-        `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
+        `https://safimayi-backend.onrender.com/api/compteur/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -123,14 +123,14 @@ export function CompteurView() {
       if (formData.id) {
         // Update
         await axios.put(
-          `https://safimayi-backend.onrender.com/api/compteur/compteurs/${formData.id}/`,
+          `https://safimayi-backend.onrender.com/api/compteur/${formData.id}/`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else if (mode === "manual") {
         // Création multiple manuelle
         await axios.post(
-          `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
+          `https://safimayi-backend.onrender.com/api/compteur/`,
           bulkCompteurs,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -157,14 +157,14 @@ export function CompteurView() {
         }
 
         await axios.post(
-          `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
+          `https://safimayi-backend.onrender.com/api/compteur/`,
           generatedCompteurs,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
         // Création simple
         await axios.post(
-          `https://safimayi-backend.onrender.com/api/compteur/compteurs/`,
+          `https://safimayi-backend.onrender.com/api/compteur/`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -186,7 +186,7 @@ export function CompteurView() {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `https://safimayi-backend.onrender.com/api/compteur/compteurs/toggle-activation/${id}/`,
+        `https://safimayi-backend.onrender.com/api/compteur/toggle-activation/${id}/`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
