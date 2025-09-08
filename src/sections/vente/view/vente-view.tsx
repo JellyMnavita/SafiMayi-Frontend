@@ -16,7 +16,7 @@ interface Vente {
   prix_unitaire: string;
   montant_total: string;
   mode_paiement: string;
-  client: string;
+  acheteur: string;
   date_vente: string;
 }
 
@@ -74,7 +74,7 @@ export function VenteView() {
     try {
       const token = localStorage.getItem("token");
       const [compteursRes, rfidsRes] = await Promise.all([
-        axios.get("https://safimayi-backend.onrender.com/api/compteur/", {
+        axios.get("https://safimayi-backend.onrender.com/api/inactifs/", {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get("https://safimayi-backend.onrender.com/api/rfid/", {
@@ -191,7 +191,7 @@ export function VenteView() {
                         <TableCell>{v.prix_unitaire} FC</TableCell>
                         <TableCell>{v.montant_total} FC</TableCell>
                         <TableCell>{v.mode_paiement}</TableCell>
-                        <TableCell>{v.client}</TableCell>
+                        <TableCell>{v.acheteur}</TableCell>
                         <TableCell>{new Date(v.date_vente).toLocaleString()}</TableCell>
                       </TableRow>
                     ))
