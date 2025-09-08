@@ -1,1 +1,1 @@
-export * from './rfid-view';
+export * from './vente-view';

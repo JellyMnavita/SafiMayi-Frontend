@@ -21,6 +21,8 @@ export const Page404 = lazy(() => import('../pages').then(m => ({ default: m.Pag
 export const CreateRfidPage = lazy(() => import('../pages').then(m => ({ default: m.CreateRfidPage })));
 export const CompteurPage = lazy(() => import('../pages').then(m => ({ default: m.CompteurPage })));
 export const RfidPage = lazy(() => import('../pages').then(m => ({ default: m.RfidPage })));
+export const VenteView = lazy(() => import('../pages').then(m => ({ default: m.VenteView })));
+
 const renderFallback = () => (
   <Box
     sx={{
@@ -54,6 +56,7 @@ export const routesSection: RouteObject[] = [
      
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'createrfid', element: <CreateRfidPage /> },
+      { path: 'ventes', element: <VenteView /> },
       { path: 'compteur', element: <CompteurPage /> },
       { path: 'user', element: <UserPage /> },
       { path: 'products', element: <ProductsPage /> },

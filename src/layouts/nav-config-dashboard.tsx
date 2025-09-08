@@ -9,7 +9,7 @@ export type NavItem = {
   title: string;
   path: string;
   icon: React.ReactNode;
-  info?: React.ReactNode; 
+  info?: React.ReactNode;
 };
 
 export const navData = [
@@ -17,6 +17,11 @@ export const navData = [
     title: 'Dashboard',
     path: '/dashboard',
     icon: icon('ic-analytics'),
+  },
+  {
+    title: 'Ventes',
+    path: '/ventes',
+    icon: icon('ic-user'),
   },
   {
     title: 'Compteur',
@@ -38,9 +43,9 @@ export const navData = [
     path: '/',
     icon: icon('ic-logout'),
   },
-/*   {
-    title: 'Not found',
-    path: '/404',
-    icon: icon('ic-disabled'),
-  }, */
+  /*   {
+      title: 'Not found',
+      path: '/404',
+      icon: icon('ic-disabled'),
+    }, */
 ];
