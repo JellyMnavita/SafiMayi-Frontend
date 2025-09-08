@@ -4,7 +4,7 @@ import {
   Box, Card, Button, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Pagination, CircularProgress, Grid, MenuItem,
   Select, InputLabel, FormControl, Table, TableHead, TableRow, TableCell,
-  TableBody, TableContainer
+  TableBody, TableContainer,Tabs, Tab
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -235,6 +235,9 @@ export function VenteView() {
       {/* Dialog ajout */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>Nouvelle vente</DialogTitle>
+        <Tabs value="Information" >
+          <Tab label="Information" value="Information" />
+        </Tabs>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
           {/* Select Compteur */}
           <FormControl fullWidth>
@@ -302,12 +305,7 @@ export function VenteView() {
             onChange={(e) => setFormData({ ...formData, mode_paiement: e.target.value })}
             fullWidth
           />
-          <TextField
-            label="Client"
-            value={formData.client || ""}
-            onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-            fullWidth
-          />
+
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
