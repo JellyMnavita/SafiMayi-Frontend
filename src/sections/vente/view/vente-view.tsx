@@ -4,7 +4,7 @@ import {
   Box, Card, Button, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Pagination, CircularProgress, Grid, MenuItem,
   Select, InputLabel, FormControl, Table, TableHead, TableRow, TableCell,
-  TableBody, TableContainer,Tabs, Tab
+  TableBody, TableContainer, Tabs, Tab
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -51,6 +51,8 @@ export function VenteView() {
   const [formData, setFormData] = useState<any>({});
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
   const [rfids, setRfids] = useState<RFID[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [tabValue, setTabValue] = useState<"compteur" | "rfid">("compteur");
 
   const fetchVentes = async (pageNumber = 1) => {
     try {
@@ -69,7 +71,6 @@ export function VenteView() {
       setLoading(false);
     }
   };
-  const [clients, setClients] = useState<any[]>([]);
 
   const fetchClients = async () => {
     try {
@@ -104,6 +105,7 @@ export function VenteView() {
   useEffect(() => {
     fetchVentes(page);
     fetchCompteursEtRfids();
+    fetchClients();
   }, [page]);
 
   const handleSave = async () => {
@@ -130,6 +132,7 @@ export function VenteView() {
         <Typography variant="h4">Journal des ventes</Typography>
         <Button
           variant="contained"
+          color="inherit"
           startIcon={<Iconify icon="mingcute:add-line" />}
           onClick={() => setOpenDialog(true)}
         >
@@ -159,12 +162,6 @@ export function VenteView() {
                   <Typography variant="h5">{stats.montant_total} FC</Typography>
                 </Card>
               </Grid>
-              {/*  <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography>Espèces</Typography>
-                  <Typography variant="h5">{stats.ventes_especes}</Typography>
-                </Card>
-              </Grid> */}
               <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Par RFID</Typography>
@@ -235,58 +232,85 @@ export function VenteView() {
       {/* Dialog ajout */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>Nouvelle vente</DialogTitle>
-        <Tabs value="Information" >
-          <Tabs>
-            <Tab label="Information" value="Information" />
-          </Tabs>
+        <Tabs
+          value={tabValue}
+          onChange={(_, v) => setTabValue(v)}
+          sx={{ width: '100%', mb: 2 }}
+        >
+          <Tab label="Vente Compteur" value="compteur" />
+          <Tab label="Vente RFID" value="rfid" />
         </Tabs>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          {/* Select Compteur */}
-          <FormControl fullWidth>
-            <InputLabel id="compteur-label">Compteur</InputLabel>
-            <Select
-              labelId="compteur-label"
-              value={formData.compteur || ""}
-              onChange={(e) => setFormData({ ...formData, compteur: e.target.value })}
-            >
-              {compteurs.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.nom} ({c.code_serie})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Select RFID */}
-          <FormControl fullWidth>
-            <InputLabel id="rfid-label">Carte RFID</InputLabel>
-            <Select
-              labelId="rfid-label"
-              value={formData.rfid || ""}
-              onChange={(e) => setFormData({ ...formData, rfid: e.target.value })}
-            >
-              {rfids.map((r) => (
-                <MenuItem key={r.id} value={r.id}>
-                  {r.code_uid} ({r.telephone || "Anonyme"})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth>
-            <InputLabel id="client-label">Client</InputLabel>
-            <Select
-              labelId="client-label"
-              value={formData.client || ""}
-              onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-              required={!!formData.compteur} // obligatoire si compteur choisi
-            >
-              {clients.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.username} ({c.email})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {tabValue === "compteur" && (
+            <>
+              <FormControl fullWidth>
+                <InputLabel id="compteur-label">Compteur</InputLabel>
+                <Select
+                  labelId="compteur-label"
+                  label="Compteur"
+                  value={formData.compteur || ""}
+                  onChange={(e) => setFormData({ ...formData, compteur: e.target.value, rfid: undefined })}
+                >
+                  {compteurs.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.nom} ({c.code_serie})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel id="client-label">Client</InputLabel>
+                <Select
+                  labelId="client-label"
+                  label="Client"
+                  value={formData.client || ""}
+                  onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                  required={!!formData.compteur}
+                >
+                  {clients.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.username} ({c.email})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
+          )}
+          {tabValue === "rfid" && (
+            <>
+              <FormControl fullWidth>
+                <InputLabel id="rfid-label">Carte RFID</InputLabel>
+                <Select
+                  labelId="rfid-label"
+                  label="Carte RFID"
+                  value={formData.rfid || ""}
+                  onChange={(e) => setFormData({ ...formData, rfid: e.target.value, compteur: undefined })}
+                >
+                  {rfids.map((r) => (
+                    <MenuItem key={r.id} value={r.id}>
+                      {r.code_uid} ({r.telephone || "Anonyme"})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+                 <FormControl fullWidth>
+                <InputLabel id="client-label">Client</InputLabel>
+                <Select
+                  labelId="client-label"
+                  label="Client"
+                  value={formData.client || ""}
+                  onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                  required={!!formData.compteur}
+                >
+                  {clients.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.username} ({c.email})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
+          )}
           <TextField
             label="Quantité"
             type="number"
@@ -301,13 +325,20 @@ export function VenteView() {
             onChange={(e) => setFormData({ ...formData, prix_unitaire: e.target.value })}
             fullWidth
           />
-          <TextField
-            label="Mode de paiement"
-            value={formData.mode_paiement || ""}
-            onChange={(e) => setFormData({ ...formData, mode_paiement: e.target.value })}
-            fullWidth
-          />
-
+          <FormControl fullWidth>
+            <InputLabel id="mode-paiement-label">Mode de paiement</InputLabel>
+            <Select
+              labelId="mode-paiement-label"
+              label="Mode de paiement"
+              value={formData.mode_paiement || ""}
+              onChange={(e) => setFormData({ ...formData, mode_paiement: e.target.value })}
+            >
+              <MenuItem value="cash">Espèces</MenuItem>
+              <MenuItem value="mobile_money">Mobile Money</MenuItem>
+              <MenuItem value="carte">Carte Bancaire</MenuItem>
+            </Select>
+          </FormControl>
+       
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Annuler</Button>

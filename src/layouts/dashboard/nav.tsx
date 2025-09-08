@@ -106,7 +106,7 @@ export function NavMobile({
 
 export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
   const pathname = usePathname();
-console.log(workspaces);
+
   return (
     <>
       <Logo />

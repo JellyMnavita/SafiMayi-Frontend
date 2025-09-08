@@ -41,7 +41,7 @@ export type NotificationsPopoverProps = IconButtonProps & {
 export function NotificationsPopover({ data = [], sx, ...other }: NotificationsPopoverProps) {
   const [notifications, setNotifications] = useState(data);
 
-  const totalUnRead = notifications.filter((item) => item.isUnRead === true).length;
+  const totalUnRead = notifications.filter((item) => item.isUnRead === true).length-2;
 
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
 

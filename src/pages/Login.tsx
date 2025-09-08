@@ -25,6 +25,7 @@ const Login = () => {
         navigate('/404');
       } else {
         localStorage.setItem('token', response.data.access);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         navigate('/dashboard');
       }
 
