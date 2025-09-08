@@ -236,7 +236,9 @@ export function VenteView() {
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>Nouvelle vente</DialogTitle>
         <Tabs value="Information" >
-          <Tab label="Information" value="Information" />
+          <Tabs>
+            <Tab label="Information" value="Information" />
+          </Tabs>
         </Tabs>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
           {/* Select Compteur */}
