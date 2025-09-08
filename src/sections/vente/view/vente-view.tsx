@@ -69,6 +69,19 @@ export function VenteView() {
       setLoading(false);
     }
   };
+  const [clients, setClients] = useState<any[]>([]);
+
+  const fetchClients = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("https://safimayi-backend.onrender.com/api/users/create-list/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setClients(res.data);
+    } catch (err) {
+      console.error("Erreur lors du fetch des clients :", err);
+    }
+  };
 
   const fetchCompteursEtRfids = async () => {
     try {
@@ -134,31 +147,31 @@ export function VenteView() {
           {/* Stats */}
           {stats && (
             <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Total ventes</Typography>
                   <Typography variant="h5">{stats.total_ventes}</Typography>
                 </Card>
               </Grid>
-              <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Montant total</Typography>
                   <Typography variant="h5">{stats.montant_total} FC</Typography>
                 </Card>
               </Grid>
-             {/*  <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              {/*  <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Espèces</Typography>
                   <Typography variant="h5">{stats.ventes_especes}</Typography>
                 </Card>
               </Grid> */}
-              <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Par RFID</Typography>
                   <Typography variant="h5">{stats.ventes_rfid}</Typography>
                 </Card>
               </Grid>
-              <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Par Compteur</Typography>
                   <Typography variant="h5">{stats.ventes_compteur}</Typography>
@@ -254,7 +267,21 @@ export function VenteView() {
               ))}
             </Select>
           </FormControl>
-
+          <FormControl fullWidth>
+            <InputLabel id="client-label">Client</InputLabel>
+            <Select
+              labelId="client-label"
+              value={formData.client || ""}
+              onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+              required={!!formData.compteur} // obligatoire si compteur choisi
+            >
+              {clients.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.username} ({c.email})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <TextField
             label="Quantité"
             type="number"
