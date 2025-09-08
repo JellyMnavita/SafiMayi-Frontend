@@ -21,7 +21,7 @@ export const navData = [
   {
     title: 'Ventes',
     path: '/ventes',
-    icon: icon('ic-user'),
+    icon: icon('ic-vente'),
   },
   {
     title: 'Compteur',
