@@ -38,7 +38,7 @@ export function VenteView() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://safimayi-backend.onrender.com/api/stats-journal/?page=${pageNumber}`,
+        `https://safimayi-backend.onrender.com/api/stats-journal/?page=${pageNumber}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setVentes(res.data.results);
@@ -56,7 +56,7 @@ export function VenteView() {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`http://safimayi-backend.onrender.com/api/ventes/create/`, formData, {
+      await axios.post(`https://safimayi-backend.onrender.com/api/ventes/create/`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOpenDialog(false);
