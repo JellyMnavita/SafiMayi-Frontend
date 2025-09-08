@@ -38,7 +38,7 @@ export function VenteView() {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `https://safimayi-backend.onrender.com/api/stats-journal/?page=${pageNumber}`,
+        `https://safimayi-backend.onrender.com/api/ventes/stats-journal/?page=${pageNumber}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setVentes(res.data.results);
