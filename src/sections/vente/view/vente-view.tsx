@@ -146,12 +146,12 @@ export function VenteView() {
                   <Typography variant="h5">{stats.montant_total} FC</Typography>
                 </Card>
               </Grid>
-              <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
+             {/*  <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Espèces</Typography>
                   <Typography variant="h5">{stats.ventes_especes}</Typography>
                 </Card>
-              </Grid>
+              </Grid> */}
               <Grid  sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography>Par RFID</Typography>
