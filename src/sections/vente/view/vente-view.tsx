@@ -304,7 +304,7 @@ export function VenteView() {
                 >
                   {clients.map((c) => (
                     <MenuItem key={c.id} value={c.id}>
-                      {c.username} ({c.email})
+                   {c.nom} - {c.email}
                     </MenuItem>
                   ))}
                 </Select>
