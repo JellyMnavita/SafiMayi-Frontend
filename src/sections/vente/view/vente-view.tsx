@@ -263,8 +263,8 @@ export function VenteView() {
                 <Select
                   labelId="client-label"
                   label="Client"
-                  value={formData.client || ""}
-                  onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                  value={formData.acheteur || ""}
+                  onChange={(e) => setFormData({ ...formData, acheteur: e.target.value })}
                   required={!!formData.compteur}
                 >
                   {clients.map((c) => (
@@ -298,8 +298,8 @@ export function VenteView() {
                 <Select
                   labelId="client-label"
                   label="Client"
-                  value={formData.client || ""}
-                  onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                  value={formData.acheteur || ""}
+                  onChange={(e) => setFormData({ ...formData, acheteur: e.target.value })}
                   required={!!formData.compteur}
                 >
                   {clients.map((c) => (
