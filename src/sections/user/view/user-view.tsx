@@ -17,7 +17,7 @@ import {
   Select,
   Pagination,
   FormControl,
-  InputLabel,
+  CircularProgress
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -160,7 +160,7 @@ export function UserView() {
             size="small"
           />
           <FormControl size="small">
-         
+
             <Select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -191,7 +191,7 @@ export function UserView() {
         <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
           {loading ? (
             <div className="flex justify-center items-center py-10">
-              <p className="text-gray-500">Chargement des utilisateurs...</p>
+              <CircularProgress />
             </div>
           ) : (
             <>
@@ -317,7 +317,7 @@ export function UserView() {
             fullWidth
           />
           <FormControl fullWidth>
-            
+
             <Select
               value={formData.role || "client"}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
