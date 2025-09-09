@@ -88,7 +88,7 @@ export function VenteView() {
     try {
       const token = localStorage.getItem("token");
       const [compteursRes, rfidsRes] = await Promise.all([
-        axios.get("https://safimayi-backend.onrender.com/api/inactifs/", {
+        axios.get("https://safimayi-backend.onrender.com/api/compteur/inactifs/", {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get("https://safimayi-backend.onrender.com/api/rfid/", {
