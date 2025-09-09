@@ -131,7 +131,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Box sx={{ p: 1 }}>
-          <Button fullWidth color="error" href="/logout" size="medium" variant="text">
+          <Button fullWidth color="error" href="/" size="medium" variant="text">
             Logout
           </Button>
         </Box>
