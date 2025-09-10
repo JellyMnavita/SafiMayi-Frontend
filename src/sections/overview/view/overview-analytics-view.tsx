@@ -46,11 +46,11 @@ export function OverviewAnalyticsView() {
       { breakpoint: 768, settings: { slidesToShow: 1 } },  // mobile
     ],
   };
-
+  const username = JSON.parse(localStorage.getItem('user') || '{}').username;
   return (
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hey, bienvenue dans l'espace administrateur
+        Hey, {username} bienvenue dans l'espace administrateur
       </Typography>
 
       {!stats ? (
