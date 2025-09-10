@@ -52,7 +52,7 @@ export function OverviewAnalyticsView() {
     ],
   };
 
-  const username = JSON.parse(localStorage.getItem('user') || '{}').username;
+  const username = JSON.parse(localStorage.getItem('user') || '{}').nom;
   return (
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
@@ -60,7 +60,9 @@ export function OverviewAnalyticsView() {
       </Typography>
 
       {!stats ? (
-        <CircularProgress />
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <CircularProgress />
+        </Box>
       ) : (
         <Box sx={{ px: 2 }}>
           <Slider {...settings}>
