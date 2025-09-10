@@ -1,39 +1,18 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import { DashboardContent } from '../../../layouts/dashboard';
 import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
+import { CircularProgress, Box } from '@mui/material';
+import Slider from 'react-slick';
 
-// Définir le type de la réponse de l'API
 interface StatsResponse {
-  utilisateurs: {
-    total: number;
-    clients: number;
-    admins: number;
-  };
-  litrage: {
-    total_recharges_litres: number;
-    total_consomme_litres: number;
-    total_disponible_litres: number;
-  };
-  paiements: {
-    montant_total: number;
-    nombre_transactions: number;
-  };
-  access_codes: {
-    total: number;
-    utilises: number;
-    non_utilises: number;
-  };
-  compteurs: {
-    total: number;
-    actifs: number;
-  };
-  rfid: {
-    total: number;
-    actives: number;
-  };
+  utilisateurs: { total: number; clients: number; admins: number };
+  litrage: { total_recharges_litres: number; total_consomme_litres: number; total_disponible_litres: number };
+  paiements: { montant_total: number; nombre_transactions: number };
+  access_codes: { total: number; utilises: number; non_utilises: number };
+  compteurs: { total: number; actifs: number };
+  rfid: { total: number; actives: number };
 }
 
 export function OverviewAnalyticsView() {
@@ -42,14 +21,10 @@ export function OverviewAnalyticsView() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('token'); // JWT access token
+        const token = localStorage.getItem('token');
         const res = await axios.get<StatsResponse>(
           'https://safimayi-backend.onrender.com/api/users/stats/',
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setStats(res.data);
       } catch (error) {
@@ -60,13 +35,17 @@ export function OverviewAnalyticsView() {
     fetchStats();
   }, []);
 
-  if (!stats) {
-    return (
-      <DashboardContent maxWidth="xl">
-        <Typography variant="h6">Chargement des statistiques...</Typography>
-      </DashboardContent>
-    );
-  }
+  const settings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 3,   // 3 cartes visibles sur desktop
+    slidesToScroll: 1,
+    responsive: [
+      { breakpoint: 1200, settings: { slidesToShow: 2 } }, // tablette
+      { breakpoint: 768, settings: { slidesToShow: 1 } },  // mobile
+    ],
+  };
 
   return (
     <DashboardContent maxWidth="xl">
@@ -74,66 +53,61 @@ export function OverviewAnalyticsView() {
         Hey, bienvenue dans l'espace administrateur
       </Typography>
 
-
-      <Grid container spacing={3}>
-        {/* Cartes RFID */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticsWidgetSummary
-            title="Total Cartes RFID"
-            total={stats.rfid.total}
-            icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-bag.svg" />}
-          />
-        </Grid>        
-        {/* Utilisateurs */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticsWidgetSummary
-            title="Total Utilisateurs"
-            total={stats.utilisateurs.total}
-            color="secondary"
-            icon={<img alt="Users" src="/assets/icons/glass/ic-glass-users.svg" />}
-          />
-        </Grid>
-
-        {/* Paiements */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticsWidgetSummary
-            title="Montant Paiements"
-            total={stats.paiements.montant_total}
-            color="warning"
-            icon={<img alt="Paiements" src="/assets/icons/glass/ic-glass-buy.svg" />}
-          />
-        </Grid>
-
-        {/* Codes d'accès */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticsWidgetSummary
-            title="Codes d'accès générés"
-            total={stats.access_codes.total}
-            color="error"
-            icon={<img alt="Access Codes" src="/assets/icons/glass/ic-glass-message.svg" />}
-          />
-        </Grid>
-
-        {/* Compteurs */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticsWidgetSummary
-            title="Compteurs actifs"
-            total={stats.compteurs.actifs}
-            color="info"
-            icon={<img alt="Compteurs" src="/assets/icons/glass/ic-glass-buy.svg" />}
-          />
-        </Grid>
-
-        {/* Litres consommés */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AnalyticsWidgetSummary
-            title="Litres consommés"
-            total={stats.litrage.total_consomme_litres}
-            color="success"
-            icon={<img alt="Consommation" src="/assets/icons/glass/ic-glass-users.svg" />}
-          />
-        </Grid>
-      </Grid>
+      {!stats ? (
+        <CircularProgress />
+      ) : (
+        <Box sx={{ px: 2 }}>
+          <Slider {...settings}>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Total Cartes RFID"
+                total={stats.rfid.total}
+                icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-bag.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Total Utilisateurs"
+                total={stats.utilisateurs.total}
+                color="secondary"
+                icon={<img alt="Users" src="/assets/icons/glass/ic-glass-users.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Montant Paiements"
+                total={stats.paiements.montant_total}
+                color="warning"
+                icon={<img alt="Paiements" src="/assets/icons/glass/ic-glass-buy.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Codes d'accès générés"
+                total={stats.access_codes.total}
+                color="error"
+                icon={<img alt="Access Codes" src="/assets/icons/glass/ic-glass-message.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Compteurs actifs"
+                total={stats.compteurs.actifs}
+                color="info"
+                icon={<img alt="Compteurs" src="/assets/icons/glass/ic-glass-buy.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Litres consommés"
+                total={stats.litrage.total_consomme_litres}
+                color="success"
+                icon={<img alt="Consommation" src="/assets/icons/glass/ic-glass-users.svg" />}
+              />
+            </div>
+          </Slider>
+        </Box>
+      )}
     </DashboardContent>
   );
 }

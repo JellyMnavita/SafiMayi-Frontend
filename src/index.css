@@ -2,3 +2,11 @@
   margin: 0;
   padding: 0;
 }
+/* slick-carousel styles */
+.slick-prev, .slick-next {
+  z-index: 1;
+}
+.slick-dots li button:before {
+  font-size: 12px;
+  color: #888;
+}
