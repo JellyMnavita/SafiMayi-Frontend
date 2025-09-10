@@ -48,14 +48,15 @@ export function VenteView() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const [openDialog, setOpenDialog] = useState(false);
-  const [formData, setFormData] = useState<any>({});
+
+  // ✅ Ajout du champ "type" par défaut
   const [ventesForm, setVentesForm] = useState<any[]>([
-    { compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "" }
+    { type: "compteur", compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "", mode_paiement: "cash" }
   ]);
+
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
   const [rfids, setRfids] = useState<RFID[]>([]);
   const [clients, setClients] = useState<any[]>([]);
-  const [tabValue, setTabValue] = useState<"compteur" | "rfid">("compteur");
 
   const fetchVentes = async (pageNumber = 1) => {
     try {
@@ -112,7 +113,10 @@ export function VenteView() {
   }, [page]);
 
   const addVenteRow = () => {
-    setVentesForm([...ventesForm, { compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "" }]);
+    setVentesForm([
+      ...ventesForm,
+      { type: "compteur", compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "", mode_paiement: "cash" }
+    ]);
   };
 
   const handleChange = (index: number, field: string, value: any) => {
@@ -126,18 +130,17 @@ export function VenteView() {
       const token = localStorage.getItem("token");
       await axios.post(
         `https://safimayi-backend.onrender.com/api/ventes/create/`,
-        ventesForm, // maintenant on envoie un tableau
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        ventesForm,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setOpenDialog(false);
-      setVentesForm([{ compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "" }]);
+      setVentesForm([{ type: "compteur", compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "", mode_paiement: "cash" }]);
       fetchVentes(page);
     } catch (error) {
       console.error("Erreur lors de la création :", error);
     }
   };
+
   return (
     <DashboardContent>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3, flexWrap: "wrap" }}>
@@ -253,7 +256,7 @@ export function VenteView() {
             >
               {/* Tabs pour différencier compteur vs RFID */}
               <Tabs
-                value={vente.type || "compteur"}
+                value={vente.type}
                 onChange={(_, v) => handleChange(index, "type", v)}
                 sx={{ width: "100%", mb: 2 }}
               >
@@ -349,7 +352,7 @@ export function VenteView() {
               <FormControl fullWidth sx={{ mt: 2 }}>
                 <InputLabel id={`mode-paiement-label-${index}`}>Mode de paiement</InputLabel>
                 <Select
-                  value={vente.mode_paiement || "cash"}
+                  value={vente.mode_paiement}
                   onChange={(e) => handleChange(index, "mode_paiement", e.target.value)}
                 >
                   <MenuItem value="cash">Espèces</MenuItem>
@@ -372,7 +375,6 @@ export function VenteView() {
           </Button>
         </DialogActions>
       </Dialog>
-
     </DashboardContent>
   );
 }
