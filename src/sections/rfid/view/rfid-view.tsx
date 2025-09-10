@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Box, Card, Button, Typography, TextField, Select, MenuItem,
+  Box, Card, Button, Typography, TextField, Select, MenuItem,CircularProgress,
   IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, Tabs, Tab
 } from "@mui/material";
@@ -229,7 +229,7 @@ export function RFIDView() {
       {/* Cards */}
       <Grid container spacing={2}>
         {loading ? (
-          <Typography>Chargement...</Typography>
+          <Typography><CircularProgress /></Typography>
         ) : rfids.length > 0 ? (
           rfids.map((rfid) => (
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={rfid.id}>

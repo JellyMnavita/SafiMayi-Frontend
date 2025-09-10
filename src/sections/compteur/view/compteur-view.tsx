@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 import {
-  Box, Card, Button, Typography, TextField, Select, MenuItem,
+  Box, Card, Button, Typography, TextField, Select, MenuItem,CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab
 } from "@mui/material";
@@ -258,7 +258,7 @@ export function CompteurView() {
         <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
           {loading ? (
             <div className="flex justify-center items-center py-10">
-              <p className="text-gray-500">Chargement des compteurs...</p>
+              <p className="text-gray-500"><CircularProgress /></p>
             </div>
           ) : (
             <>
