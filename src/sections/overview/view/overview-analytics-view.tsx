@@ -7,10 +7,10 @@ import { CircularProgress, Box } from '@mui/material';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-
+import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
 import '../../../index.css'
 import useMediaQuery from '@mui/material/useMediaQuery';
-
+import Grid from '@mui/material/Grid';
 
 
 
@@ -60,7 +60,7 @@ const isTablet = useMediaQuery('(max-width:1200px)');
       {
         breakpoint: 768, // mobile
         settings: {
-          slidesToShow: 1,   // ✅ une seule card sur mobile
+          slidesToShow: 1,  
         },
       },
     ],
@@ -128,6 +128,19 @@ const isTablet = useMediaQuery('(max-width:1200px)');
               />
             </div>
           </Slider>
+          <Grid size={{ xs: 12, md: 6, lg: 8 }}>
+          <AnalyticsWebsiteVisits
+            title="Website visits"
+            subheader="(+43%) than last year"
+            chart={{
+              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+              series: [
+                { name: 'Team A', data: [43, 33, 22, 37, 67, 68, 37, 24, 55] },
+                { name: 'Team B', data: [51, 70, 47, 67, 40, 37, 24, 70, 24] },
+              ],
+            }}
+          />
+        </Grid>
         </Box>
       )}
     </DashboardContent>
