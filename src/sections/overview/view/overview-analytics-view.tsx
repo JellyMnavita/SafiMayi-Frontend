@@ -12,8 +12,7 @@ import '../../../index.css'
 import useMediaQuery from '@mui/material/useMediaQuery';
 
 
-const isMobile = useMediaQuery('(max-width:768px)');
-const isTablet = useMediaQuery('(max-width:1200px)');
+
 
 interface StatsResponse {
   utilisateurs: { total: number; clients: number; admins: number };
@@ -26,7 +25,8 @@ interface StatsResponse {
 
 export function OverviewAnalyticsView() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
-
+const isMobile = useMediaQuery('(max-width:768px)');
+const isTablet = useMediaQuery('(max-width:1200px)');
   useEffect(() => {
     const fetchStats = async () => {
       try {
