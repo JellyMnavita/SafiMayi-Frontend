@@ -8,11 +8,9 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
-import '../../../index.css'
+import '../../../index.css';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Grid from '@mui/material/Grid';
-
-
 
 interface StatsResponse {
   utilisateurs: { total: number; clients: number; admins: number };
@@ -23,10 +21,17 @@ interface StatsResponse {
   rfid: { total: number; actives: number };
 }
 
+interface GraphStatsResponse {
+  graph_stats: { date: string; total_litres: number }[];
+}
+
 export function OverviewAnalyticsView() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
-const isMobile = useMediaQuery('(max-width:768px)');
-const isTablet = useMediaQuery('(max-width:1200px)');
+  const [graphStats, setGraphStats] = useState<GraphStatsResponse | null>(null);
+
+  const isMobile = useMediaQuery('(max-width:768px)');
+  const isTablet = useMediaQuery('(max-width:1200px)');
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -41,32 +46,57 @@ const isTablet = useMediaQuery('(max-width:1200px)');
       }
     };
 
+    const fetchGraphStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get<GraphStatsResponse>(
+          'https://safimayi-backend.onrender.com/api/compteur/global/last-date-stat/',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setGraphStats(res.data);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des graph_stats:', error);
+      }
+    };
+
     fetchStats();
+    fetchGraphStats();
   }, []);
+
   const settings = {
     dots: true,
     infinite: false,
     speed: 500,
     slidesToShow: isMobile ? 1 : isTablet ? 2 : 3,
     slidesToScroll: 1,
-    arrows: true, // flèches activées
+    arrows: true,
     responsive: [
       {
-        breakpoint: 1200, // tablette
-        settings: {
-          slidesToShow: 2,
-        },
+        breakpoint: 1200,
+        settings: { slidesToShow: 2 },
       },
       {
-        breakpoint: 768, // mobile
-        settings: {
-          slidesToShow: 1,  
-        },
+        breakpoint: 768,
+        settings: { slidesToShow: 1 },
       },
     ],
   };
 
   const username = JSON.parse(localStorage.getItem('user') || '{}').nom;
+
+  // Transformation des graph_stats pour le chart
+  const chartData = graphStats
+    ? {
+        categories: graphStats.graph_stats.map((item) => item.date),
+        series: [
+          {
+            name: 'Consommation (L)',
+            data: graphStats.graph_stats.map((item) => item.total_litres),
+          },
+        ],
+      }
+    : { categories: [], series: [] };
+
   return (
     <DashboardContent maxWidth="xl">
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
@@ -128,18 +158,14 @@ const isTablet = useMediaQuery('(max-width:1200px)');
               />
             </div>
           </Slider>
-          <Grid size={{ xs: 12, md: 6, lg: 8 }}>
-          <AnalyticsWebsiteVisits
-            title="Statistiques Globales de Consommation"
-            subheader="(+43%) than last year"
-            chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-              series: [
-                { name: 'Team A', data: [43, 33, 22, 37, 67, 68, 37, 24, 55] }
-              ],
-            }}
-          />
-        </Grid>
+
+          <Grid  size={{ xs: 12, md: 6, lg: 8 }}>
+            <AnalyticsWebsiteVisits
+              title="Statistiques Globales de Consommation"
+              subheader="Dernières consommations"
+              chart={chartData}
+            />
+          </Grid>
         </Box>
       )}
     </DashboardContent>
