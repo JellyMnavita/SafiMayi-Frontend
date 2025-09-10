@@ -270,6 +270,8 @@ export function VenteView() {
                   <FormControl fullWidth>
                     <InputLabel id={`compteur-label-${index}`}>Compteur</InputLabel>
                     <Select
+                      labelId={`compteur-label-${index}`}
+                      label="Compteur"
                       value={vente.compteur}
                       onChange={(e) => handleChange(index, "compteur", e.target.value)}
                     >
@@ -284,6 +286,8 @@ export function VenteView() {
                   <FormControl fullWidth sx={{ mt: 2 }}>
                     <InputLabel id={`client-label-${index}`}>Client</InputLabel>
                     <Select
+                      labelId={`client-label-${index}`}
+                      label="Client"
                       value={vente.acheteur}
                       onChange={(e) => handleChange(index, "acheteur", e.target.value)}
                       required
@@ -304,6 +308,8 @@ export function VenteView() {
                   <FormControl fullWidth>
                     <InputLabel id={`rfid-label-${index}`}>Carte RFID</InputLabel>
                     <Select
+                      labelId={`rfid-label-${index}`}
+                      label="Carte RFID"
                       value={vente.rfid}
                       onChange={(e) => handleChange(index, "rfid", e.target.value)}
                     >
@@ -318,6 +324,8 @@ export function VenteView() {
                   <FormControl fullWidth sx={{ mt: 2 }}>
                     <InputLabel id={`client-label-${index}`}>Client (optionnel)</InputLabel>
                     <Select
+                      labelId={`client-label-${index}`}
+                      label="Client (optionnel)"
                       value={vente.acheteur}
                       onChange={(e) => handleChange(index, "acheteur", e.target.value)}
                     >
@@ -333,16 +341,9 @@ export function VenteView() {
               )}
 
               {/* Champs communs */}
+     
               <TextField
-                label="Quantité"
-                type="number"
-                fullWidth
-                sx={{ mt: 2 }}
-                value={vente.quantite}
-                onChange={(e) => handleChange(index, "quantite", Number(e.target.value))}
-              />
-              <TextField
-                label="Prix unitaire"
+                label="Prix"
                 type="number"
                 fullWidth
                 sx={{ mt: 2 }}
@@ -352,6 +353,8 @@ export function VenteView() {
               <FormControl fullWidth sx={{ mt: 2 }}>
                 <InputLabel id={`mode-paiement-label-${index}`}>Mode de paiement</InputLabel>
                 <Select
+                  labelId={`mode-paiement-label-${index}`}
+                  label="Mode de paiement"
                   value={vente.mode_paiement}
                   onChange={(e) => handleChange(index, "mode_paiement", e.target.value)}
                 >
