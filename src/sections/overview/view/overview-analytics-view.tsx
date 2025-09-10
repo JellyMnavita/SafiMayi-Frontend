@@ -9,8 +9,11 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 
 import '../../../index.css'
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 
+const isMobile = useMediaQuery('(max-width:768px)');
+const isTablet = useMediaQuery('(max-width:1200px)');
 
 interface StatsResponse {
   utilisateurs: { total: number; clients: number; admins: number };
@@ -44,7 +47,7 @@ export function OverviewAnalyticsView() {
     dots: true,
     infinite: false,
     speed: 500,
-    slidesToShow: 3,
+    slidesToShow: isMobile ? 1 : isTablet ? 2 : 3,
     slidesToScroll: 1,
     arrows: true, // flèches activées
     responsive: [
