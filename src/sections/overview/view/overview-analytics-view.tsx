@@ -35,18 +35,19 @@ export function OverviewAnalyticsView() {
 
     fetchStats();
   }, []);
-
   const settings = {
     dots: true,
     infinite: false,
     speed: 500,
     slidesToShow: 3,   
     slidesToScroll: 1,
+    arrows: true, // flèches activées
     responsive: [
-      { breakpoint: 1200, settings: { slidesToShow: 2 } }, // tablette
-      { breakpoint: 768, settings: { slidesToShow: 1 } },  // mobile
+      { breakpoint: 1200, settings: { slidesToShow: 2 } }, 
+      { breakpoint: 768, settings: { slidesToShow: 1 } },  
     ],
   };
+
   const username = JSON.parse(localStorage.getItem('user') || '{}').username;
   return (
     <DashboardContent maxWidth="xl">
