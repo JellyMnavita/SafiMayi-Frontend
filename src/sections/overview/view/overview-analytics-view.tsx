@@ -6,6 +6,7 @@ import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
 import { CircularProgress, Box } from '@mui/material';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 
 import '../../../index.css'
 
