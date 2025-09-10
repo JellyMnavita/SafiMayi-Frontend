@@ -130,7 +130,7 @@ const isTablet = useMediaQuery('(max-width:1200px)');
           </Slider>
           <Grid size={{ xs: 12, md: 6, lg: 8 }}>
           <AnalyticsWebsiteVisits
-            title="Website visits"
+            title="Statistiques Globales de Consommation"
             subheader="(+43%) than last year"
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
