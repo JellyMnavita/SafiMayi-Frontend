@@ -44,12 +44,22 @@ export function OverviewAnalyticsView() {
     dots: true,
     infinite: false,
     speed: 500,
-    slidesToShow: 3,   
+    slidesToShow: 3,
     slidesToScroll: 1,
     arrows: true, // flèches activées
     responsive: [
-      { breakpoint: 1200, settings: { slidesToShow: 2 } }, 
-      { breakpoint: 768, settings: { slidesToShow: 1 } },  
+      {
+        breakpoint: 1200, // tablette
+        settings: {
+          slidesToShow: 2,
+        },
+      },
+      {
+        breakpoint: 768, // mobile
+        settings: {
+          slidesToShow: 1,   // ✅ une seule card sur mobile
+        },
+      },
     ],
   };
 
