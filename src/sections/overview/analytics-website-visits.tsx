@@ -36,7 +36,7 @@ export function AnalyticsWebsiteVisits({ title, subheader, chart, sx, ...other }
     stroke: { width: 2 }, // <-- retire colors ou mets une couleur réelle
     xaxis: { categories: chart.categories },
     legend: { show: true },
-    tooltip: { y: { formatter: (value: number) => `${value} visits` } },
+    tooltip: { y: { formatter: (value: number) => `${value} Litres` } },
     ...chart.options,
   });
 
