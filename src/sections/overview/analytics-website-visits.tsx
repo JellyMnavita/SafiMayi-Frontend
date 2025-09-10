@@ -45,7 +45,7 @@ export function AnalyticsWebsiteVisits({ title, subheader, chart, sx, ...other }
       <CardHeader title={title} subheader={subheader} />
 
       <Chart
-        type="bar"
+        type="line"
         series={chart.series}
         options={chartOptions}
         slotProps={{ loading: { p: 2.5 } }}

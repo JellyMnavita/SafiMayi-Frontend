@@ -135,8 +135,7 @@ const isTablet = useMediaQuery('(max-width:1200px)');
             chart={{
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
               series: [
-                { name: 'Team A', data: [43, 33, 22, 37, 67, 68, 37, 24, 55] },
-                { name: 'Team B', data: [51, 70, 47, 67, 40, 37, 24, 70, 24] },
+                { name: 'Team A', data: [43, 33, 22, 37, 67, 68, 37, 24, 55] }
               ],
             }}
           />
