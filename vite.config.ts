@@ -1,17 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
+import path from 'path/win32'
 
-// https://vite.dev/config/
 export default defineConfig({
-  base: '/safi-front/',   
-  plugins: [react()],
-  build: {
-    target: 'es2020',
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-})
+  plugins: [react()], build: {
+    target: 'es2020' 
+  }, resolve: { alias: { '@': path.resolve(__dirname, './src'), }, },
+}) 
