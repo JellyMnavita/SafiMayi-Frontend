@@ -70,15 +70,15 @@ export function VenteView() {
 
   const fetchVentes = async (pageNumber = 1) => {
     try {
-      setLoading(true);
+ /*      setLoading(true);
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `https://safimayi-backend.onrender.com/api/ventes/stats-journal/?page=${pageNumber}`,
+        `https://safimayi-backend.onrender.com/api/ventes/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setVentes(res.data.results);
       setStats(res.data.stats);
-      setTotalPages(Math.ceil(res.data.count / 10));
+      setTotalPages(Math.ceil(res.data.count / 10)); */
     } catch (err) {
       console.error("Erreur lors du fetch des ventes :", err);
     } finally {
