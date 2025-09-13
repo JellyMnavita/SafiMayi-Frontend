@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Box, Card, Button, Typography, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Pagination, CircularProgress, Grid, MenuItem,
-  Select, InputLabel, FormControl, Table, TableHead, TableRow, TableCell,
-  TableBody, TableContainer, Tabs, Tab
+  DialogActions, TextField, Pagination, CircularProgress, Grid,
+  Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
+  Stepper, Step, StepLabel, Autocomplete
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -32,12 +32,14 @@ interface Compteur {
   id: number;
   nom: string;
   code_serie: string;
+  prix?: number;
 }
 
 interface RFID {
   id: number;
   code_uid: string;
   telephone: string;
+  prix?: number;
 }
 
 export function VenteView() {
@@ -49,14 +51,22 @@ export function VenteView() {
 
   const [openDialog, setOpenDialog] = useState(false);
 
-  // ✅ Ajout du champ "type" par défaut
-  const [ventesForm, setVentesForm] = useState<any[]>([
-    { type: "compteur", compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "", mode_paiement: "cash" }
-  ]);
+  // Stepper state
+  const [activeStep, setActiveStep] = useState(0);
+  const steps = ["Informations acheteur", "Produits vendus"];
 
+  // Acheteur
+  const [searchUser, setSearchUser] = useState("");
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [nomAcheteur, setNomAcheteur] = useState("");
+  const [telAcheteur, setTelAcheteur] = useState("");
+
+  // Produits
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
   const [rfids, setRfids] = useState<RFID[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
+  const [selectedProduits, setSelectedProduits] = useState<any[]>([]);
+  const [montantPaye, setMontantPaye] = useState<number>(0);
 
   const fetchVentes = async (pageNumber = 1) => {
     try {
@@ -76,17 +86,19 @@ export function VenteView() {
     }
   };
 
-  const fetchClients = async () => {
-    try {
+  // Recherche user dynamique
+  useEffect(() => {
+    if (searchUser.length > 2) {
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://safimayi-backend.onrender.com/api/users/create-list/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setClients(res.data);
-    } catch (err) {
-      console.error("Erreur lors du fetch des clients :", err);
+      axios
+        .get(
+          `https://safimayi-backend.onrender.com/api/users/create-list/?search=${searchUser}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .then((res) => setUsers(res.data))
+        .catch((err) => console.error(err));
     }
-  };
+  }, [searchUser]);
 
   const fetchCompteursEtRfids = async () => {
     try {
@@ -109,32 +121,44 @@ export function VenteView() {
   useEffect(() => {
     fetchVentes(page);
     fetchCompteursEtRfids();
-    fetchClients();
   }, [page]);
 
-  const addVenteRow = () => {
-    setVentesForm([
-      ...ventesForm,
-      { type: "compteur", compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "", mode_paiement: "cash" }
-    ]);
+  const handleAddProduit = (produit: any, type: string) => {
+    setSelectedProduits([...selectedProduits, { ...produit, quantite: 1, type }]);
   };
 
-  const handleChange = (index: number, field: string, value: any) => {
-    const newVentes = [...ventesForm];
-    newVentes[index][field] = value;
-    setVentesForm(newVentes);
+  const handleRemoveProduit = (index: number) => {
+    const updated = [...selectedProduits];
+    updated.splice(index, 1);
+    setSelectedProduits(updated);
   };
+
+  const montantTotal = selectedProduits.reduce(
+    (sum, p) => sum + p.quantite * (p.prix || 0),
+    0
+  );
 
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
         `https://safimayi-backend.onrender.com/api/ventes/create/`,
-        ventesForm,
+        {
+          acheteur: selectedUser?.id || null,
+          nom_acheteur: nomAcheteur,
+          telephone_acheteur: telAcheteur,
+          montant_paye: montantPaye,
+          mode_paiement: "cash",
+          details: selectedProduits.map((p) => ({
+            compteur: p.type === "compteur" ? p.id : null,
+            rfid: p.type === "rfid" ? p.id : null,
+            quantite: p.quantite,
+          })),
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setOpenDialog(false);
-      setVentesForm([{ type: "compteur", compteur: "", rfid: "", acheteur: "", quantite: 1, prix_unitaire: "", mode_paiement: "cash" }]);
+      setSelectedProduits([]);
       fetchVentes(page);
     } catch (error) {
       console.error("Erreur lors de la création :", error);
@@ -248,134 +272,103 @@ export function VenteView() {
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
 
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          {ventesForm.map((vente, index) => (
-            <Box
-              key={index}
-              sx={{ border: "1px solid #ccc", p: 2, borderRadius: 2, mb: 2 }}
-            >
-              {/* Tabs pour différencier compteur vs RFID */}
-              <Tabs
-                value={vente.type}
-                onChange={(_, v) => handleChange(index, "type", v)}
-                sx={{ width: "100%", mb: 2 }}
-              >
-                <Tab label="Vente Compteur" value="compteur" />
-                <Tab label="Vente RFID" value="rfid" />
-              </Tabs>
+        <DialogContent>
+          <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+            {steps.map((label) => (
+              <Step key={label}><StepLabel>{label}</StepLabel></Step>
+            ))}
+          </Stepper>
 
-              {/* Si compteur */}
-              {vente.type === "compteur" && (
-                <>
-                  <FormControl fullWidth>
-                    <InputLabel id={`compteur-label-${index}`}>Compteur</InputLabel>
-                    <Select
-                      labelId={`compteur-label-${index}`}
-                      label="Compteur"
-                      value={vente.compteur}
-                      onChange={(e) => handleChange(index, "compteur", e.target.value)}
-                    >
-                      {compteurs.map((c) => (
-                        <MenuItem key={c.id} value={c.id}>
-                          {c.nom} ({c.code_serie})
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel id={`client-label-${index}`}>Client</InputLabel>
-                    <Select
-                      labelId={`client-label-${index}`}
-                      label="Client"
-                      value={vente.acheteur}
-                      onChange={(e) => handleChange(index, "acheteur", e.target.value)}
-                      required
-                    >
-                      {clients.map((c) => (
-                        <MenuItem key={c.id} value={c.id}>
-                          {c.nom} - {c.email}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </>
-              )}
-
-              {/* Si RFID */}
-              {vente.type === "rfid" && (
-                <>
-                  <FormControl fullWidth>
-                    <InputLabel id={`rfid-label-${index}`}>Carte RFID</InputLabel>
-                    <Select
-                      labelId={`rfid-label-${index}`}
-                      label="Carte RFID"
-                      value={vente.rfid}
-                      onChange={(e) => handleChange(index, "rfid", e.target.value)}
-                    >
-                      {rfids.map((r) => (
-                        <MenuItem key={r.id} value={r.id}>
-                          {r.code_uid} ({r.telephone || "Anonyme"})
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel id={`client-label-${index}`}>Client (optionnel)</InputLabel>
-                    <Select
-                      labelId={`client-label-${index}`}
-                      label="Client (optionnel)"
-                      value={vente.acheteur}
-                      onChange={(e) => handleChange(index, "acheteur", e.target.value)}
-                    >
-                      <MenuItem value="">— Aucun —</MenuItem>
-                      {clients.map((c) => (
-                        <MenuItem key={c.id} value={c.id}>
-                          {c.nom} - {c.email}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </>
-              )}
-
-              {/* Champs communs */}
-     
-              <TextField
-                label="Prix"
-                type="number"
-                fullWidth
-                sx={{ mt: 2 }}
-                value={vente.prix_unitaire}
-                onChange={(e) => handleChange(index, "prix_unitaire", e.target.value)}
+          {/* Étape 1 : acheteur */}
+          {activeStep === 0 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Autocomplete
+                options={users}
+                getOptionLabel={(u) => `${u.nom} - ${u.email || u.telephone}`}
+                value={selectedUser}
+                onChange={(_, v) => setSelectedUser(v)}
+                onInputChange={(_, v) => setSearchUser(v)}
+                renderInput={(params) => <TextField {...params} label="Utilisateur du système" />}
               />
-              <FormControl fullWidth sx={{ mt: 2 }}>
-                <InputLabel id={`mode-paiement-label-${index}`}>Mode de paiement</InputLabel>
-                <Select
-                  labelId={`mode-paiement-label-${index}`}
-                  label="Mode de paiement"
-                  value={vente.mode_paiement}
-                  onChange={(e) => handleChange(index, "mode_paiement", e.target.value)}
-                >
-                  <MenuItem value="cash">Espèces</MenuItem>
-                  <MenuItem value="mobile_money">Mobile Money</MenuItem>
-                  <MenuItem value="carte">Carte Bancaire</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth label="Nom acheteur"
+                value={nomAcheteur}
+                onChange={(e) => setNomAcheteur(e.target.value)}
+              />
+              <TextField
+                fullWidth label="Téléphone acheteur"
+                value={telAcheteur}
+                onChange={(e) => setTelAcheteur(e.target.value)}
+              />
             </Box>
-          ))}
+          )}
 
-          <Button variant="outlined" onClick={addVenteRow}>
-            Ajouter une autre vente
-          </Button>
+          {/* Étape 2 : produits */}
+          {activeStep === 1 && (
+            <Grid container spacing={2}>
+              <div style={{ width: "50%", padding: "8px" }}>
+                <Autocomplete
+                  options={compteurs}
+                  getOptionLabel={(p) => `${p.nom} (${p.code_serie})`}
+                  onChange={(_, v) => v && handleAddProduit({ ...v, prix: v.prix }, "compteur")}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Rechercher un compteur" />
+                  )}
+                />
+
+                <Autocomplete
+                  style={{ marginTop: 16 }}
+                  options={rfids}
+                  getOptionLabel={(r) => `${r.code_uid} (${r.telephone || "Anonyme"})`}
+                  onChange={(_, v) => v && handleAddProduit({ ...v, prix: v.prix }, "rfid")}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Rechercher une carte RFID" />
+                  )}
+                />
+              </div>
+
+              <div style={{ width: "50%", padding: "8px" }}>
+                <Card style={{ padding: "16px" }}>
+                  <Typography variant="h6">Produits sélectionnés</Typography>
+
+                  {selectedProduits.map((p, i) => (
+                    <Box
+                      key={i}
+                      sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}
+                    >
+                      <Typography>
+                        {p.nom || p.code_uid} x {p.quantite}
+                      </Typography>
+                      <Button color="error" onClick={() => handleRemoveProduit(i)}>❌</Button>
+                    </Box>
+                  ))}
+
+                  <Typography sx={{ mt: 2 }}>
+                    Montant total: <b>{montantTotal} FCFA</b>
+                  </Typography>
+
+                  <TextField
+                    label="Montant perçu"
+                    type="number"
+                    fullWidth
+                    sx={{ mt: 2 }}
+                    value={montantPaye}
+                    onChange={(e) => setMontantPaye(parseInt(e.target.value))}
+                  />
+                </Card>
+              </div>
+
+            </Grid>
+          )}
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
-          <Button variant="contained" onClick={handleSave}>
-            Enregistrer
-          </Button>
+          <Button disabled={activeStep === 0} onClick={() => setActiveStep(activeStep - 1)}>Retour</Button>
+          {activeStep < steps.length - 1 ? (
+            <Button variant="contained" onClick={() => setActiveStep(activeStep + 1)}>Suivant</Button>
+          ) : (
+            <Button variant="contained" color="success" onClick={handleSave}>Enregistrer</Button>
+          )}
         </DialogActions>
       </Dialog>
     </DashboardContent>
