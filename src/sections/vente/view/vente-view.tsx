@@ -7,6 +7,8 @@ import {
   Stepper, Step, StepLabel, Autocomplete
 } from "@mui/material";
 
+import DeleteIcon from "@mui/icons-material/Delete";
+import { IconButton } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -353,9 +355,9 @@ export function VenteView() {
                       <Typography>
                         {p.nom || p.code_uid} x {p.quantite}
                       </Typography>
-                      <Button color="error" onClick={() => handleRemoveProduit(i)}>
-                        ❌
-                      </Button>
+                      <IconButton color="error" onClick={() => handleRemoveProduit(i)}>
+                        <DeleteIcon />
+                      </IconButton>
                     </Box>
                   ))}
 
