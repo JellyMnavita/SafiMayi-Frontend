@@ -350,7 +350,22 @@ export function VenteView() {
                   {selectedProduits.map((p, i) => (
                     <Box
                       key={i}
-                      sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        p: 1.5,
+                        mb: 1.5,
+                        border: "1px solid #e0e0e0",
+                        borderRadius: 2,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                        backgroundColor: "#fafafa",
+                        transition: "transform 0.1s",
+                        "&:hover": {
+                          transform: "scale(1.02)",
+                          boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+                        },
+                      }}
                     >
                       <Typography>
                         {p.nom || p.code_uid} x {p.quantite}
@@ -360,6 +375,7 @@ export function VenteView() {
                       </IconButton>
                     </Box>
                   ))}
+
 
                   <Typography sx={{ mt: 2 }}>
                     Montant total: <b>{montantTotal} FCFA</b>
