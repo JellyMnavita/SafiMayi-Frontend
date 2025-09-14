@@ -217,25 +217,25 @@ export function VenteView() {
           {/* Stats */}
           {stats && (
             <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2">Total ventes</Typography>
                   <Typography variant="h5">{stats.total_ventes}</Typography>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2">Montant total</Typography>
                   <Typography variant="h5">{stats.montant_total.toLocaleString()} FC</Typography>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2">Par RFID</Typography>
                   <Typography variant="h5">{stats.ventes_rfid}</Typography>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2">Par Compteur</Typography>
                   <Typography variant="h5">{stats.ventes_compteur}</Typography>
@@ -243,21 +243,21 @@ export function VenteView() {
               </Grid>
               
               {/* Statistiques par mode de paiement */}
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2">Ventes en espèces</Typography>
                   <Typography variant="h6">{stats.ventes_par_mode.cash}</Typography>
                   <Typography variant="body2">{stats.montant_par_mode.cash.toLocaleString()} FC</Typography>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2">Ventes Mobile Money</Typography>
                   <Typography variant="h6">{stats.ventes_par_mode.mobile_money}</Typography>
                   <Typography variant="body2">{stats.montant_par_mode.mobile_money.toLocaleString()} FC</Typography>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2">Ventes par carte</Typography>
                   <Typography variant="h6">{stats.ventes_par_mode.carte}</Typography>
