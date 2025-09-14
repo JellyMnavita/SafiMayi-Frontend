@@ -4,24 +4,42 @@ import {
   Box, Card, Button, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Pagination, CircularProgress, Grid,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
-  Stepper, Step, StepLabel, Autocomplete
+  Stepper, Step, StepLabel, Autocomplete, Chip, Accordion, AccordionSummary, AccordionDetails
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { IconButton } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
+interface VenteDetail {
+  id: number;
+  compteur: number | null;
+  rfid: number | null;
+  produit_nom: string;
+  prix_unitaire: string;
+  quantite: number;
+  montant: string;
+}
+
 interface Vente {
   id: number;
-  produit: string;
-  quantite: number;
-  prix_unitaire: string;
+  vendeur: number;
+  acheteur: number | null;
+  nom_acheteur: string;
+  telephone_acheteur: string;
+  sexe_acheteur: string | null;
+  adresse_acheteur: string | null;
   montant_total: string;
+  montant_paye: string;
   mode_paiement: string;
-  acheteur: string;
+  transaction_id: string | null;
   date_vente: string;
+  statut: string;
+  note: string | null;
+  details_read: VenteDetail[];
 }
 
 interface Stats {
@@ -90,8 +108,9 @@ export function VenteView() {
         `https://safimayi-backend.onrender.com/api/ventes/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setVentes(res.data.results || []);
-      setTotalPages(Math.ceil((res.data.count || 0) / 10));
+      setVentes(res.data || []);
+      // Si l'API ne retourne pas de pagination, on suppose qu'il n'y a qu'une page
+      setTotalPages(1);
     } catch (err) {
       console.error("Erreur lors du fetch des ventes :", err);
       setVentes([]);
@@ -226,6 +245,17 @@ export function VenteView() {
 
   const displayStats = stats || defaultStats;
 
+  // Fonction pour formater le nom du client
+  const formatClientName = (vente: Vente) => {
+    if (vente.nom_acheteur) {
+      return vente.nom_acheteur;
+    }
+    if (vente.acheteur) {
+      return `Utilisateur #${vente.acheteur}`;
+    }
+    return "Anonyme";
+  };
+
   return (
     <DashboardContent>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3, flexWrap: "wrap" }}>
@@ -274,7 +304,7 @@ export function VenteView() {
           </Grid>
           
           {/* Statistiques par mode de paiement */}
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+       {/*    <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Ventes en espèces</Typography>
               <Typography variant="h6">{displayStats.ventes_par_mode.cash}</Typography>
@@ -294,7 +324,7 @@ export function VenteView() {
               <Typography variant="h6">{displayStats.ventes_par_mode.carte}</Typography>
               <Typography variant="body2">{displayStats.montant_par_mode.carte.toLocaleString()} FC</Typography>
             </Card>
-          </Grid>
+          </Grid> */}
         </Grid>
       )}
 
@@ -310,31 +340,93 @@ export function VenteView() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Produit</TableCell>
-                  <TableCell>Quantité</TableCell>
-                  <TableCell>Prix unitaire</TableCell>
-                  <TableCell>Montant</TableCell>
-                  <TableCell>Paiement</TableCell>
+                  <TableCell>ID</TableCell>
                   <TableCell>Client</TableCell>
+                  <TableCell>Téléphone</TableCell>
+                  <TableCell>Montant Total</TableCell>
+                  <TableCell>Montant Payé</TableCell>
+                  <TableCell>Mode Paiement</TableCell>
+                  <TableCell>Statut</TableCell>
                   <TableCell>Date</TableCell>
+                  <TableCell>Détails</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {ventes.length > 0 ? (
-                  ventes.map((v) => (
-                    <TableRow key={v.id}>
-                      <TableCell>{v.produit}</TableCell>
-                      <TableCell>{v.quantite}</TableCell>
-                      <TableCell>{v.prix_unitaire} FC</TableCell>
-                      <TableCell>{v.montant_total} FC</TableCell>
-                      <TableCell>{v.mode_paiement}</TableCell>
-                      <TableCell>{v.acheteur}</TableCell>
-                      <TableCell>{new Date(v.date_vente).toLocaleString()}</TableCell>
-                    </TableRow>
+                  ventes.map((vente) => (
+                    <React.Fragment key={vente.id}>
+                      <TableRow>
+                        <TableCell>{vente.id}</TableCell>
+                        <TableCell>{formatClientName(vente)}</TableCell>
+                        <TableCell>{vente.telephone_acheteur || "N/A"}</TableCell>
+                        <TableCell>{vente.montant_total} FC</TableCell>
+                        <TableCell>{vente.montant_paye} FC</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={vente.mode_paiement} 
+                            color={vente.mode_paiement === "cash" ? "success" : "primary"} 
+                            size="small" 
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={vente.statut} 
+                            color={vente.statut === "payé" ? "success" : "default"} 
+                            size="small" 
+                          />
+                        </TableCell>
+                        <TableCell>{new Date(vente.date_vente).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => {
+                              const detailsElement = document.getElementById(`details-${vente.id}`);
+                              if (detailsElement) {
+                                detailsElement.style.display = detailsElement.style.display === 'none' ? 'table-row' : 'none';
+                              }
+                            }}
+                          >
+                            <ExpandMoreIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow id={`details-${vente.id}`} style={{ display: 'none' }}>
+                        <TableCell colSpan={9}>
+                          <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+                            <Typography variant="h6" gutterBottom>Détails de la vente</Typography>
+                            {vente.note && (
+                              <Typography variant="body2" color="textSecondary" gutterBottom>
+                                Note: {vente.note}
+                              </Typography>
+                            )}
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>Produit</TableCell>
+                                  <TableCell>Quantité</TableCell>
+                                  <TableCell>Prix unitaire</TableCell>
+                                  <TableCell>Montant</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {vente.details_read.map((detail) => (
+                                  <TableRow key={detail.id}>
+                                    <TableCell>{detail.produit_nom}</TableCell>
+                                    <TableCell>{detail.quantite}</TableCell>
+                                    <TableCell>{detail.prix_unitaire} FC</TableCell>
+                                    <TableCell>{detail.montant} FC</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={9} align="center">
                       Aucune vente trouvée
                     </TableCell>
                   </TableRow>
