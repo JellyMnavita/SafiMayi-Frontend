@@ -354,8 +354,8 @@ export function VenteView() {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        p: 1.5,
-                        mb: 1,
+                        p: 1,
+                        mb: 0.5,
                         border: "1px solid #e0e0e0",
                         borderRadius: 2,
                         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
@@ -363,7 +363,7 @@ export function VenteView() {
                         transition: "transform 0.1s",
                         "&:hover": {
                           transform: "scale(1.01)",
-                          boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
                         },
                       }}
                     >
