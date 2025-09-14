@@ -61,6 +61,7 @@ export function VenteView() {
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
+  const [statsLoading, setStatsLoading] = useState<boolean>(false);
 
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -89,10 +90,11 @@ export function VenteView() {
         `https://safimayi-backend.onrender.com/api/ventes/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setVentes(res.data.results);
-      setTotalPages(Math.ceil(res.data.count / 10));
+      setVentes(res.data.results || []);
+      setTotalPages(Math.ceil((res.data.count || 0) / 10));
     } catch (err) {
       console.error("Erreur lors du fetch des ventes :", err);
+      setVentes([]);
     } finally {
       setLoading(false);
     }
@@ -100,6 +102,7 @@ export function VenteView() {
 
   const fetchStats = async () => {
     try {
+      setStatsLoading(true);
       const token = localStorage.getItem("token");
       const res = await axios.get(
         "https://safimayi-backend.onrender.com/api/ventes/stats/",
@@ -108,6 +111,9 @@ export function VenteView() {
       setStats(res.data);
     } catch (err) {
       console.error("Erreur lors du fetch des statistiques :", err);
+      setStats(null);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -120,8 +126,13 @@ export function VenteView() {
           `https://safimayi-backend.onrender.com/api/users/create-list/?search=${searchUser}`,
           { headers: { Authorization: `Bearer ${token}` } }
         )
-        .then((res) => setUsers(res.data))
-        .catch((err) => console.error(err));
+        .then((res) => setUsers(res.data || []))
+        .catch((err) => {
+          console.error(err);
+          setUsers([]);
+        });
+    } else {
+      setUsers([]);
     }
   }, [searchUser]);
 
@@ -136,10 +147,12 @@ export function VenteView() {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
-      setCompteurs(compteursRes.data);
-      setRfids(rfidsRes.data);
+      setCompteurs(compteursRes.data || []);
+      setRfids(rfidsRes.data || []);
     } catch (err) {
       console.error("Erreur lors du fetch des compteurs ou RFID :", err);
+      setCompteurs([]);
+      setRfids([]);
     }
   };
 
@@ -193,6 +206,26 @@ export function VenteView() {
     }
   };
 
+  // Valeurs par défaut pour les statistiques
+  const defaultStats = {
+    total_ventes: 0,
+    montant_total: 0,
+    ventes_par_mode: {
+      cash: 0,
+      mobile_money: 0,
+      carte: 0
+    },
+    montant_par_mode: {
+      cash: 0,
+      mobile_money: 0,
+      carte: 0
+    },
+    ventes_compteur: 0,
+    ventes_rfid: 0
+  };
+
+  const displayStats = stats || defaultStats;
+
   return (
     <DashboardContent>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3, flexWrap: "wrap" }}>
@@ -207,106 +240,111 @@ export function VenteView() {
         </Button>
       </Box>
 
-      {/* Loader */}
+      {/* Loader pour les statistiques */}
+      {statsLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        /* Stats */
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Total ventes</Typography>
+              <Typography variant="h5">{displayStats.total_ventes}</Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Montant total</Typography>
+              <Typography variant="h5">{displayStats.montant_total.toLocaleString()} FC</Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Par RFID</Typography>
+              <Typography variant="h5">{displayStats.ventes_rfid}</Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Par Compteur</Typography>
+              <Typography variant="h5">{displayStats.ventes_compteur}</Typography>
+            </Card>
+          </Grid>
+          
+          {/* Statistiques par mode de paiement */}
+          <Grid item xs={12} sm={6} md={4}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Ventes en espèces</Typography>
+              <Typography variant="h6">{displayStats.ventes_par_mode.cash}</Typography>
+              <Typography variant="body2">{displayStats.montant_par_mode.cash.toLocaleString()} FC</Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Ventes Mobile Money</Typography>
+              <Typography variant="h6">{displayStats.ventes_par_mode.mobile_money}</Typography>
+              <Typography variant="body2">{displayStats.montant_par_mode.mobile_money.toLocaleString()} FC</Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Ventes par carte</Typography>
+              <Typography variant="h6">{displayStats.ventes_par_mode.carte}</Typography>
+              <Typography variant="body2">{displayStats.montant_par_mode.carte.toLocaleString()} FC</Typography>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Loader pour les ventes */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
           <CircularProgress />
         </Box>
       ) : (
-        <>
-          {/* Stats */}
-          {stats && (
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="subtitle2">Total ventes</Typography>
-                  <Typography variant="h5">{stats.total_ventes}</Typography>
-                </Card>
-              </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="subtitle2">Montant total</Typography>
-                  <Typography variant="h5">{stats.montant_total.toLocaleString()} FC</Typography>
-                </Card>
-              </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="subtitle2">Par RFID</Typography>
-                  <Typography variant="h5">{stats.ventes_rfid}</Typography>
-                </Card>
-              </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="subtitle2">Par Compteur</Typography>
-                  <Typography variant="h5">{stats.ventes_compteur}</Typography>
-                </Card>
-              </Grid>
-              
-              {/* Statistiques par mode de paiement */}
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="subtitle2">Ventes en espèces</Typography>
-                  <Typography variant="h6">{stats.ventes_par_mode.cash}</Typography>
-                  <Typography variant="body2">{stats.montant_par_mode.cash.toLocaleString()} FC</Typography>
-                </Card>
-              </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="subtitle2">Ventes Mobile Money</Typography>
-                  <Typography variant="h6">{stats.ventes_par_mode.mobile_money}</Typography>
-                  <Typography variant="body2">{stats.montant_par_mode.mobile_money.toLocaleString()} FC</Typography>
-                </Card>
-              </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-                <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography variant="subtitle2">Ventes par carte</Typography>
-                  <Typography variant="h6">{stats.ventes_par_mode.carte}</Typography>
-                  <Typography variant="body2">{stats.montant_par_mode.carte.toLocaleString()} FC</Typography>
-                </Card>
-              </Grid>
-            </Grid>
-          )}
-
-          {/* Tableau journal */}
-          <Card sx={{ p: 2 }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Produit</TableCell>
-                    <TableCell>Quantité</TableCell>
-                    <TableCell>Prix unitaire</TableCell>
-                    <TableCell>Montant</TableCell>
-                    <TableCell>Paiement</TableCell>
-                    <TableCell>Client</TableCell>
-                    <TableCell>Date</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {ventes.length > 0 ? (
-                    ventes.map((v) => (
-                      <TableRow key={v.id}>
-                        <TableCell>{v.produit}</TableCell>
-                        <TableCell>{v.quantite}</TableCell>
-                        <TableCell>{v.prix_unitaire} FC</TableCell>
-                        <TableCell>{v.montant_total} FC</TableCell>
-                        <TableCell>{v.mode_paiement}</TableCell>
-                        <TableCell>{v.acheteur}</TableCell>
-                        <TableCell>{new Date(v.date_vente).toLocaleString()}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        Aucune vente trouvée
-                      </TableCell>
+        /* Tableau journal */
+        <Card sx={{ p: 2 }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Produit</TableCell>
+                  <TableCell>Quantité</TableCell>
+                  <TableCell>Prix unitaire</TableCell>
+                  <TableCell>Montant</TableCell>
+                  <TableCell>Paiement</TableCell>
+                  <TableCell>Client</TableCell>
+                  <TableCell>Date</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {ventes.length > 0 ? (
+                  ventes.map((v) => (
+                    <TableRow key={v.id}>
+                      <TableCell>{v.produit}</TableCell>
+                      <TableCell>{v.quantite}</TableCell>
+                      <TableCell>{v.prix_unitaire} FC</TableCell>
+                      <TableCell>{v.montant_total} FC</TableCell>
+                      <TableCell>{v.mode_paiement}</TableCell>
+                      <TableCell>{v.acheteur}</TableCell>
+                      <TableCell>{new Date(v.date_vente).toLocaleString()}</TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center">
+                      Aucune vente trouvée
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-            {/* Pagination */}
+          {/* Pagination */}
+          {totalPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
               <Pagination
                 count={totalPages}
@@ -315,8 +353,8 @@ export function VenteView() {
                 color="primary"
               />
             </Box>
-          </Card>
-        </>
+          )}
+        </Card>
       )}
 
       {/* Dialog ajout */}
@@ -438,7 +476,7 @@ export function VenteView() {
                     fullWidth
                     sx={{ mt: 2 }}
                     value={montantPaye}
-                    onChange={(e) => setMontantPaye(parseInt(e.target.value))}
+                    onChange={(e) => setMontantPaye(parseInt(e.target.value) || 0)}
                   />
                 </Card>
               </Box>
