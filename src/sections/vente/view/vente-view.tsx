@@ -286,8 +286,8 @@ export function VenteView() {
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Montant total</Typography>
-              <Typography variant="h5">{displayStats.montant_total.toLocaleString()} FC</Typography>
+              <Typography variant="subtitle2">Montant calculé</Typography>
+              <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
             </Card>
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
@@ -343,7 +343,7 @@ export function VenteView() {
                   <TableCell>ID</TableCell>
                   <TableCell>Client</TableCell>
                   <TableCell>Téléphone</TableCell>
-                  <TableCell>Montant Total</TableCell>
+                  <TableCell>Montant Calculé</TableCell>
                   <TableCell>Montant Payé</TableCell>
                   <TableCell>Mode Paiement</TableCell>
                   <TableCell>Statut</TableCell>
@@ -359,7 +359,7 @@ export function VenteView() {
                         <TableCell>{vente.id}</TableCell>
                         <TableCell>{formatClientName(vente)}</TableCell>
                         <TableCell>{vente.telephone_acheteur || "N/A"}</TableCell>
-                        <TableCell>{vente.montant_total} FC</TableCell>
+                        <TableCell>{vente.montant_total} $</TableCell>
                         <TableCell>{vente.montant_paye} FC</TableCell>
                         <TableCell>
                           <Chip 
@@ -413,8 +413,8 @@ export function VenteView() {
                                   <TableRow key={detail.id}>
                                     <TableCell>{detail.produit_nom}</TableCell>
                                     <TableCell>{detail.quantite}</TableCell>
-                                    <TableCell>{detail.prix_unitaire} FC</TableCell>
-                                    <TableCell>{detail.montant} FC</TableCell>
+                                    <TableCell>{detail.prix_unitaire} $</TableCell>
+                                    <TableCell>{detail.montant} $</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
