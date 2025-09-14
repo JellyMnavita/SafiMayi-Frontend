@@ -27,9 +27,18 @@ interface Vente {
 interface Stats {
   total_ventes: number;
   montant_total: number;
-  ventes_especes: number;
-  ventes_rfid: number;
+  ventes_par_mode: {
+    cash: number;
+    mobile_money: number;
+    carte: number;
+  };
+  montant_par_mode: {
+    cash: number;
+    mobile_money: number;
+    carte: number;
+  };
   ventes_compteur: number;
+  ventes_rfid: number;
 }
 
 interface Compteur {
@@ -74,19 +83,31 @@ export function VenteView() {
 
   const fetchVentes = async (pageNumber = 1) => {
     try {
-      /*      setLoading(true);
-           const token = localStorage.getItem("token");
-           const res = await axios.get(
-             `https://safimayi-backend.onrender.com/api/ventes/`,
-             { headers: { Authorization: `Bearer ${token}` } }
-           );
-           setVentes(res.data.results);
-           setStats(res.data.stats);
-           setTotalPages(Math.ceil(res.data.count / 10)); */
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `https://safimayi-backend.onrender.com/api/ventes/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setVentes(res.data.results);
+      setTotalPages(Math.ceil(res.data.count / 10));
     } catch (err) {
       console.error("Erreur lors du fetch des ventes :", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        "https://safimayi-backend.onrender.com/api/ventes/stats/",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setStats(res.data);
+    } catch (err) {
+      console.error("Erreur lors du fetch des statistiques :", err);
     }
   };
 
@@ -124,6 +145,7 @@ export function VenteView() {
 
   useEffect(() => {
     fetchVentes(page);
+    fetchStats();
     fetchCompteursEtRfids();
   }, [page]);
 
@@ -163,7 +185,9 @@ export function VenteView() {
       );
       setOpenDialog(false);
       setSelectedProduits([]);
+      setActiveStep(0);
       fetchVentes(page);
+      fetchStats(); // Rafraîchir les stats après une nouvelle vente
     } catch (error) {
       console.error("Erreur lors de la création :", error);
     }
@@ -193,28 +217,51 @@ export function VenteView() {
           {/* Stats */}
           {stats && (
             <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography>Total ventes</Typography>
+                  <Typography variant="subtitle2">Total ventes</Typography>
                   <Typography variant="h5">{stats.total_ventes}</Typography>
                 </Card>
               </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography>Montant total</Typography>
-                  <Typography variant="h5">{stats.montant_total} FC</Typography>
+                  <Typography variant="subtitle2">Montant total</Typography>
+                  <Typography variant="h5">{stats.montant_total.toLocaleString()} FC</Typography>
                 </Card>
               </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography>Par RFID</Typography>
+                  <Typography variant="subtitle2">Par RFID</Typography>
                   <Typography variant="h5">{stats.ventes_rfid}</Typography>
                 </Card>
               </Grid>
-              <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Grid item xs={12} sm={6} md={3}>
                 <Card sx={{ p: 2, textAlign: "center" }}>
-                  <Typography>Par Compteur</Typography>
+                  <Typography variant="subtitle2">Par Compteur</Typography>
                   <Typography variant="h5">{stats.ventes_compteur}</Typography>
+                </Card>
+              </Grid>
+              
+              {/* Statistiques par mode de paiement */}
+              <Grid item xs={12} sm={6} md={4}>
+                <Card sx={{ p: 2, textAlign: "center" }}>
+                  <Typography variant="subtitle2">Ventes en espèces</Typography>
+                  <Typography variant="h6">{stats.ventes_par_mode.cash}</Typography>
+                  <Typography variant="body2">{stats.montant_par_mode.cash.toLocaleString()} FC</Typography>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <Card sx={{ p: 2, textAlign: "center" }}>
+                  <Typography variant="subtitle2">Ventes Mobile Money</Typography>
+                  <Typography variant="h6">{stats.ventes_par_mode.mobile_money}</Typography>
+                  <Typography variant="body2">{stats.montant_par_mode.mobile_money.toLocaleString()} FC</Typography>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <Card sx={{ p: 2, textAlign: "center" }}>
+                  <Typography variant="subtitle2">Ventes par carte</Typography>
+                  <Typography variant="h6">{stats.ventes_par_mode.carte}</Typography>
+                  <Typography variant="body2">{stats.montant_par_mode.carte.toLocaleString()} FC</Typography>
                 </Card>
               </Grid>
             </Grid>
@@ -273,7 +320,11 @@ export function VenteView() {
       )}
 
       {/* Dialog ajout */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="md">
+      <Dialog open={openDialog} onClose={() => {
+        setOpenDialog(false);
+        setActiveStep(0);
+        setSelectedProduits([]);
+      }} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
 
         <DialogContent>
@@ -378,7 +429,7 @@ export function VenteView() {
 
 
                   <Typography sx={{ mt: 2 }}>
-                    Montant total: <b>{montantTotal} FCFA</b>
+                    Montant total: <b>{montantTotal} FC</b>
                   </Typography>
 
                   <TextField
