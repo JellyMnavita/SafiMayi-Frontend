@@ -357,7 +357,7 @@ export function VenteView() {
                         p: 1,
                         mb: 0.5,
                         border: "1px solid #e0e0e0",
-                        borderRadius: 2,
+                        borderRadius: 1.5,
                         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                         backgroundColor: "#fafafa",
                         transition: "transform 0.1s",
