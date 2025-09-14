@@ -6,6 +6,8 @@ import {
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
   Stepper, Step, StepLabel, Autocomplete
 } from "@mui/material";
+
+
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
@@ -70,15 +72,15 @@ export function VenteView() {
 
   const fetchVentes = async (pageNumber = 1) => {
     try {
- /*      setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        `https://safimayi-backend.onrender.com/api/ventes/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setVentes(res.data.results);
-      setStats(res.data.stats);
-      setTotalPages(Math.ceil(res.data.count / 10)); */
+      /*      setLoading(true);
+           const token = localStorage.getItem("token");
+           const res = await axios.get(
+             `https://safimayi-backend.onrender.com/api/ventes/`,
+             { headers: { Authorization: `Bearer ${token}` } }
+           );
+           setVentes(res.data.results);
+           setStats(res.data.stats);
+           setTotalPages(Math.ceil(res.data.count / 10)); */
     } catch (err) {
       console.error("Erreur lors du fetch des ventes :", err);
     } finally {
@@ -305,30 +307,42 @@ export function VenteView() {
 
           {/* Étape 2 : produits */}
           {activeStep === 1 && (
-            <Grid container spacing={2}>
-              <div style={{ width: "50%", padding: "8px" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                gap: 2,
+              }}
+            >
+              {/* Colonne gauche */}
+              <Box sx={{ flex: 1 }}>
                 <Autocomplete
                   options={compteurs}
                   getOptionLabel={(p) => `${p.nom} (${p.code_serie})`}
-                  onChange={(_, v) => v && handleAddProduit({ ...v, prix: v.prix }, "compteur")}
+                  onChange={(_, v) =>
+                    v && handleAddProduit({ ...v, prix: v.prix }, "compteur")
+                  }
                   renderInput={(params) => (
                     <TextField {...params} label="Rechercher un compteur" />
                   )}
                 />
 
                 <Autocomplete
-                  style={{ marginTop: 16 }}
+                  sx={{ mt: 2 }}
                   options={rfids}
                   getOptionLabel={(r) => `${r.code_uid} (${r.telephone || "Anonyme"})`}
-                  onChange={(_, v) => v && handleAddProduit({ ...v, prix: v.prix }, "rfid")}
+                  onChange={(_, v) =>
+                    v && handleAddProduit({ ...v, prix: v.prix }, "rfid")
+                  }
                   renderInput={(params) => (
                     <TextField {...params} label="Rechercher une carte RFID" />
                   )}
                 />
-              </div>
+              </Box>
 
-              <div style={{ width: "50%", padding: "8px" }}>
-                <Card style={{ padding: "16px" }}>
+              {/* Colonne droite */}
+              <Box sx={{ flex: 1 }}>
+                <Card sx={{ p: 2 }}>
                   <Typography variant="h6">Produits sélectionnés</Typography>
 
                   {selectedProduits.map((p, i) => (
@@ -339,7 +353,9 @@ export function VenteView() {
                       <Typography>
                         {p.nom || p.code_uid} x {p.quantite}
                       </Typography>
-                      <Button color="error" onClick={() => handleRemoveProduit(i)}>❌</Button>
+                      <Button color="error" onClick={() => handleRemoveProduit(i)}>
+                        ❌
+                      </Button>
                     </Box>
                   ))}
 
@@ -356,9 +372,8 @@ export function VenteView() {
                     onChange={(e) => setMontantPaye(parseInt(e.target.value))}
                   />
                 </Card>
-              </div>
-
-            </Grid>
+              </Box>
+            </Box>
           )}
         </DialogContent>
 
