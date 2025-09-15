@@ -16,9 +16,7 @@ interface StatsResponse {
   utilisateurs: { total: number; clients: number; admins: number };
   litrage: { total_recharges_litres: number; total_consomme_litres: number; total_disponible_litres: number };
   paiements: { montant_total: number; nombre_transactions: number };
-  access_codes: { total: number; utilises: number; non_utilises: number };
-  compteurs: { total: number; actifs: number };
-  rfid: { total: number; actives: number };
+  ventes: { nombre_total: number; montant_total: number; payees: number; acomptes: number };
 }
 
 interface GraphStatsResponse {
@@ -67,7 +65,7 @@ export function OverviewAnalyticsView() {
     dots: true,
     infinite: false,
     speed: 500,
-    slidesToShow: isMobile ? 1 : isTablet ? 2 : 3,
+    slidesToShow: isMobile ? 1 : isTablet ? 2 : 4, // Ajusté pour afficher 4 cartes
     slidesToScroll: 1,
     arrows: true,
     responsive: [
@@ -110,61 +108,54 @@ export function OverviewAnalyticsView() {
       ) : (
         <Box sx={{ px: 2 }}>
           <Slider {...settings}>
-            <div>
-              <AnalyticsWidgetSummary
-                title="Total Cartes RFID"
-                total={stats.rfid.total}
-                icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-bag.svg" />}
-              />
-            </div>
+            {/* 4 cartes les plus pertinentes */}
             <div>
               <AnalyticsWidgetSummary
                 title="Total Utilisateurs"
                 total={stats.utilisateurs.total}
-                color="secondary"
+                color="primary"
                 icon={<img alt="Users" src="/assets/icons/glass/ic-glass-users.svg" />}
               />
             </div>
             <div>
               <AnalyticsWidgetSummary
-                title="Montant Paiements"
+                title="Litres Disponibles"
+                total={stats.litrage.total_disponible_litres}
+                color="success"
+                suffix=" L"
+                icon={<img alt="Water" src="/assets/icons/glass/ic-glass-water.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Revenus Totaux"
                 total={stats.paiements.montant_total}
                 color="warning"
-                icon={<img alt="Paiements" src="/assets/icons/glass/ic-glass-buy.svg" />}
+                prefix="$"
+                isCurrency={true}
+                icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
               />
             </div>
             <div>
               <AnalyticsWidgetSummary
-                title="Codes d'accès générés"
-                total={stats.access_codes.total}
-                color="error"
-                icon={<img alt="Access Codes" src="/assets/icons/glass/ic-glass-message.svg" />}
-              />
-            </div>
-            <div>
-              <AnalyticsWidgetSummary
-                title="Compteurs actifs"
-                total={stats.compteurs.actifs}
+                title="Ventes Total"
+                total={stats.ventes.montant_total}
                 color="info"
-                icon={<img alt="Compteurs" src="/assets/icons/glass/ic-glass-buy.svg" />}
-              />
-            </div>
-            <div>
-              <AnalyticsWidgetSummary
-                title="Litres consommés"
-                total={stats.litrage.total_consomme_litres}
-                color="success"
-                icon={<img alt="Consommation" src="/assets/icons/glass/ic-glass-users.svg" />}
+                prefix="$"
+                isCurrency={true}
+                icon={<img alt="Sales" src="/assets/icons/glass/ic-glass-bag.svg" />}
               />
             </div>
           </Slider>
 
-          <Grid  size={{ xs: 12, md: 6, lg: 8 }}>
-            <AnalyticsWebsiteVisits
-              title="Statistiques Globales de Consommation"
-              subheader="Dernières consommations"
-              chart={chartData}
-            />
+          <Grid container spacing={3} sx={{ mt: 3 }}>
+            <Grid size={{ xs: 12, md: 6, lg: 8 }}>
+              <AnalyticsWebsiteVisits
+                title="Statistiques Globales de Consommation"
+                subheader="Dernières consommations"
+                chart={chartData}
+              />
+            </Grid>
           </Grid>
         </Box>
       )}

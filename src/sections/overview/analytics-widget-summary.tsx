@@ -17,7 +17,9 @@ type Props = CardProps & {
   total: number;
   color?: PaletteColorKey;
   icon: React.ReactNode;
-
+  prefix?: string;
+  suffix?: string;
+  isCurrency?: boolean;
 };
 
 export function AnalyticsWidgetSummary({
@@ -26,9 +28,25 @@ export function AnalyticsWidgetSummary({
   title,
   total,
   color = 'primary',
+  prefix = '',
+  suffix = '',
+  isCurrency = false,
   ...other
 }: Props) {
   const theme = useTheme();
+  
+  // Formater la valeur avec préfixe et suffixe
+  const formatValue = (value: number) => {
+    let formattedValue = value.toString();
+    
+    // Ajouter des séparateurs de milliers si c'est une devise
+    if (isCurrency && value >= 1000) {
+      formattedValue = value.toLocaleString('fr-FR');
+    }
+    
+    return `${prefix}${formattedValue}${suffix}`;
+  };
+
   return (
     <Card
       sx={[
@@ -46,8 +64,6 @@ export function AnalyticsWidgetSummary({
     >
       <Box sx={{ width: 48, height: 48, mb: 3 }}>{icon}</Box>
 
-      {/* {renderTrending()} */}
-
       <Box
         sx={{
           display: 'flex',
@@ -59,7 +75,7 @@ export function AnalyticsWidgetSummary({
         <Box sx={{ flexGrow: 1, minWidth: 112 }}>
           <Box sx={{ mb: 1, typography: 'subtitle2' }}>{title}</Box>
 
-          <Box sx={{ typography: 'h4' }}>{total}</Box>
+          <Box sx={{ typography: 'h4' }}>{formatValue(total)}</Box>
         </Box>
 
       
