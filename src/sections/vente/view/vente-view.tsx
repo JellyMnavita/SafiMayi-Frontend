@@ -81,6 +81,7 @@ export function VenteView() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false); // État pour le loader d'envoi
 
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -201,6 +202,7 @@ export function VenteView() {
 
   const handleSave = async () => {
     try {
+      setSaving(true); // Activer le loader
       const token = localStorage.getItem("token");
       await axios.post(
         `https://safimayi-backend.onrender.com/api/ventes/create/`,
@@ -233,6 +235,8 @@ export function VenteView() {
       fetchStats(); // Rafraîchir les stats après une nouvelle vente
     } catch (error) {
       console.error("Erreur lors de la création :", error);
+    } finally {
+      setSaving(false); // Désactiver le loader
     }
   };
 
@@ -451,15 +455,17 @@ export function VenteView() {
 
       {/* Dialog ajout */}
       <Dialog open={openDialog} onClose={() => {
-        setOpenDialog(false);
-        setActiveStep(0);
-        setSelectedProduits([]);
-        // Réinitialiser les champs acheteur
-        setSelectedUser(null);
-        setNomAcheteur("");
-        setTelAcheteur("");
-        setSexeAcheteur("");
-        setAdresseAcheteur("");
+        if (!saving) { // Empêcher la fermeture pendant l'enregistrement
+          setOpenDialog(false);
+          setActiveStep(0);
+          setSelectedProduits([]);
+          // Réinitialiser les champs acheteur
+          setSelectedUser(null);
+          setNomAcheteur("");
+          setTelAcheteur("");
+          setSexeAcheteur("");
+          setAdresseAcheteur("");
+        }
       }} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
 
@@ -612,11 +618,17 @@ export function VenteView() {
         </DialogContent>
 
         <DialogActions>
-          <Button disabled={activeStep === 0} onClick={() => setActiveStep(activeStep - 1)}>Retour</Button>
-          {activeStep < steps.length - 1 ? (
-            <Button variant="contained" onClick={() => setActiveStep(activeStep + 1)}>Suivant</Button>
+          {saving ? (
+            <CircularProgress size={24} sx={{ mr: 2 }} />
           ) : (
-            <Button variant="contained" color="success" onClick={handleSave}>Enregistrer</Button>
+            <>
+              <Button disabled={activeStep === 0} onClick={() => setActiveStep(activeStep - 1)}>Retour</Button>
+              {activeStep < steps.length - 1 ? (
+                <Button variant="contained" onClick={() => setActiveStep(activeStep + 1)}>Suivant</Button>
+              ) : (
+                <Button variant="contained" color="success" onClick={handleSave}>Enregistrer</Button>
+              )}
+            </>
           )}
         </DialogActions>
       </Dialog>
