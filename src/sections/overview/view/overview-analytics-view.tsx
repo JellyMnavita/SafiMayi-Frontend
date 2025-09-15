@@ -20,7 +20,11 @@ interface StatsResponse {
 }
 
 interface GraphStatsResponse {
-  graph_stats: { date: string; total_litres: number }[];
+  graph_stats: { 
+    date: string; 
+    total_consommation_litres: number;
+    total_recharge_litres: number;
+  }[];
 }
 
 export function OverviewAnalyticsView() {
@@ -84,17 +88,24 @@ export function OverviewAnalyticsView() {
   const username = JSON.parse(localStorage.getItem('user') || '{}').nom;
 
   // Transformation des graph_stats pour le chart
-  const chartData = graphStats
-    ? {
-        categories: graphStats.graph_stats.map((item) => item.date),
-        series: [
-          {
-            name: 'Consommation (L)',
-            data: graphStats.graph_stats.map((item) => item.total_litres),
-          },
-        ],
-      }
-    : { categories: [], series: [] };
+// Dans OverviewAnalyticsView.jsx
+const chartData = graphStats
+  ? {
+      categories: graphStats.graph_stats.map((item) => item.date),
+      series: [
+        {
+          name: 'Consommation (L)',
+          data: graphStats.graph_stats.map((item) => item.total_consommation_litres),
+        },
+        {
+          name: 'Recharge (L)',
+          data: graphStats.graph_stats.map((item) => item.total_recharge_litres),
+        },
+      ],
+    }
+  : { categories: [], series: [] };
+
+
 
   return (
     <DashboardContent maxWidth="xl">
