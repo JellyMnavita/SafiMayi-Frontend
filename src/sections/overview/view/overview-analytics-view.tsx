@@ -134,7 +134,7 @@ export function OverviewAnalyticsView() {
                 color="warning"
                 prefix="$"
                 isCurrency={true}
-                icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
+                icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-message.svg"  />}
               />
             </div>
             <div> 
