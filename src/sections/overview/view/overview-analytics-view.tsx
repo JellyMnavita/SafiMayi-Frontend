@@ -124,7 +124,7 @@ export function OverviewAnalyticsView() {
                 total={stats.litrage.total_disponible_litres}
                 color="success"
                 suffix=" L"
-                icon={<img alt="Water" src="/assets/icons/glass/ic-glass-water.svg" />}
+                icon={<img alt="Water" src="/assets/icons/glass/ic-glass-message.svg" />}
               />
             </div>
             <div>
@@ -134,7 +134,7 @@ export function OverviewAnalyticsView() {
                 color="warning"
                 prefix="$"
                 isCurrency={true}
-                icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-message.svg"  />}
+                icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
               />
             </div>
             <div> 
