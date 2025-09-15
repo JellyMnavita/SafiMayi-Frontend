@@ -137,7 +137,7 @@ export function OverviewAnalyticsView() {
                 icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
               />
             </div>
-            <div>
+            <div> 
               <AnalyticsWidgetSummary
                 title="Ventes Total"
                 total={stats.ventes.montant_total}
