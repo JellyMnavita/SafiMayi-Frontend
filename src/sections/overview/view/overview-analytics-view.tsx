@@ -149,14 +149,12 @@ export function OverviewAnalyticsView() {
             </div>
           </Slider>
 
-          <Grid container spacing={3} sx={{ mt: 3 }}>
-            <Grid size={{ xs: 12, md: 6, lg: 8 }}>
-              <AnalyticsWebsiteVisits
-                title="Statistiques Globales de Consommation"
-                subheader="Dernières consommations"
-                chart={chartData}
-              />
-            </Grid>
+           <Grid  size={{ xs: 12, md: 6, lg: 8 }}>
+            <AnalyticsWebsiteVisits
+              title="Statistiques Globales de Consommation"
+              subheader="Dernières consommations"
+              chart={chartData}
+            />
           </Grid>
         </Box>
       )}
