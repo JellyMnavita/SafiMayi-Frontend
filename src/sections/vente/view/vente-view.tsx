@@ -600,7 +600,7 @@ export function VenteView() {
                   ))}
 
                   <Typography sx={{ mt: 2 }}>
-                    Montant total: <b>{montantTotal} FC</b>
+                    Montant total: <b>{montantTotal} $</b>
                   </Typography>
 
                   <TextField
