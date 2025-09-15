@@ -142,7 +142,7 @@ const chartData = graphStats
                 title="Revenus Totaux"
                 total={stats.paiements.montant_total}
                 color="warning"
-                prefix="$"
+                suffix="FC"
                 isCurrency={true}
                 icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
               />
@@ -152,7 +152,7 @@ const chartData = graphStats
                 title="Ventes Total"
                 total={stats.ventes.montant_total}
                 color="info"
-                prefix="$"
+                suffix="$"
                 isCurrency={true}
                 icon={<img alt="Sales" src="/assets/icons/glass/ic-glass-bag.svg" />}
               />
