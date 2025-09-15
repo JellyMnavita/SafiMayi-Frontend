@@ -331,8 +331,6 @@ export function VenteView() {
                   <TableCell>ID</TableCell>
                   <TableCell>Client</TableCell>
                   <TableCell>Téléphone</TableCell>
-                  <TableCell>Sexe</TableCell>
-                  <TableCell>Adresse</TableCell>
                   <TableCell>Montant Calculé</TableCell>
                   <TableCell>Montant Payé</TableCell>
                   <TableCell>Mode Paiement</TableCell>
@@ -349,28 +347,26 @@ export function VenteView() {
                         <TableCell>{vente.id}</TableCell>
                         <TableCell>{formatClientName(vente)}</TableCell>
                         <TableCell>{vente.telephone_acheteur || "N/A"}</TableCell>
-                        <TableCell>{vente.sexe_acheteur || "N/A"}</TableCell>
-                        <TableCell>{vente.adresse_acheteur || "N/A"}</TableCell>
                         <TableCell>{vente.montant_total} $</TableCell>
                         <TableCell>{vente.montant_paye} FC</TableCell>
                         <TableCell>
-                          <Chip 
-                            label={vente.mode_paiement} 
-                            color={vente.mode_paiement === "cash" ? "success" : "primary"} 
-                            size="small" 
+                          <Chip
+                            label={vente.mode_paiement}
+                            color={vente.mode_paiement === "cash" ? "success" : "primary"}
+                            size="small"
                           />
                         </TableCell>
                         <TableCell>
-                          <Chip 
-                            label={vente.statut} 
-                            color={vente.statut === "payé" ? "success" : "default"} 
-                            size="small" 
+                          <Chip
+                            label={vente.statut}
+                            color={vente.statut === "payé" ? "success" : "default"}
+                            size="small"
                           />
                         </TableCell>
                         <TableCell>{new Date(vente.date_vente).toLocaleString()}</TableCell>
                         <TableCell>
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={() => {
                               const detailsElement = document.getElementById(`details-${vente.id}`);
                               if (detailsElement) {
@@ -383,12 +379,24 @@ export function VenteView() {
                         </TableCell>
                       </TableRow>
                       <TableRow id={`details-${vente.id}`} style={{ display: 'none' }}>
-                        <TableCell colSpan={11}>
+                        <TableCell colSpan={9}>
                           <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
                             <Typography variant="h6" gutterBottom>Détails de la vente</Typography>
+                            <Grid container spacing={2} sx={{ mb: 2 }}>
+                              <Grid sx={{ width: '100%', '@media (min-width: 600px)': { width: '50%' } }}>
+                                <Typography variant="body2">
+                                  <strong>Sexe:</strong> {vente.sexe_acheteur || "N/A"}
+                                </Typography>
+                              </Grid>
+                              <Grid sx={{ width: '100%', '@media (min-width: 600px)': { width: '50%' } }}>
+                                <Typography variant="body2">
+                                  <strong>Adresse:</strong> {vente.adresse_acheteur || "N/A"}
+                                </Typography>
+                              </Grid>
+                            </Grid>
                             {vente.note && (
                               <Typography variant="body2" color="textSecondary" gutterBottom>
-                                Note: {vente.note}
+                                <strong>Note:</strong> {vente.note}
                               </Typography>
                             )}
                             <Table size="small">
@@ -418,7 +426,7 @@ export function VenteView() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={11} align="center">
+                    <TableCell colSpan={9} align="center">
                       Aucune vente trouvée
                     </TableCell>
                   </TableRow>
