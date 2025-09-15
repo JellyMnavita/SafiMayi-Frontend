@@ -88,7 +88,6 @@ export function OverviewAnalyticsView() {
   const username = JSON.parse(localStorage.getItem('user') || '{}').nom;
 
   // Transformation des graph_stats pour le chart
-// Dans OverviewAnalyticsView.jsx
 const chartData = graphStats
   ? {
       categories: graphStats.graph_stats.map((item) => item.date),
@@ -160,7 +159,7 @@ const chartData = graphStats
             </div>
           </Slider>
 
-           <Grid  size={{ xs: 12, md: 6, lg: 8 }}>
+           <Grid style={{ marginTop: '16px' }} size={{  xs: 12, md: 6, lg: 8 }}>
             <AnalyticsWebsiteVisits
               title="Statistiques Globales de Consommation"
               subheader="Dernières consommations"
