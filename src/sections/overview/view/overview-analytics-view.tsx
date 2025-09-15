@@ -159,9 +159,9 @@ const chartData = graphStats
             </div>
           </Slider>
 
-           <Grid style={{ marginTop: '16px' }} size={{  xs: 12, md: 6, lg: 8 }}>
+           <Grid style={{ marginTop: '25px' }} size={{  xs: 12, md: 6, lg: 8 }}>
             <AnalyticsWebsiteVisits
-              title="Statistiques Globales de Consommation"
+              title="Statistiques Globales de Consommation et de Recharge"
               subheader="Dernières consommations"
               chart={chartData}
             />
