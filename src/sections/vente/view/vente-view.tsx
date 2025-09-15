@@ -489,7 +489,7 @@ export function VenteView() {
                         <TableCell>{formatClientName(vente)}</TableCell>
                         <TableCell>{vente.telephone_acheteur || "N/A"}</TableCell>
                         <TableCell>{vente.montant_total} $</TableCell>
-                        <TableCell>{vente.montant_paye} FC</TableCell>
+                        <TableCell>{vente.montant_paye} $</TableCell>
                         <TableCell>
                           <Chip
                             label={vente.mode_paiement}
