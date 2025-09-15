@@ -460,25 +460,25 @@ export function VenteView() {
         </Box>
       ) : (
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
+          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Total ventes</Typography>
               <Typography variant="h5">{displayStats.total_ventes}</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
+          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Montant calculé</Typography>
               <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
+          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Par RFID</Typography>
               <Typography variant="h5">{displayStats.ventes_rfid}</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
+          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Par Compteur</Typography>
               <Typography variant="h5">{displayStats.ventes_compteur}</Typography>
