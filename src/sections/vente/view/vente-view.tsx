@@ -4,7 +4,8 @@ import {
   Box, Card, Button, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Pagination, CircularProgress, Grid,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
-  Stepper, Step, StepLabel, Autocomplete, Chip, Accordion, AccordionSummary, AccordionDetails
+  Stepper, Step, StepLabel, Autocomplete, Chip, Accordion, AccordionSummary, AccordionDetails,
+  MenuItem, Select, FormControl, InputLabel
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -93,6 +94,8 @@ export function VenteView() {
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [nomAcheteur, setNomAcheteur] = useState("");
   const [telAcheteur, setTelAcheteur] = useState("");
+  const [sexeAcheteur, setSexeAcheteur] = useState("");
+  const [adresseAcheteur, setAdresseAcheteur] = useState("");
 
   // Produits
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
@@ -205,6 +208,8 @@ export function VenteView() {
           acheteur: selectedUser?.id || null,
           nom_acheteur: nomAcheteur,
           telephone_acheteur: telAcheteur,
+          sexe_acheteur: sexeAcheteur || null,
+          adresse_acheteur: adresseAcheteur || null,
           montant_paye: montantPaye,
           mode_paiement: "cash",
           details: selectedProduits.map((p) => ({
@@ -218,6 +223,12 @@ export function VenteView() {
       setOpenDialog(false);
       setSelectedProduits([]);
       setActiveStep(0);
+      // Réinitialiser les champs acheteur
+      setSelectedUser(null);
+      setNomAcheteur("");
+      setTelAcheteur("");
+      setSexeAcheteur("");
+      setAdresseAcheteur("");
       fetchVentes(page);
       fetchStats(); // Rafraîchir les stats après une nouvelle vente
     } catch (error) {
@@ -273,7 +284,7 @@ export function VenteView() {
       {/* Loader pour les statistiques */}
       {statsLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-          <CircularProgress />
+          Chargement des statistiques...
         </Box>
       ) : (
         /* Stats */
@@ -302,29 +313,6 @@ export function VenteView() {
               <Typography variant="h5">{displayStats.ventes_compteur}</Typography>
             </Card>
           </Grid>
-          
-          {/* Statistiques par mode de paiement */}
-       {/*    <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Ventes en espèces</Typography>
-              <Typography variant="h6">{displayStats.ventes_par_mode.cash}</Typography>
-              <Typography variant="body2">{displayStats.montant_par_mode.cash.toLocaleString()} FC</Typography>
-            </Card>
-          </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Ventes Mobile Money</Typography>
-              <Typography variant="h6">{displayStats.ventes_par_mode.mobile_money}</Typography>
-              <Typography variant="body2">{displayStats.montant_par_mode.mobile_money.toLocaleString()} FC</Typography>
-            </Card>
-          </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Ventes par carte</Typography>
-              <Typography variant="h6">{displayStats.ventes_par_mode.carte}</Typography>
-              <Typography variant="body2">{displayStats.montant_par_mode.carte.toLocaleString()} FC</Typography>
-            </Card>
-          </Grid> */}
         </Grid>
       )}
 
@@ -343,6 +331,8 @@ export function VenteView() {
                   <TableCell>ID</TableCell>
                   <TableCell>Client</TableCell>
                   <TableCell>Téléphone</TableCell>
+                  <TableCell>Sexe</TableCell>
+                  <TableCell>Adresse</TableCell>
                   <TableCell>Montant Calculé</TableCell>
                   <TableCell>Montant Payé</TableCell>
                   <TableCell>Mode Paiement</TableCell>
@@ -359,6 +349,8 @@ export function VenteView() {
                         <TableCell>{vente.id}</TableCell>
                         <TableCell>{formatClientName(vente)}</TableCell>
                         <TableCell>{vente.telephone_acheteur || "N/A"}</TableCell>
+                        <TableCell>{vente.sexe_acheteur || "N/A"}</TableCell>
+                        <TableCell>{vente.adresse_acheteur || "N/A"}</TableCell>
                         <TableCell>{vente.montant_total} $</TableCell>
                         <TableCell>{vente.montant_paye} FC</TableCell>
                         <TableCell>
@@ -391,7 +383,7 @@ export function VenteView() {
                         </TableCell>
                       </TableRow>
                       <TableRow id={`details-${vente.id}`} style={{ display: 'none' }}>
-                        <TableCell colSpan={9}>
+                        <TableCell colSpan={11}>
                           <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
                             <Typography variant="h6" gutterBottom>Détails de la vente</Typography>
                             {vente.note && (
@@ -426,7 +418,7 @@ export function VenteView() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} align="center">
+                    <TableCell colSpan={11} align="center">
                       Aucune vente trouvée
                     </TableCell>
                   </TableRow>
@@ -454,6 +446,12 @@ export function VenteView() {
         setOpenDialog(false);
         setActiveStep(0);
         setSelectedProduits([]);
+        // Réinitialiser les champs acheteur
+        setSelectedUser(null);
+        setNomAcheteur("");
+        setTelAcheteur("");
+        setSexeAcheteur("");
+        setAdresseAcheteur("");
       }} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
 
@@ -471,19 +469,49 @@ export function VenteView() {
                 options={users}
                 getOptionLabel={(u) => `${u.nom} - ${u.email || u.telephone}`}
                 value={selectedUser}
-                onChange={(_, v) => setSelectedUser(v)}
+                onChange={(_, v) => {
+                  setSelectedUser(v);
+                  if (v) {
+                    setNomAcheteur(v.nom || "");
+                    setTelAcheteur(v.telephone || "");
+                    setSexeAcheteur(v.sexe || "");
+                    setAdresseAcheteur(v.adresse || "");
+                  }
+                }}
                 onInputChange={(_, v) => setSearchUser(v)}
                 renderInput={(params) => <TextField {...params} label="Utilisateur du système" />}
               />
               <TextField
-                fullWidth label="Nom acheteur"
+                fullWidth
+                label="Nom acheteur"
                 value={nomAcheteur}
                 onChange={(e) => setNomAcheteur(e.target.value)}
               />
               <TextField
-                fullWidth label="Téléphone acheteur"
+                fullWidth
+                label="Téléphone acheteur"
                 value={telAcheteur}
                 onChange={(e) => setTelAcheteur(e.target.value)}
+              />
+              <FormControl fullWidth>
+                <InputLabel>Sexe</InputLabel>
+                <Select
+                  value={sexeAcheteur}
+                  label="Sexe"
+                  onChange={(e) => setSexeAcheteur(e.target.value)}
+                >
+                  <MenuItem value="M">Masculin</MenuItem>
+                  <MenuItem value="F">Féminin</MenuItem>
+                  <MenuItem value="Autre">Autre</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Adresse acheteur"
+                value={adresseAcheteur}
+                onChange={(e) => setAdresseAcheteur(e.target.value)}
+                multiline
+                rows={2}
               />
             </Box>
           )}
@@ -556,7 +584,6 @@ export function VenteView() {
                       </IconButton>
                     </Box>
                   ))}
-
 
                   <Typography sx={{ mt: 2 }}>
                     Montant total: <b>{montantTotal} FC</b>
