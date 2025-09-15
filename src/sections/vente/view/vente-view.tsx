@@ -83,7 +83,6 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
     telephone: "",
     password: "",
     role: "client",
-    adresse: "",
     sexe: ""
   });
   const [loading, setLoading] = useState(false);
@@ -130,11 +129,11 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2,xs: '100%' }}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      
-      <Grid container spacing={2}>
-        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+
+      <Grid container spacing={2} sx={{ mt: 2}}>
+        <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
             label="Nom complet"
@@ -144,7 +143,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             required
           />
         </Grid>
-        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+        <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
             label="Email"
@@ -155,7 +154,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             required
           />
         </Grid>
-        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+        <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
             label="Téléphone"
@@ -165,7 +164,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             required
           />
         </Grid>
-        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+        <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
             label="Mot de passe"
@@ -176,7 +175,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             required
           />
         </Grid>
-        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+        <Grid sx={{ width: { xs: '100%' } }}>
           <FormControl fullWidth>
             <InputLabel>Rôle</InputLabel>
             <Select
@@ -186,12 +185,11 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
               onChange={(e) => handleSelectChange("role", e.target.value as string)}
             >
               <MenuItem value="client">Client</MenuItem>
-              <MenuItem value="admin">Administrateur</MenuItem>
-              <MenuItem value="vendeur">Vendeur</MenuItem>
+              <MenuItem value="owner">Proprietaire de forage</MenuItem>
             </Select>
           </FormControl>
         </Grid>
-        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+        <Grid sx={{ width: { xs: '100%' } }}>
           <FormControl fullWidth>
             <InputLabel>Sexe</InputLabel>
             <Select
@@ -202,24 +200,12 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             >
               <MenuItem value="M">Masculin</MenuItem>
               <MenuItem value="F">Féminin</MenuItem>
-              <MenuItem value="Autre">Autre</MenuItem>
             </Select>
           </FormControl>
         </Grid>
-        <Grid sx={{ width: { xs: '100%'} }}>
-          <TextField
-            fullWidth
-            label="Adresse"
-            name="adresse"
-            value={formData.adresse}
-            onChange={handleInputChange}
-            multiline
-            rows={2}
-          />
-        </Grid>
       </Grid>
 
-      <DialogActions sx={{ px: 0, mt: 2 }}>
+      <DialogActions sx={{ px: 0, mt: 2}}>
         <Button onClick={onCancel}>Annuler</Button>
         <Button 
           type="submit" 
@@ -670,12 +656,6 @@ export function VenteView() {
                       />
                     )}
                   />
-                  
-                  <Box sx={{ textAlign: 'center', my: 1 }}>
-                    <Typography variant="body2" color="textSecondary">
-                      ou
-                    </Typography>
-                  </Box>
                 </>
               ) : (
                 <CreateUserForm 
