@@ -5,11 +5,12 @@ import {
   DialogActions, TextField, Pagination, CircularProgress, Grid,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
   Stepper, Step, StepLabel, Autocomplete, Chip, Accordion, AccordionSummary, AccordionDetails,
-  MenuItem, Select, FormControl, InputLabel
+  MenuItem, Select, FormControl, InputLabel, Tabs, Tab, Alert
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { IconButton } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -74,6 +75,165 @@ interface RFID {
   prix?: number;
 }
 
+// Composant pour créer un nouvel utilisateur
+function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any) => void, onCancel: () => void }) {
+  const [formData, setFormData] = useState({
+    nom: "",
+    email: "",
+    telephone: "",
+    password: "",
+    role: "client",
+    adresse: "",
+    sexe: ""
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Gestionnaire pour les champs TextField
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Gestionnaire spécifique pour les Select
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "https://safimayi-backend.onrender.com/api/users/create-list/",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Appeler le callback avec le nouvel utilisateur créé
+      onUserCreated(response.data);
+    } catch (err: any) {
+      console.error("Erreur lors de la création de l'utilisateur:", err);
+      setError(err.response?.data?.message || "Erreur lors de la création de l'utilisateur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      
+      <Grid container spacing={2}>
+        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+          <TextField
+            fullWidth
+            label="Nom complet"
+            name="nom"
+            value={formData.nom}
+            onChange={handleInputChange}
+            required
+          />
+        </Grid>
+        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+          />
+        </Grid>
+        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+          <TextField
+            fullWidth
+            label="Téléphone"
+            name="telephone"
+            value={formData.telephone}
+            onChange={handleInputChange}
+            required
+          />
+        </Grid>
+        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+          <TextField
+            fullWidth
+            label="Mot de passe"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            required
+          />
+        </Grid>
+        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+          <FormControl fullWidth>
+            <InputLabel>Rôle</InputLabel>
+            <Select
+              name="role"
+              value={formData.role}
+              label="Rôle"
+              onChange={(e) => handleSelectChange("role", e.target.value as string)}
+            >
+              <MenuItem value="client">Client</MenuItem>
+              <MenuItem value="admin">Administrateur</MenuItem>
+              <MenuItem value="vendeur">Vendeur</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+          <FormControl fullWidth>
+            <InputLabel>Sexe</InputLabel>
+            <Select
+              name="sexe"
+              value={formData.sexe}
+              label="Sexe"
+              onChange={(e) => handleSelectChange("sexe", e.target.value as string)}
+            >
+              <MenuItem value="M">Masculin</MenuItem>
+              <MenuItem value="F">Féminin</MenuItem>
+              <MenuItem value="Autre">Autre</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid sx={{ width: { xs: '100%'} }}>
+          <TextField
+            fullWidth
+            label="Adresse"
+            name="adresse"
+            value={formData.adresse}
+            onChange={handleInputChange}
+            multiline
+            rows={2}
+          />
+        </Grid>
+      </Grid>
+
+      <DialogActions sx={{ px: 0, mt: 2 }}>
+        <Button onClick={onCancel}>Annuler</Button>
+        <Button 
+          type="submit" 
+          variant="contained" 
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={16} /> : <PersonAddIcon />}
+        >
+          Créer l'utilisateur
+        </Button>
+      </DialogActions>
+    </Box>
+  );
+}
+
 export function VenteView() {
   const [ventes, setVentes] = useState<Vente[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -81,9 +241,10 @@ export function VenteView() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
-  const [saving, setSaving] = useState<boolean>(false); // État pour le loader d'envoi
+  const [saving, setSaving] = useState<boolean>(false);
 
   const [openDialog, setOpenDialog] = useState(false);
+  const [userCreationTab, setUserCreationTab] = useState(0);
 
   // Stepper state
   const [activeStep, setActiveStep] = useState(0);
@@ -113,7 +274,6 @@ export function VenteView() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setVentes(res.data || []);
-      // Si l'API ne retourne pas de pagination, on suppose qu'il n'y a qu'une page
       setTotalPages(1);
     } catch (err) {
       console.error("Erreur lors du fetch des ventes :", err);
@@ -202,7 +362,7 @@ export function VenteView() {
 
   const handleSave = async () => {
     try {
-      setSaving(true); // Activer le loader
+      setSaving(true);
       const token = localStorage.getItem("token");
       await axios.post(
         `https://safimayi-backend.onrender.com/api/ventes/create/`,
@@ -225,22 +385,32 @@ export function VenteView() {
       setOpenDialog(false);
       setSelectedProduits([]);
       setActiveStep(0);
-      // Réinitialiser les champs acheteur
       setSelectedUser(null);
       setNomAcheteur("");
       setTelAcheteur("");
       setSexeAcheteur("");
       setAdresseAcheteur("");
+      setUserCreationTab(0);
       fetchVentes(page);
-      fetchStats(); // Rafraîchir les stats après une nouvelle vente
+      fetchStats();
     } catch (error) {
       console.error("Erreur lors de la création :", error);
     } finally {
-      setSaving(false); // Désactiver le loader
+      setSaving(false);
     }
   };
 
-  // Valeurs par défaut pour les statistiques
+  // Gérer la création d'un nouvel utilisateur
+  const handleUserCreated = (newUser: any) => {
+    setUsers(prev => [...prev, newUser]);
+    setSelectedUser(newUser);
+    setNomAcheteur(newUser.nom || "");
+    setTelAcheteur(newUser.telephone || "");
+    setSexeAcheteur(newUser.sexe || "");
+    setAdresseAcheteur(newUser.adresse || "");
+    setUserCreationTab(0);
+  };
+
   const defaultStats = {
     total_ventes: 0,
     montant_total: 0,
@@ -260,7 +430,6 @@ export function VenteView() {
 
   const displayStats = stats || defaultStats;
 
-  // Fonction pour formater le nom du client
   const formatClientName = (vente: Vente) => {
     if (vente.nom_acheteur) {
       return vente.nom_acheteur;
@@ -285,33 +454,31 @@ export function VenteView() {
         </Button>
       </Box>
 
-      {/* Loader pour les statistiques */}
       {statsLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
           Chargement des statistiques...
         </Box>
       ) : (
-        /* Stats */
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Total ventes</Typography>
               <Typography variant="h5">{displayStats.total_ventes}</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Montant calculé</Typography>
               <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Par RFID</Typography>
               <Typography variant="h5">{displayStats.ventes_rfid}</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Par Compteur</Typography>
               <Typography variant="h5">{displayStats.ventes_compteur}</Typography>
@@ -320,13 +487,11 @@ export function VenteView() {
         </Grid>
       )}
 
-      {/* Loader pour les ventes */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
           <CircularProgress />
         </Box>
       ) : (
-        /* Tableau journal */
         <Card sx={{ p: 2 }}>
           <TableContainer>
             <Table>
@@ -387,12 +552,12 @@ export function VenteView() {
                           <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
                             <Typography variant="h6" gutterBottom>Détails de la vente</Typography>
                             <Grid container spacing={2} sx={{ mb: 2 }}>
-                              <Grid sx={{ width: '100%', '@media (min-width: 600px)': { width: '50%' } }}>
+                              <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
                                 <Typography variant="body2">
                                   <strong>Sexe:</strong> {vente.sexe_acheteur || "N/A"}
                                 </Typography>
                               </Grid>
-                              <Grid sx={{ width: '100%', '@media (min-width: 600px)': { width: '50%' } }}>
+                              <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
                                 <Typography variant="body2">
                                   <strong>Adresse:</strong> {vente.adresse_acheteur || "N/A"}
                                 </Typography>
@@ -439,7 +604,6 @@ export function VenteView() {
             </Table>
           </TableContainer>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
               <Pagination
@@ -453,18 +617,17 @@ export function VenteView() {
         </Card>
       )}
 
-      {/* Dialog ajout */}
       <Dialog open={openDialog} onClose={() => {
-        if (!saving) { // Empêcher la fermeture pendant l'enregistrement
+        if (!saving) {
           setOpenDialog(false);
           setActiveStep(0);
           setSelectedProduits([]);
-          // Réinitialiser les champs acheteur
           setSelectedUser(null);
           setNomAcheteur("");
           setTelAcheteur("");
           setSexeAcheteur("");
           setAdresseAcheteur("");
+          setUserCreationTab(0);
         }
       }} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
@@ -476,43 +639,79 @@ export function VenteView() {
             ))}
           </Stepper>
 
-          {/* Étape 1 : acheteur */}
           {activeStep === 0 && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Autocomplete
-                options={users}
-                getOptionLabel={(u) => `${u.nom} - ${u.email || u.telephone}`}
-                value={selectedUser}
-                onChange={(_, v) => {
-                  setSelectedUser(v);
-                  if (v) {
-                    setNomAcheteur(v.nom || "");
-                    setTelAcheteur(v.telephone || "");
-                    setSexeAcheteur(v.sexe || "");
-                    setAdresseAcheteur(v.adresse || "");
-                  }
-                }}
-                onInputChange={(_, v) => setSearchUser(v)}
-                renderInput={(params) => <TextField {...params} label="Utilisateur du système" />}
-              />
+              <Tabs value={userCreationTab} onChange={(_, newValue) => setUserCreationTab(newValue)}>
+                <Tab label="Rechercher un utilisateur" />
+                <Tab label="Créer un nouvel utilisateur" />
+              </Tabs>
+
+              {userCreationTab === 0 ? (
+                <>
+                  <Autocomplete
+                    options={users}
+                    getOptionLabel={(u) => `${u.nom} - ${u.email || u.telephone}`}
+                    value={selectedUser}
+                    onChange={(_, v) => {
+                      setSelectedUser(v);
+                      if (v) {
+                        setNomAcheteur(v.nom || "");
+                        setTelAcheteur(v.telephone || "");
+                        setSexeAcheteur(v.sexe || "");
+                        setAdresseAcheteur(v.adresse || "");
+                      }
+                    }}
+                    onInputChange={(_, v) => setSearchUser(v)}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        label="Rechercher un utilisateur" 
+                        helperText="Tapez au moins 3 caractères pour rechercher"
+                      />
+                    )}
+                  />
+                  
+                  <Box sx={{ textAlign: 'center', my: 1 }}>
+                    <Typography variant="body2" color="textSecondary">
+                      ou
+                    </Typography>
+                  </Box>
+                  
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<PersonAddIcon />}
+                    onClick={() => setUserCreationTab(1)}
+                  >
+                    Créer un nouvel utilisateur
+                  </Button>
+                </>
+              ) : (
+                <CreateUserForm 
+                  onUserCreated={handleUserCreated}
+                  onCancel={() => setUserCreationTab(0)}
+                />
+              )}
+
               <TextField
                 fullWidth
                 label="Nom acheteur"
                 value={nomAcheteur}
                 onChange={(e) => setNomAcheteur(e.target.value)}
+                required
               />
               <TextField
                 fullWidth
                 label="Téléphone acheteur"
                 value={telAcheteur}
                 onChange={(e) => setTelAcheteur(e.target.value)}
+                required
               />
               <FormControl fullWidth>
                 <InputLabel>Sexe</InputLabel>
                 <Select
                   value={sexeAcheteur}
                   label="Sexe"
-                  onChange={(e) => setSexeAcheteur(e.target.value)}
+                  onChange={(e) => setSexeAcheteur(e.target.value as string)}
                 >
                   <MenuItem value="M">Masculin</MenuItem>
                   <MenuItem value="F">Féminin</MenuItem>
@@ -530,7 +729,6 @@ export function VenteView() {
             </Box>
           )}
 
-          {/* Étape 2 : produits */}
           {activeStep === 1 && (
             <Box
               sx={{
@@ -539,7 +737,6 @@ export function VenteView() {
                 gap: 2,
               }}
             >
-              {/* Colonne gauche */}
               <Box sx={{ flex: 1 }}>
                 <Autocomplete
                   options={compteurs}
@@ -565,7 +762,6 @@ export function VenteView() {
                 />
               </Box>
 
-              {/* Colonne droite */}
               <Box sx={{ flex: 1 }}>
                 <Card sx={{ p: 2 }}>
                   <Typography variant="h6">Produits sélectionnés</Typography>
@@ -583,11 +779,6 @@ export function VenteView() {
                         borderRadius: 1.5,
                         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                         backgroundColor: "#fafafa",
-                        transition: "transform 0.1s",
-                        "&:hover": {
-                          transform: "scale(1.01)",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                        },
                       }}
                     >
                       <Typography>
@@ -624,9 +815,22 @@ export function VenteView() {
             <>
               <Button disabled={activeStep === 0} onClick={() => setActiveStep(activeStep - 1)}>Retour</Button>
               {activeStep < steps.length - 1 ? (
-                <Button variant="contained" onClick={() => setActiveStep(activeStep + 1)}>Suivant</Button>
+                <Button 
+                  variant="contained" 
+                  onClick={() => setActiveStep(activeStep + 1)}
+                  disabled={!nomAcheteur || !telAcheteur}
+                >
+                  Suivant
+                </Button>
               ) : (
-                <Button variant="contained" color="success" onClick={handleSave}>Enregistrer</Button>
+                <Button 
+                  variant="contained" 
+                  color="success" 
+                  onClick={handleSave}
+                  disabled={selectedProduits.length === 0}
+                >
+                  Enregistrer
+                </Button>
               )}
             </>
           )}
