@@ -130,7 +130,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2,xs: '100%' }}>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       
       <Grid container spacing={2}>
@@ -676,14 +676,6 @@ export function VenteView() {
                       ou
                     </Typography>
                   </Box>
-                  
-                  <Button 
-                    variant="outlined" 
-                    startIcon={<PersonAddIcon />}
-                    onClick={() => setUserCreationTab(1)}
-                  >
-                    Créer un nouvel utilisateur
-                  </Button>
                 </>
               ) : (
                 <CreateUserForm 
