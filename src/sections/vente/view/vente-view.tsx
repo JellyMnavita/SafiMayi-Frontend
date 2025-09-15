@@ -82,8 +82,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
     email: "",
     telephone: "",
     password: "",
-    role: "client",
-    sexe: ""
+    role: "client"
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -189,20 +188,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             </Select>
           </FormControl>
         </Grid>
-        <Grid sx={{ width: { xs: '100%' } }}>
-          <FormControl fullWidth>
-            <InputLabel>Sexe</InputLabel>
-            <Select
-              name="sexe"
-              value={formData.sexe}
-              label="Sexe"
-              onChange={(e) => handleSelectChange("sexe", e.target.value as string)}
-            >
-              <MenuItem value="M">Masculin</MenuItem>
-              <MenuItem value="F">Féminin</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
+        
       </Grid>
 
       <DialogActions sx={{ px: 0, mt: 2}}>
@@ -687,7 +673,6 @@ export function VenteView() {
                 >
                   <MenuItem value="M">Masculin</MenuItem>
                   <MenuItem value="F">Féminin</MenuItem>
-                  <MenuItem value="Autre">Autre</MenuItem>
                 </Select>
               </FormControl>
               <TextField
