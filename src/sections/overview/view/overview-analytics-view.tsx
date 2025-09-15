@@ -39,6 +39,7 @@ export function OverviewAnalyticsView() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setStats(res.data);
+        console.log('Stats récupérées:', res.data);
       } catch (error) {
         console.error('Erreur lors de la récupération des stats:', error);
       }
