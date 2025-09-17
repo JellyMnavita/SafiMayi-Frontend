@@ -19,7 +19,7 @@ interface Recharge {
   Moyen: string;
 }
 
-export function RechargesView() {
+export function JournauxView() {
   const [allRecharges, setAllRecharges] = useState<Recharge[]>([]);
   const [recharges, setRecharges] = useState<Recharge[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
