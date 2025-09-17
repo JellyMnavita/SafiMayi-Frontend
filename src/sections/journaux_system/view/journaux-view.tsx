@@ -37,12 +37,12 @@ interface Paiement {
 
 export function JournauxView() {
   const [activeTab, setActiveTab] = useState(0);
-  
+
   // États pour les recharges
   const [allRecharges, setAllRecharges] = useState<Recharge[]>([]);
   const [recharges, setRecharges] = useState<Recharge[]>([]);
   const [loadingRecharges, setLoadingRecharges] = useState<boolean>(true);
-  
+
   // États pour les paiements
   const [allPaiements, setAllPaiements] = useState<Paiement[]>([]);
   const [paiements, setPaiements] = useState<Paiement[]>([]);
@@ -56,10 +56,10 @@ export function JournauxView() {
   // Filtres communs
   const [searchUtilisateur, setSearchUtilisateur] = useState<string>("");
   const [searchTelephone, setSearchTelephone] = useState<string>("");
-  
+
   // Filtres spécifiques aux recharges
   const [moyenFilter, setMoyenFilter] = useState<string>("");
-  
+
   // Filtres spécifiques aux paiements
   const [statutFilter, setStatutFilter] = useState<string>("");
   const [operateurFilter, setOperateurFilter] = useState<string>("");
@@ -78,7 +78,7 @@ export function JournauxView() {
     setSelectedItem(item);
     setItemType(type);
   };
-  
+
   const handleMenuClose = () => setAnchorEl(null);
 
   // Charger les recharges
@@ -294,7 +294,7 @@ export function JournauxView() {
             onChange={(e) => setSearchTelephone(e.target.value)}
             size="small"
           />
-          
+
           {activeTab === 0 ? (
             <Select
               value={moyenFilter}
@@ -338,7 +338,7 @@ export function JournauxView() {
               />
             </>
           )}
-          
+
           <Button
             variant="outlined"
             onClick={resetAllFilters}
@@ -352,8 +352,8 @@ export function JournauxView() {
       {activeTab === 1 && (
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <Card sx={{ p: 2, minWidth: 200 }}>
-            <Typography variant="h6">Total: {statsPaiements.total || 0}</Typography>
-            <Typography variant="body2">Paiements</Typography>
+            <Typography variant="h6">{statsPaiements.montant_total ? `${statsPaiements.montant_total.toFixed(2)} $` : '0 $'}</Typography>
+            <Typography variant="body2">Montant total</Typography>
           </Card>
           <Card sx={{ p: 2, minWidth: 200, bgcolor: 'success.light' }}>
             <Typography variant="h6">{statsPaiements.reussis || 0}</Typography>
@@ -366,14 +366,6 @@ export function JournauxView() {
           <Card sx={{ p: 2, minWidth: 200, bgcolor: 'error.light' }}>
             <Typography variant="h6">{statsPaiements.echecs || 0}</Typography>
             <Typography variant="body2">Échoués</Typography>
-          </Card>
-          <Card sx={{ p: 2, minWidth: 200 }}>
-            <Typography variant="h6">{statsPaiements.montant_total ? `${statsPaiements.montant_total.toFixed(2)} $` : '0 $'}</Typography>
-            <Typography variant="body2">Montant total</Typography>
-          </Card>
-          <Card sx={{ p: 2, minWidth: 200 }}>
-            <Typography variant="h6">{statsPaiements.litres_total ? `${statsPaiements.litres_total.toFixed(2)} L` : '0 L'}</Typography>
-            <Typography variant="body2">Litres total</Typography>
           </Card>
         </Box>
       )}
@@ -460,11 +452,11 @@ export function JournauxView() {
                           <td className="p-2 border-b">{(paiement as Paiement).telephone}</td>
                           <td className="p-2 border-b">{(paiement as Paiement).rfid_uid || 'Aucune'}</td>
                           <td className="p-2 border-b">{(paiement as Paiement).operateur}</td>
-                          <td className="p-2 border-b">{(paiement as Paiement).montant} $</td>
+                          <td className="p-2 border-b">{(paiement as Paiement).montant} FC</td>
                           <td className="p-2 border-b">{(paiement as Paiement).litres_credite} L</td>
                           <td className="p-2 border-b">
-                            <Chip 
-                              label={getStatusText((paiement as Paiement).statut)} 
+                            <Chip
+                              label={getStatusText((paiement as Paiement).statut)}
                               color={getStatusColor((paiement as Paiement).statut) as any}
                               size="small"
                             />
@@ -545,7 +537,7 @@ export function JournauxView() {
               <Typography><strong>Moyen de paiement:</strong> {(selectedItem as Recharge).Moyen}</Typography>
             </>
           )}
-          
+
           {selectedItem && itemType === 'paiement' && (
             <>
               <Typography><strong>Date:</strong> {formatDate((selectedItem as Paiement).created_at)}</Typography>
@@ -557,9 +549,9 @@ export function JournauxView() {
               <Typography><strong>Opérateur:</strong> {(selectedItem as Paiement).operateur}</Typography>
               <Typography><strong>Montant:</strong> {(selectedItem as Paiement).montant} $</Typography>
               <Typography><strong>Litres crédités:</strong> {(selectedItem as Paiement).litres_credite} L</Typography>
-              <Typography><strong>Statut:</strong> 
-                <Chip 
-                  label={getStatusText((selectedItem as Paiement).statut)} 
+              <Typography><strong>Statut:</strong>
+                <Chip
+                  label={getStatusText((selectedItem as Paiement).statut)}
                   color={getStatusColor((selectedItem as Paiement).statut) as any}
                   size="small"
                   sx={{ ml: 1 }}
