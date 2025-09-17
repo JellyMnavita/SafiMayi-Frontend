@@ -237,7 +237,9 @@ export function JournauxView() {
 
       // Calculer les statistiques des consommations
       const totalConsommations = response.data.length;
-      const totalLitres = response.data.reduce((sum: number, c: Consommation) => sum + c.litres, 0);
+      const totalLitres = Math.round(
+        response.data.reduce((sum: number, c: Consommation) => sum + c.litres, 0)
+      );
       const rfidCount = response.data.filter((c: Consommation) => c.type === "RFID").length;
       const accessCodeCount = response.data.filter((c: Consommation) => c.type === "Code d'accès").length;
 
@@ -612,7 +614,7 @@ export function JournauxView() {
                   title="Paiements Réussis"
                   total={statsPaiements.reussis || 0}
                   color="success"
-                  icon={<img alt="Success" src="/assets/icons/glass/ic-glass-checkmark.svg" />}
+                  icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-users.svg" />}
                   sx={{ height: '100%' }}
                 />
               </div>
