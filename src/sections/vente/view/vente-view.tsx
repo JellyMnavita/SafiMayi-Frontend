@@ -5,7 +5,7 @@ import {
   DialogActions, TextField, Pagination, CircularProgress, Grid,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
   Stepper, Step, StepLabel, Autocomplete, Chip, Accordion, AccordionSummary, AccordionDetails,
-  MenuItem, Select, FormControl, InputLabel, Tabs, Tab, Alert
+  MenuItem, Select, FormControl, InputLabel, Tabs, Tab, Alert, Snackbar
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -15,8 +15,6 @@ import { IconButton } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
-
-
 
 interface VenteDetail {
   id: number;
@@ -216,6 +214,8 @@ export function VenteView() {
   const [loading, setLoading] = useState<boolean>(false);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
 
   const [openDialog, setOpenDialog] = useState(false);
   const [userCreationTab, setUserCreationTab] = useState(0);
@@ -338,6 +338,24 @@ export function VenteView() {
     try {
       setSaving(true);
       const token = localStorage.getItem("token");
+      
+      // Validation côté client pour les montants négatifs
+      if (montantPaye < 0) {
+        setErrorMessage("Le montant payé ne peut pas être négatif");
+        setOpenSnackbar(true);
+        setSaving(false);
+        return;
+      }
+
+      // Vérifier si les produits ont des prix négatifs
+      const produitAvecPrixNegatif = selectedProduits.find(p => (p.prix || 0) < 0);
+      if (produitAvecPrixNegatif) {
+        setErrorMessage("Le prix d'un produit ne peut pas être négatif");
+        setOpenSnackbar(true);
+        setSaving(false);
+        return;
+      }
+
       await axios.post(
         `https://safimayi-backend.onrender.com/api/ventes/create/`,
         {
@@ -367,11 +385,42 @@ export function VenteView() {
       setUserCreationTab(0);
       fetchVentes(page);
       fetchStats();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors de la création :", error);
+      
+      // Gestion des erreurs de validation du backend
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        if (errorData.montant_paye) {
+          setErrorMessage(errorData.montant_paye);
+        } else if (errorData.details) {
+          setErrorMessage(errorData.details);
+        } else if (typeof errorData === 'object') {
+          // Parcourir toutes les erreurs possibles
+          const firstError = Object.values(errorData)[0];
+          if (Array.isArray(firstError)) {
+            setErrorMessage(firstError[0]);
+          } else if (typeof firstError === 'string') {
+            setErrorMessage(firstError);
+          } else {
+            setErrorMessage("Erreur lors de la création de la vente");
+          }
+        } else {
+          setErrorMessage("Erreur lors de la création de la vente");
+        }
+      } else {
+        setErrorMessage("Erreur de connexion au serveur");
+      }
+      setOpenSnackbar(true);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+    setErrorMessage("");
   };
 
   // Gérer la création d'un nouvel utilisateur
@@ -427,6 +476,18 @@ export function VenteView() {
           Nouvelle vente
         </Button>
       </Box>
+
+      {/* Snackbar pour afficher les erreurs */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
+          {errorMessage}
+        </Alert>
+      </Snackbar>
 
       {statsLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
@@ -759,7 +820,15 @@ export function VenteView() {
                     fullWidth
                     sx={{ mt: 2 }}
                     value={montantPaye}
-                    onChange={(e) => setMontantPaye(parseInt(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      if (value >= 0) {
+                        setMontantPaye(value);
+                      }
+                    }}
+                    error={montantPaye < 0}
+                    helperText={montantPaye < 0 ? "Le montant ne peut pas être négatif" : ""}
+                    inputProps={{ min: 0 }}
                   />
                 </Card>
               </Box>
@@ -786,7 +855,7 @@ export function VenteView() {
                   variant="contained" 
                   color="success" 
                   onClick={handleSave}
-                  disabled={selectedProduits.length === 0}
+                  disabled={selectedProduits.length === 0 || montantPaye < 0}
                 >
                   Enregistrer
                 </Button>
