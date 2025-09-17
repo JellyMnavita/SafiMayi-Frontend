@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
@@ -9,6 +12,8 @@ import {
 
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
+import { AnalyticsWidgetSummary } from "../analytics-widget-summary";
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 interface Recharge {
   Date: string;
@@ -37,6 +42,8 @@ interface Paiement {
 
 export function JournauxView() {
   const [activeTab, setActiveTab] = useState(0);
+  const isMobile = useMediaQuery('(max-width:768px)');
+  const isTablet = useMediaQuery('(max-width:1200px)');
 
   // États pour les recharges
   const [allRecharges, setAllRecharges] = useState<Recharge[]>([]);
@@ -72,6 +79,26 @@ export function JournauxView() {
 
   // Dialog pour voir les détails
   const [openDialog, setOpenDialog] = useState(false);
+
+  // Configuration du Slider
+  const sliderSettings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: isMobile ? 1 : isTablet ? 2 : 4,
+    slidesToScroll: 1,
+    arrows: true,
+    responsive: [
+      {
+        breakpoint: 1200,
+        settings: { slidesToShow: 2 },
+      },
+      {
+        breakpoint: 768,
+        settings: { slidesToShow: 1 },
+      },
+    ],
+  };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, item: Recharge | Paiement, type: 'recharge' | 'paiement') => {
     setAnchorEl(event.currentTarget);
@@ -348,25 +375,62 @@ export function JournauxView() {
         </Box>
       </Card>
 
-      {/* Statistiques des paiements (seulement sur l'onglet paiements) */}
+      {/* Statistiques des paiements avec Slider */}
       {activeTab === 1 && (
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-          <Card sx={{ p: 2, minWidth: 200 }}>
-            <Typography variant="h6">{statsPaiements.montant_total ? `${statsPaiements.montant_total.toFixed(2)} $` : '0 $'}</Typography>
-            <Typography variant="body2">Montant total</Typography>
-          </Card>
-          <Card sx={{ p: 2, minWidth: 200, bgcolor: 'success.light' }}>
-            <Typography variant="h6">{statsPaiements.reussis || 0}</Typography>
-            <Typography variant="body2">Réussis</Typography>
-          </Card>
-          <Card sx={{ p: 2, minWidth: 200, bgcolor: 'warning.light' }}>
-            <Typography variant="h6">{statsPaiements.en_attente || 0}</Typography>
-            <Typography variant="body2">En attente</Typography>
-          </Card>
-          <Card sx={{ p: 2, minWidth: 200, bgcolor: 'error.light' }}>
-            <Typography variant="h6">{statsPaiements.echecs || 0}</Typography>
-            <Typography variant="body2">Échoués</Typography>
-          </Card>
+        <Box sx={{ mb: 3 }}>
+          <Slider {...sliderSettings}>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Montant Total"
+                total={statsPaiements.montant_total || 0}
+                color="primary"
+                suffix=" FC"
+                isCurrency={true}
+                icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Litres Total"
+                total={statsPaiements.litres_total || 0}
+                color="success"
+                suffix=" L"
+                icon={<img alt="Water" src="/assets/icons/glass/ic-glass-message.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Paiements Réussis"
+                total={statsPaiements.reussis || 0}
+                color="success"
+                icon={<img alt="Success" src="/assets/icons/glass/ic-glass-checkmark.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="En Attente"
+                total={statsPaiements.en_attente || 0}
+                color="warning"
+                icon={<img alt="Pending" src="/assets/icons/glass/ic-glass-clock.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Échoués"
+                total={statsPaiements.echecs || 0}
+                color="error"
+                icon={<img alt="Failed" src="/assets/icons/glass/ic-glass-close.svg" />}
+              />
+            </div>
+            <div>
+              <AnalyticsWidgetSummary
+                title="Total Paiements"
+                total={statsPaiements.total || 0}
+                color="info"
+                icon={<img alt="Total" src="/assets/icons/glass/ic-glass-bag.svg" />}
+              />
+            </div>
+          </Slider>
         </Box>
       )}
 
@@ -547,7 +611,7 @@ export function JournauxView() {
               <Typography><strong>Téléphone de paiement:</strong> {(selectedItem as Paiement).telephone}</Typography>
               <Typography><strong>Carte RFID:</strong> {(selectedItem as Paiement).rfid_uid || 'Aucune carte'}</Typography>
               <Typography><strong>Opérateur:</strong> {(selectedItem as Paiement).operateur}</Typography>
-              <Typography><strong>Montant:</strong> {(selectedItem as Paiement).montant} $</Typography>
+              <Typography><strong>Montant:</strong> {(selectedItem as Paiement).montant} FC</Typography>
               <Typography><strong>Litres crédités:</strong> {(selectedItem as Paiement).litres_credite} L</Typography>
               <Typography><strong>Statut:</strong>
                 <Chip
