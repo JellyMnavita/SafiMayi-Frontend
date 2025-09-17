@@ -20,7 +20,8 @@ import {
   CircularProgress,
   Grid,
   InputLabel,
-  Alert
+  Alert,
+  Snackbar
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -38,6 +39,7 @@ export function UserView() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Search + Filters
   const [searchNom, setSearchNom] = useState("");
@@ -142,26 +144,94 @@ export function UserView() {
       }
 
       if (formData.id) {
+        // Modification - utiliser PUT pour la mise à jour complète
         await axios.put(
           `https://safimayi-backend.onrender.com/api/users/${formData.id}/`,
           formData,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            } 
+          }
         );
+        setSuccessMessage("Utilisateur modifié avec succès");
       } else {
+        // Création
         await axios.post(
           "https://safimayi-backend.onrender.com/api/users/create-list/",
           formData,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            } 
+          }
         );
+        setSuccessMessage("Utilisateur créé avec succès");
       }
+      
       fetchUsers();
       setOpenDialog(false);
       setFormData({});
     } catch (error: any) {
       console.error("Erreur lors de la sauvegarde :", error);
-      setError(error.response?.data?.message || "Erreur lors de la sauvegarde");
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          "Erreur lors de la sauvegarde";
+      setError(errorMessage);
     } finally {
       setSaveLoading(false);
+    }
+  };
+
+  // Supprimer un utilisateur
+  const handleDelete = async () => {
+    try {
+      if (!selectedUser) return;
+      
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `https://safimayi-backend.onrender.com/api/users/${selectedUser.id}/`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      setSuccessMessage("Utilisateur désactivé avec succès");
+      fetchUsers();
+      handleMenuClose();
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression :", error);
+      setError(error.response?.data?.detail || "Erreur lors de la suppression");
+    }
+  };
+
+  // Activer/Désactiver un utilisateur
+  const handleToggleStatus = async () => {
+    try {
+      if (!selectedUser) return;
+      
+      const token = localStorage.getItem("token");
+      const newState = !selectedUser.state;
+      
+      await axios.patch(
+        `https://safimayi-backend.onrender.com/api/users/${selectedUser.id}/`,
+        { state: newState },
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      setSuccessMessage(`Utilisateur ${newState ? "activé" : "désactivé"} avec succès`);
+      fetchUsers();
+      handleMenuClose();
+    } catch (error: any) {
+      console.error("Erreur lors du changement de statut :", error);
+      setError(error.response?.data?.detail || "Erreur lors du changement de statut");
     }
   };
 
@@ -211,10 +281,12 @@ export function UserView() {
               labelId="role-filter-label"
               style={{ minWidth: 120 }}
             >
-           
+              <MenuItem value="">Tous</MenuItem>
               <MenuItem value="client">Client</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="agent">Agent</MenuItem>
+              <MenuItem value="gerant">Gérant</MenuItem>
+              <MenuItem value="owner">Propriétaire</MenuItem>
             </Select>
           </FormControl>
           <Button
@@ -265,7 +337,7 @@ export function UserView() {
                             </span>
                           ) : (
                             <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Banni
+                              Inactif
                             </span>
                           )}
                         </td>
@@ -326,10 +398,13 @@ export function UserView() {
             Modifier
           </MenuItem>
           <MenuItem
-            onClick={() => {
-              console.log("TODO: delete user", selectedUser);
-              handleMenuClose();
-            }}
+            onClick={handleToggleStatus}
+          >
+            {selectedUser?.state ? "Désactiver" : "Activer"}
+          </MenuItem>
+          <MenuItem
+            onClick={handleDelete}
+            sx={{ color: "error.main" }}
           >
             Supprimer
           </MenuItem>
@@ -345,7 +420,7 @@ export function UserView() {
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid  sx={{ width: { xs: '100%' } }} >
+            <Grid sx={{width: '100%'}}>
               <TextField
                 label="Nom complet"
                 name="nom"
@@ -355,7 +430,7 @@ export function UserView() {
                 required
               />
             </Grid>
-            <Grid  sx={{ width: { xs: '100%' } }} >
+            <Grid sx={{width: '100%'}}>
               <TextField
                 label="Email"
                 name="email"
@@ -366,7 +441,7 @@ export function UserView() {
                 required
               />
             </Grid>
-            <Grid sx={{ width: { xs: '100%' } }}  >
+            <Grid sx={{width: '100%'}}>
               <TextField
                 label="Téléphone"
                 name="telephone"
@@ -377,7 +452,7 @@ export function UserView() {
               />
             </Grid>
             {!formData.id && (
-              <Grid sx={{ width: { xs: '100%' } }} >
+              <Grid sx={{width: '100%'}} >
                 <TextField
                   label="Mot de passe"
                   name="password"
@@ -389,7 +464,7 @@ export function UserView() {
                 />
               </Grid>
             )}
-            <Grid sx={{ width: { xs: '100%' } }}>
+            <Grid sx={{width: '100%'}} >
               <FormControl fullWidth>
                 <InputLabel>Rôle</InputLabel>
                 <Select
@@ -401,7 +476,9 @@ export function UserView() {
                 >
                   <MenuItem value="client">Client</MenuItem>
                   <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="agent">Agent</MenuItem>
+                  <MenuItem value="agent">Agent Commercial</MenuItem>
+                  <MenuItem value="gerant">Gérant</MenuItem>
+                  <MenuItem value="owner">Propriétaire</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -421,6 +498,29 @@ export function UserView() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Notifications */}
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError("")}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setError("")}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage("")}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" onClose={() => setSuccessMessage("")}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </DashboardContent>
   );
 }
