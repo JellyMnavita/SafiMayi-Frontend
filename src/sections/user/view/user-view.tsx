@@ -17,7 +17,10 @@ import {
   Select,
   Pagination,
   FormControl,
-  CircularProgress
+  CircularProgress,
+  Grid,
+  InputLabel,
+  Alert
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -34,6 +37,7 @@ interface User {
 export function UserView() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Search + Filters
   const [searchNom, setSearchNom] = useState("");
@@ -50,7 +54,8 @@ export function UserView() {
 
   // Dialog (create/edit)
   const [openDialog, setOpenDialog] = useState(false);
-  const [formData, setFormData] = useState<Partial<User>>({});
+  const [formData, setFormData] = useState<Partial<User & { password: string }>>({});
+  const [saveLoading, setSaveLoading] = useState(false);
 
   // Charger utilisateurs
   const fetchUsers = async () => {
@@ -66,6 +71,7 @@ export function UserView() {
       setUsers(res.data);
     } catch (err) {
       console.error("Erreur lors du chargement des utilisateurs", err);
+      setError("Erreur lors du chargement des utilisateurs");
     } finally {
       setLoading(false);
     }
@@ -99,10 +105,42 @@ export function UserView() {
   };
   const handleMenuClose = () => setAnchorEl(null);
 
+  // Gestionnaire pour les champs TextField
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Gestionnaire spécifique pour les Select
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   // Save (create/update)
   const handleSave = async () => {
     try {
+      setSaveLoading(true);
+      setError("");
       const token = localStorage.getItem("token");
+      
+      // Validation des champs requis
+      if (!formData.nom || !formData.email || !formData.telephone || !formData.role) {
+        setError("Veuillez remplir tous les champs obligatoires");
+        return;
+      }
+
+      // Pour la création, vérifier le mot de passe
+      if (!formData.id && !formData.password) {
+        setError("Le mot de passe est requis pour la création");
+        return;
+      }
+
       if (formData.id) {
         await axios.put(
           `https://safimayi-backend.onrender.com/api/users/${formData.id}/`,
@@ -119,8 +157,11 @@ export function UserView() {
       fetchUsers();
       setOpenDialog(false);
       setFormData({});
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur lors de la sauvegarde :", error);
+      setError(error.response?.data?.message || "Erreur lors de la sauvegarde");
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -138,6 +179,7 @@ export function UserView() {
           onClick={() => {
             setFormData({});
             setOpenDialog(true);
+            setError("");
           }}
         >
           Nouvel utilisateur
@@ -160,10 +202,10 @@ export function UserView() {
             size="small"
           />
           <FormControl size="small">
-
+            <InputLabel>Rôle</InputLabel>
             <Select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => setRoleFilter(e.target.value as string)}
               displayEmpty
               label="Rôle"
             >
@@ -275,6 +317,7 @@ export function UserView() {
             onClick={() => {
               setFormData(selectedUser || {});
               setOpenDialog(true);
+              setError("");
               handleMenuClose();
             }}
           >
@@ -294,44 +337,85 @@ export function UserView() {
       {/* Dialog Ajout / Édition */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>
-          {formData.id ? "Modifier l’utilisateur" : "Nouvel utilisateur"}
+          {formData.id ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
         </DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-          <TextField
-            label="Nom"
-            value={formData.nom || ""}
-            onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label="Email"
-            type="email"
-            value={formData.email || ""}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label="Téléphone"
-            value={formData.telephone || ""}
-            onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-            fullWidth
-          />
-          <FormControl fullWidth>
-
-            <Select
-              value={formData.role || "client"}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            >
-              <MenuItem value="client">Client</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="agent">Agent</MenuItem>
-            </Select>
-          </FormControl>
+        <DialogContent sx={{ mt: 2 }}>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid  sx={{ width: { xs: '100%' } }} >
+              <TextField
+                label="Nom complet"
+                name="nom"
+                value={formData.nom || ""}
+                onChange={handleInputChange}
+                fullWidth
+                required
+              />
+            </Grid>
+            <Grid  sx={{ width: { xs: '100%' } }} >
+              <TextField
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email || ""}
+                onChange={handleInputChange}
+                fullWidth
+                required
+              />
+            </Grid>
+            <Grid sx={{ width: { xs: '100%' } }}  >
+              <TextField
+                label="Téléphone"
+                name="telephone"
+                value={formData.telephone || ""}
+                onChange={handleInputChange}
+                fullWidth
+                required
+              />
+            </Grid>
+            {!formData.id && (
+              <Grid sx={{ width: { xs: '100%' } }} >
+                <TextField
+                  label="Mot de passe"
+                  name="password"
+                  type="password"
+                  value={formData.password || ""}
+                  onChange={handleInputChange}
+                  fullWidth
+                  required={!formData.id}
+                />
+              </Grid>
+            )}
+            <Grid sx={{ width: { xs: '100%' } }}>
+              <FormControl fullWidth>
+                <InputLabel>Rôle</InputLabel>
+                <Select
+                  name="role"
+                  value={formData.role || "client"}
+                  label="Rôle"
+                  onChange={(e) => handleSelectChange("role", e.target.value as string)}
+                  required
+                >
+                  <MenuItem value="client">Client</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="agent">Agent</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
-          <Button variant="contained" onClick={handleSave}>
-            Enregistrer
+          <Button onClick={() => setOpenDialog(false)} disabled={saveLoading}>
+            Annuler
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSave}
+            disabled={saveLoading}
+            startIcon={saveLoading ? <CircularProgress size={16} /> : null}
+          >
+            {saveLoading ? "Enregistrement..." : "Enregistrer"}
           </Button>
         </DialogActions>
       </Dialog>
