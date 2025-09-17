@@ -202,12 +202,13 @@ export function UserView() {
             size="small"
           />
           <FormControl size="small">
-            <InputLabel>Rôle</InputLabel>
+            <InputLabel id="role-filter-label">Rôle</InputLabel>
             <Select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as string)}
               displayEmpty
               label="Rôle"
+              labelId="role-filter-label"
             >
               <MenuItem value="">Tous</MenuItem>
               <MenuItem value="client">Client</MenuItem>
