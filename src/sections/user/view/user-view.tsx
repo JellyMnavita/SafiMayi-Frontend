@@ -209,6 +209,7 @@ export function UserView() {
               displayEmpty
               label="Rôle"
               labelId="role-filter-label"
+              style={{ minWidth: 120 }}
             >
            
               <MenuItem value="client">Client</MenuItem>
