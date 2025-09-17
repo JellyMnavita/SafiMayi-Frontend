@@ -16,6 +16,13 @@ import { IconButton } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import '../../../index.css';
+
+import useMediaQuery from '@mui/material/useMediaQuery';
+
 interface VenteDetail {
   id: number;
   compteur: number | null;
@@ -131,7 +138,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Grid container spacing={2} sx={{ mt: 2}}>
+      <Grid container spacing={2} sx={{ mt: 2 }}>
         <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
@@ -188,14 +195,14 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             </Select>
           </FormControl>
         </Grid>
-        
+
       </Grid>
 
-      <DialogActions sx={{ px: 0, mt: 2}}>
+      <DialogActions sx={{ px: 0, mt: 2 }}>
         <Button onClick={onCancel}>Annuler</Button>
-        <Button 
-          type="submit" 
-          variant="contained" 
+        <Button
+          type="submit"
+          variant="contained"
           disabled={loading}
           startIcon={loading ? <CircularProgress size={16} /> : <PersonAddIcon />}
         >
@@ -236,6 +243,9 @@ export function VenteView() {
   const [rfids, setRfids] = useState<RFID[]>([]);
   const [selectedProduits, setSelectedProduits] = useState<any[]>([]);
   const [montantPaye, setMontantPaye] = useState<number>(0);
+
+  const isMobile = useMediaQuery('(max-width:768px)');
+  const isTablet = useMediaQuery('(max-width:1200px)');
 
   const fetchVentes = async (pageNumber = 1) => {
     try {
@@ -412,6 +422,26 @@ export function VenteView() {
     return "Anonyme";
   };
 
+  const settings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: isMobile ? 1 : isTablet ? 2 : 4, // Ajusté pour afficher 4 cartes
+    slidesToScroll: 1,
+    arrows: true,
+    responsive: [
+      {
+        breakpoint: 1200,
+        settings: { slidesToShow: 2 },
+      },
+      {
+        breakpoint: 768,
+        settings: { slidesToShow: 1 },
+      },
+    ],
+  };
+
+
   return (
     <DashboardContent>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3, flexWrap: "wrap" }}>
@@ -432,30 +462,32 @@ export function VenteView() {
         </Box>
       ) : (
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Total ventes</Typography>
-              <Typography variant="h5">{displayStats.total_ventes}</Typography>
-            </Card>
-          </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Montant calculé</Typography>
-              <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
-            </Card>
-          </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Par RFID</Typography>
-              <Typography variant="h5">{displayStats.ventes_rfid}</Typography>
-            </Card>
-          </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Par Compteur</Typography>
-              <Typography variant="h5">{displayStats.ventes_compteur}</Typography>
-            </Card>
-          </Grid>
+          <Slider {...settings}>
+            <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">Total ventes</Typography>
+                <Typography variant="h5">{displayStats.total_ventes}</Typography>
+              </Card>
+            </Grid>
+            <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">Montant calculé</Typography>
+                <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
+              </Card>
+            </Grid>
+            <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">Par RFID</Typography>
+                <Typography variant="h5">{displayStats.ventes_rfid}</Typography>
+              </Card>
+            </Grid>
+            <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">Par Compteur</Typography>
+                <Typography variant="h5">{displayStats.ventes_compteur}</Typography>
+              </Card>
+            </Grid>
+          </Slider>
         </Grid>
       )}
 
@@ -635,16 +667,16 @@ export function VenteView() {
                     }}
                     onInputChange={(_, v) => setSearchUser(v)}
                     renderInput={(params) => (
-                      <TextField 
-                        {...params} 
-                        label="Rechercher un utilisateur" 
+                      <TextField
+                        {...params}
+                        label="Rechercher un utilisateur"
                         helperText="Tapez au moins 3 caractères pour rechercher"
                       />
                     )}
                   />
                 </>
               ) : (
-                <CreateUserForm 
+                <CreateUserForm
                   onUserCreated={handleUserCreated}
                   onCancel={() => setUserCreationTab(0)}
                 />
@@ -772,17 +804,17 @@ export function VenteView() {
             <>
               <Button disabled={activeStep === 0} onClick={() => setActiveStep(activeStep - 1)}>Retour</Button>
               {activeStep < steps.length - 1 ? (
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   onClick={() => setActiveStep(activeStep + 1)}
                   disabled={!nomAcheteur || !telAcheteur}
                 >
                   Suivant
                 </Button>
               ) : (
-                <Button 
-                  variant="contained" 
-                  color="success" 
+                <Button
+                  variant="contained"
+                  color="success"
                   onClick={handleSave}
                   disabled={selectedProduits.length === 0}
                 >
