@@ -11,3 +11,4 @@ export { default as CreateRfidPage } from './create-rfid';
 export { default as CompteurPage } from './compteur';
 export { default as RfidPage } from './rfid';
 export { default as VenteView } from './vente';
+export { default as JournauxView } from './journaux_system';
