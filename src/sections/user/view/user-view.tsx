@@ -210,7 +210,7 @@ export function UserView() {
               label="Rôle"
               labelId="role-filter-label"
             >
-              <MenuItem value="">Tous</MenuItem>
+           
               <MenuItem value="client">Client</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="agent">Agent</MenuItem>
