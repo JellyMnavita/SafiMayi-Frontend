@@ -133,15 +133,41 @@ export function JournauxView() {
     speed: 500,
     slidesToShow: isMobile ? 1 : isTablet ? 2 : 4,
     slidesToScroll: 1,
-    arrows: true,
+    arrows: !isMobile,
+    adaptiveHeight: true,
+    centerMode: false,
     responsive: [
       {
         breakpoint: 1200,
-        settings: { slidesToShow: 2 },
+        settings: {
+          slidesToShow: 2,
+          arrows: true,
+          dots: true
+        },
+      },
+      {
+        breakpoint: 900,
+        settings: {
+          slidesToShow: 2,
+          arrows: false,
+          dots: true
+        },
       },
       {
         breakpoint: 768,
-        settings: { slidesToShow: 1 },
+        settings: {
+          slidesToShow: 1,
+          arrows: false,
+          dots: true
+        },
+      },
+      {
+        breakpoint: 480,
+        settings: {
+          slidesToShow: 1,
+          arrows: false,
+          dots: true
+        },
       },
     ],
   };
@@ -208,13 +234,13 @@ export function JournauxView() {
 
       setAllConsommations(response.data);
       setConsommations(response.data);
-      
+
       // Calculer les statistiques des consommations
       const totalConsommations = response.data.length;
       const totalLitres = response.data.reduce((sum: number, c: Consommation) => sum + c.litres, 0);
       const rfidCount = response.data.filter((c: Consommation) => c.type === "RFID").length;
       const accessCodeCount = response.data.filter((c: Consommation) => c.type === "Code d'accès").length;
-      
+
       setStatsConsommations({
         total: totalConsommations,
         total_litres: totalLitres,
@@ -477,7 +503,6 @@ export function JournauxView() {
             >
               <MenuItem value="">Tous les moyens</MenuItem>
               <MenuItem value="mobile">Mobile</MenuItem>
-              <MenuItem value="carte">Carte RFID</MenuItem>
             </Select>
           ) : activeTab === 1 ? (
             <>
@@ -554,7 +579,20 @@ export function JournauxView() {
 
       {/* Statistiques avec Slider */}
       {(activeTab === 1 || activeTab === 2) && (
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{
+          mb: 3,
+          '& .slick-slide': {
+            display: 'flex',
+            justifyContent: 'center'
+          },
+          '& .slick-list': {
+            margin: '0 -8px'
+          },
+          '& .slick-slide > div': {
+            padding: '0 8px',
+            width: '100%'
+          }
+        }}>
           <Slider {...sliderSettings}>
             {activeTab === 1 ? (
               <>
@@ -566,6 +604,7 @@ export function JournauxView() {
                     suffix=" FC"
                     isCurrency={true}
                     icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
                 <div>
@@ -574,6 +613,7 @@ export function JournauxView() {
                     total={statsPaiements.reussis || 0}
                     color="success"
                     icon={<img alt="Success" src="/assets/icons/glass/ic-glass-checkmark.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
                 <div>
@@ -582,6 +622,7 @@ export function JournauxView() {
                     total={statsPaiements.en_attente || 0}
                     color="warning"
                     icon={<img alt="Pending" src="/assets/icons/glass/ic-glass-clock.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
                 <div>
@@ -590,6 +631,7 @@ export function JournauxView() {
                     total={statsPaiements.echecs || 0}
                     color="error"
                     icon={<img alt="Failed" src="/assets/icons/glass/ic-glass-close.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
               </>
@@ -601,6 +643,7 @@ export function JournauxView() {
                     total={statsConsommations.total || 0}
                     color="primary"
                     icon={<img alt="Total" src="/assets/icons/glass/ic-glass-bag.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
                 <div>
@@ -610,6 +653,7 @@ export function JournauxView() {
                     color="success"
                     suffix=" L"
                     icon={<img alt="Water" src="/assets/icons/glass/ic-glass-message.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
                 <div>
@@ -618,6 +662,7 @@ export function JournauxView() {
                     total={statsConsommations.rfid_count || 0}
                     color="info"
                     icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-users.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
                 <div>
@@ -626,6 +671,7 @@ export function JournauxView() {
                     total={statsConsommations.access_code_count || 0}
                     color="warning"
                     icon={<img alt="Access Code" src="/assets/icons/glass/ic-glass-key.svg" />}
+                    sx={{ height: '100%' }}
                   />
                 </div>
               </>
@@ -785,8 +831,8 @@ export function JournauxView() {
                               </td>
                               <td className="p-2 border-b">{consommation.litres} L</td>
                               <td className="p-2 border-b">
-                                <Chip 
-                                  label={consommation.type} 
+                                <Chip
+                                  label={consommation.type}
                                   color={getTypeColor(consommation.type) as any}
                                   size="small"
                                 />
@@ -800,8 +846,8 @@ export function JournauxView() {
                               <td className="p-2 border-b">{consommation.utilisateur_telephone || "N/A"}</td>
                               <td className="p-2 border-b">
                                 {consommation.access_code ? (
-                                  <Chip 
-                                    label={consommation.access_code} 
+                                  <Chip
+                                    label={consommation.access_code}
                                     color={consommation.access_code_status === "valide" ? "success" : "default"}
                                     size="small"
                                   />
@@ -843,11 +889,10 @@ export function JournauxView() {
                 }}
               >
                 <Typography variant="body2">
-                  {`Affichage de ${paginatedData.length} sur ${totalItems} ${
-                    activeTab === 0 ? 'recharges' : 
-                    activeTab === 1 ? 'paiements' : 
-                    'consommations'
-                  }`}
+                  {`Affichage de ${paginatedData.length} sur ${totalItems} ${activeTab === 0 ? 'recharges' :
+                    activeTab === 1 ? 'paiements' :
+                      'consommations'
+                    }`}
                 </Typography>
                 <Pagination
                   count={Math.ceil(totalItems / pageSize)}
@@ -927,8 +972,8 @@ export function JournauxView() {
               <Typography><strong>Compteur:</strong> {selectedItem.compteur_nom} ({selectedItem.compteur_code_serie})</Typography>
               <Typography><strong>Litres consommés:</strong> {selectedItem.litres} L</Typography>
               <Typography><strong>Type:</strong>
-                <Chip 
-                  label={selectedItem.type} 
+                <Chip
+                  label={selectedItem.type}
                   color={getTypeColor(selectedItem.type) as any}
                   size="small"
                   sx={{ ml: 1 }}
@@ -954,7 +999,7 @@ export function JournauxView() {
                   <Typography><strong>Litres demandés:</strong> {selectedItem.access_code_litres_demandes || 0} L</Typography>
                   <Typography><strong>Créé le:</strong> {selectedItem.access_code_created_at ? formatDate(selectedItem.access_code_created_at) : "Non disponible"}</Typography>
                   <Typography><strong>Expire le:</strong> {selectedItem.access_code_expire_at ? formatDate(selectedItem.access_code_expire_at) : "Non disponible"}</Typography>
-                  
+
                   {selectedItem.access_code_compteur_nom && (
                     <Typography><strong>Compteur cible:</strong> {selectedItem.access_code_compteur_nom} ({selectedItem.access_code_compteur_code_serie})</Typography>
                   )}
