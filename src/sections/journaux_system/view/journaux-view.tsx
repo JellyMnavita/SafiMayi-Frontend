@@ -595,7 +595,7 @@ export function JournauxView() {
         }}>
           <Slider {...sliderSettings}>
             {activeTab === 1 ? (
-              <>
+              <div style={{ display: 'flex', gap: 16 }}>
                 <div>
                   <AnalyticsWidgetSummary
                     title="Montant Total"
@@ -634,7 +634,7 @@ export function JournauxView() {
                     sx={{ height: '100%' }}
                   />
                 </div>
-              </>
+              </div>
             ) : (
               <>
                 <div>
