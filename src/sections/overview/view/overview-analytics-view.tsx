@@ -17,7 +17,7 @@ interface StatsResponse {
   litrage: { total_recharges_litres: number; total_consomme_litres: number; total_disponible_litres: number };
   paiements: { montant_total: number; nombre_transactions: number };
   ventes: { nombre_total: number; montant_total: number; payees: number; acomptes: number };
-  year_range: string;
+ 
 }
 
 interface GraphStatsResponse {
@@ -26,6 +26,7 @@ interface GraphStatsResponse {
     total_consommation_litres: number;
     total_recharge_litres: number;
   }[];
+   year_range: string;
 }
 
 export function OverviewAnalyticsView() {
@@ -44,7 +45,7 @@ export function OverviewAnalyticsView() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setStats(res.data);
-        setYearRange(res.data.year_range || '');
+        
         console.log('Stats récupérées:', res.data);
       } catch (error) {
         console.error('Erreur lors de la récupération des stats:', error);
@@ -58,6 +59,7 @@ export function OverviewAnalyticsView() {
           'https://safimayi-backend.onrender.com/api/compteur/global/last-date-stat/',
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        setYearRange(res.data.year_range || '');
         setGraphStats(res.data);
       } catch (error) {
         console.error('Erreur lors de la récupération des graph_stats:', error);
