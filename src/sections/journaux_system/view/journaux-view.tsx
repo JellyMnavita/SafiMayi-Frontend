@@ -593,90 +593,90 @@ export function JournauxView() {
             width: '100%'
           }
         }}>
-         
-            {activeTab === 1 ? (
-              <Slider {...sliderSettings}>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="Montant Total"
-                    total={statsPaiements.montant_total || 0}
-                    color="primary"
-                    suffix=" FC"
-                    isCurrency={true}
-                    icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="Paiements Réussis"
-                    total={statsPaiements.reussis || 0}
-                    color="success"
-                    icon={<img alt="Success" src="/assets/icons/glass/ic-glass-checkmark.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="En Attente"
-                    total={statsPaiements.en_attente || 0}
-                    color="warning"
-                    icon={<img alt="Pending" src="/assets/icons/glass/ic-glass-clock.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="Échoués"
-                    total={statsPaiements.echecs || 0}
-                    color="error"
-                    icon={<img alt="Failed" src="/assets/icons/glass/ic-glass-close.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-                 </Slider>
-            ) : (
-              <Slider {...sliderSettings}>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="Total Consommations"
-                    total={statsConsommations.total || 0}
-                    color="primary"
-                    icon={<img alt="Total" src="/assets/icons/glass/ic-glass-bag.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="Litres Total"
-                    total={statsConsommations.total_litres || 0}
-                    color="success"
-                    suffix=" L"
-                    icon={<img alt="Water" src="/assets/icons/glass/ic-glass-message.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="Consommations RFID"
-                    total={statsConsommations.rfid_count || 0}
-                    color="info"
-                    icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-users.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-                <div>
-                  <AnalyticsWidgetSummary
-                    title="Codes d'Accès"
-                    total={statsConsommations.access_code_count || 0}
-                    color="warning"
-                    icon={<img alt="Access Code" src="/assets/icons/glass/ic-glass-key.svg" />}
-                    sx={{ height: '100%' }}
-                  />
-                </div>
-               </Slider>
-            )}
-         
+
+          {activeTab === 1 ? (
+            <Slider {...sliderSettings}>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="Montant Total"
+                  total={statsPaiements.montant_total || 0}
+                  color="primary"
+                  suffix=" FC"
+                  isCurrency={true}
+                  icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="Paiements Réussis"
+                  total={statsPaiements.reussis || 0}
+                  color="success"
+                  icon={<img alt="Success" src="/assets/icons/glass/ic-glass-checkmark.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="En Attente"
+                  total={statsPaiements.en_attente || 0}
+                  color="warning"
+                  icon={<img alt="Pending" src="/assets/icons/glass/ic-glass-clock.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="Échoués"
+                  total={statsPaiements.echecs || 0}
+                  color="error"
+                  icon={<img alt="Failed" src="/assets/icons/glass/ic-glass-close.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+            </Slider>
+          ) : (
+            <Slider {...sliderSettings}>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="Total Consommations"
+                  total={statsConsommations.total || 0}
+                  color="primary"
+                  icon={<img alt="Total" src="/assets/icons/glass/ic-glass-bag.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="Litres Total"
+                  total={statsConsommations.total_litres || 0}
+                  color="success"
+                  suffix=" L"
+                  icon={<img alt="Water" src="/assets/icons/glass/ic-glass-message.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="Consommations RFID"
+                  total={statsConsommations.rfid_count || 0}
+                  color="info"
+                  icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-users.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+              <div>
+                <AnalyticsWidgetSummary
+                  title="Codes d'Accès"
+                  total={statsConsommations.access_code_count || 0}
+                  color="warning"
+                  icon={<img alt="Access Code" src="/assets/icons/glass/ic-glass-key.svg" />}
+                  sx={{ height: '100%' }}
+                />
+              </div>
+            </Slider>
+          )}
+
         </Box>
       )}
 
