@@ -17,6 +17,7 @@ interface StatsResponse {
   litrage: { total_recharges_litres: number; total_consomme_litres: number; total_disponible_litres: number };
   paiements: { montant_total: number; nombre_transactions: number };
   ventes: { nombre_total: number; montant_total: number; payees: number; acomptes: number };
+  year_range: string;
 }
 
 interface GraphStatsResponse {
@@ -30,7 +31,7 @@ interface GraphStatsResponse {
 export function OverviewAnalyticsView() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [graphStats, setGraphStats] = useState<GraphStatsResponse | null>(null);
-
+  const [yearRange, setYearRange] = useState<string>('');
   const isMobile = useMediaQuery('(max-width:768px)');
   const isTablet = useMediaQuery('(max-width:1200px)');
 
@@ -43,6 +44,7 @@ export function OverviewAnalyticsView() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setStats(res.data);
+        setYearRange(res.data.year_range || '');
         console.log('Stats récupérées:', res.data);
       } catch (error) {
         console.error('Erreur lors de la récupération des stats:', error);
@@ -162,7 +164,7 @@ const chartData = graphStats
            <Grid style={{ marginTop: '25px' }} size={{  xs: 12, md: 6, lg: 8 }}>
             <AnalyticsWebsiteVisits
               title="Statistiques Globales de Consommation et de Recharge"
-              subheader="Dernières consommations"
+              subheader={`Dernières consommations et recharges ${yearRange}`}
               chart={chartData}
             />
           </Grid>
