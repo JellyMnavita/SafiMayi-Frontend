@@ -281,7 +281,7 @@ export function UserView() {
               labelId="role-filter-label"
               style={{ minWidth: 120 }}
             >
-              <MenuItem value="">Tous</MenuItem>
+             
               <MenuItem value="client">Client</MenuItem>
               <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="agent">Agent</MenuItem>
