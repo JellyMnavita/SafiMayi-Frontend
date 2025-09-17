@@ -4,7 +4,7 @@ import axios from "axios";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Chip, Tabs, Tab
 } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -19,37 +19,72 @@ interface Recharge {
   Moyen: string;
 }
 
+interface Paiement {
+  id: number;
+  montant: number;
+  telephone: string;
+  operateur: string;
+  id_transaction_ext: string;
+  litres_credite: number;
+  statut: string;
+  created_at: string;
+  utilisateur_nom: string;
+  utilisateur_email: string;
+  utilisateur_telephone: string;
+  rfid_uid: string;
+  raw_response: any;
+}
+
 export function JournauxView() {
+  const [activeTab, setActiveTab] = useState(0);
+  
+  // États pour les recharges
   const [allRecharges, setAllRecharges] = useState<Recharge[]>([]);
   const [recharges, setRecharges] = useState<Recharge[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingRecharges, setLoadingRecharges] = useState<boolean>(true);
+  
+  // États pour les paiements
+  const [allPaiements, setAllPaiements] = useState<Paiement[]>([]);
+  const [paiements, setPaiements] = useState<Paiement[]>([]);
+  const [loadingPaiements, setLoadingPaiements] = useState<boolean>(true);
+  const [statsPaiements, setStatsPaiements] = useState<any>({});
 
   // Pagination
   const [page, setPage] = useState<number>(1);
-  const [pageSize] = useState<number>(5);
+  const [pageSize] = useState<number>(10);
 
-  // Filtres
+  // Filtres communs
   const [searchUtilisateur, setSearchUtilisateur] = useState<string>("");
   const [searchTelephone, setSearchTelephone] = useState<string>("");
+  
+  // Filtres spécifiques aux recharges
   const [moyenFilter, setMoyenFilter] = useState<string>("");
+  
+  // Filtres spécifiques aux paiements
+  const [statutFilter, setStatutFilter] = useState<string>("");
+  const [operateurFilter, setOperateurFilter] = useState<string>("");
+  const [searchRFID, setSearchRFID] = useState<string>("");
 
   // Menu actions
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedRecharge, setSelectedRecharge] = useState<Recharge | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Recharge | Paiement | null>(null);
+  const [itemType, setItemType] = useState<'recharge' | 'paiement' | null>(null);
 
   // Dialog pour voir les détails
   const [openDialog, setOpenDialog] = useState(false);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, recharge: Recharge) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, item: Recharge | Paiement, type: 'recharge' | 'paiement') => {
     setAnchorEl(event.currentTarget);
-    setSelectedRecharge(recharge);
+    setSelectedItem(item);
+    setItemType(type);
   };
+  
   const handleMenuClose = () => setAnchorEl(null);
 
   // Charger les recharges
   const fetchRecharges = async () => {
     try {
-      setLoading(true);
+      setLoadingRecharges(true);
       const token = localStorage.getItem("token");
 
       const response = await axios.get(
@@ -62,15 +97,40 @@ export function JournauxView() {
     } catch (error) {
       console.error("Erreur lors du chargement des recharges :", error);
     } finally {
-      setLoading(false);
+      setLoadingRecharges(false);
+    }
+  };
+
+  // Charger les paiements
+  const fetchPaiements = async () => {
+    try {
+      setLoadingPaiements(true);
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(
+        `https://safimayi-backend.onrender.com/api/paiements/all/`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setAllPaiements(response.data.paiements);
+      setPaiements(response.data.paiements);
+      setStatsPaiements(response.data.statistiques || {});
+    } catch (error) {
+      console.error("Erreur lors du chargement des paiements :", error);
+    } finally {
+      setLoadingPaiements(false);
     }
   };
 
   useEffect(() => {
-    fetchRecharges();
-  }, []);
+    if (activeTab === 0) {
+      fetchRecharges();
+    } else {
+      fetchPaiements();
+    }
+  }, [activeTab]);
 
-  // Filtrage local
+  // Filtrage local des recharges
   useEffect(() => {
     let filtered = [...allRecharges];
 
@@ -94,8 +154,47 @@ export function JournauxView() {
     setPage(1);
   }, [searchUtilisateur, searchTelephone, moyenFilter, allRecharges]);
 
+  // Filtrage local des paiements
+  useEffect(() => {
+    let filtered = [...allPaiements];
+
+    if (searchUtilisateur) {
+      filtered = filtered.filter((p) =>
+        p.utilisateur_nom && p.utilisateur_nom.toLowerCase().includes(searchUtilisateur.toLowerCase())
+      );
+    }
+    if (searchTelephone) {
+      filtered = filtered.filter((p) =>
+        p.telephone.toLowerCase().includes(searchTelephone.toLowerCase())
+      );
+    }
+    if (statutFilter) {
+      filtered = filtered.filter((p) => p.statut === statutFilter);
+    }
+    if (operateurFilter) {
+      filtered = filtered.filter((p) => p.operateur === operateurFilter);
+    }
+    if (searchRFID) {
+      filtered = filtered.filter((p) =>
+        p.rfid_uid && p.rfid_uid.toLowerCase().includes(searchRFID.toLowerCase())
+      );
+    }
+
+    setPaiements(filtered);
+    setPage(1);
+  }, [searchUtilisateur, searchTelephone, statutFilter, operateurFilter, searchRFID, allPaiements]);
+
   // Pagination locale
-  const paginatedData = recharges.slice((page - 1) * pageSize, page * pageSize);
+  const getPaginatedData = () => {
+    if (activeTab === 0) {
+      return recharges.slice((page - 1) * pageSize, page * pageSize);
+    } else {
+      return paiements.slice((page - 1) * pageSize, page * pageSize);
+    }
+  };
+
+  const paginatedData = getPaginatedData();
+  const totalItems = activeTab === 0 ? recharges.length : paiements.length;
 
   // Formater la date pour l'affichage
   const formatDate = (dateString: string) => {
@@ -109,22 +208,77 @@ export function JournauxView() {
     });
   };
 
+  // Obtenir la couleur du statut
+  const getStatusColor = (statut: string) => {
+    switch (statut) {
+      case 'success': return 'success';
+      case 'pending': return 'warning';
+      case 'failed': return 'error';
+      default: return 'default';
+    }
+  };
+
+  // Obtenir le texte du statut
+  const getStatusText = (statut: string) => {
+    switch (statut) {
+      case 'success': return 'Réussi';
+      case 'pending': return 'En attente';
+      case 'failed': return 'Échoué';
+      default: return statut;
+    }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+    setPage(1);
+    // Réinitialiser les filtres spécifiques
+    setMoyenFilter("");
+    setStatutFilter("");
+    setOperateurFilter("");
+    setSearchRFID("");
+  };
+
+  const resetAllFilters = () => {
+    setSearchUtilisateur("");
+    setSearchTelephone("");
+    setMoyenFilter("");
+    setStatutFilter("");
+    setOperateurFilter("");
+    setSearchRFID("");
+  };
+
+  const refreshData = () => {
+    if (activeTab === 0) {
+      fetchRecharges();
+    } else {
+      fetchPaiements();
+    }
+  };
+
   return (
     <DashboardContent>
-      <Box sx={{ mb: 5, display: "flex", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Historique des Recharges
+          Journaux
         </Typography>
         <Button
           variant="contained"
           color="inherit"
           startIcon={<Iconify icon="solar:restart-bold" />}
-          onClick={fetchRecharges}
+          onClick={refreshData}
         >
           Actualiser
         </Button>
       </Box>
-      
+
+      {/* Onglets */}
+      <Card sx={{ mb: 3 }}>
+        <Tabs value={activeTab} onChange={handleTabChange} centered>
+          <Tab label="Journal des Recharges" />
+          <Tab label="Journal des Paiements" />
+        </Tabs>
+      </Card>
+
       {/* Filtres */}
       <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -140,80 +294,199 @@ export function JournauxView() {
             onChange={(e) => setSearchTelephone(e.target.value)}
             size="small"
           />
-          <Select
-            value={moyenFilter}
-            onChange={(e) => setMoyenFilter(e.target.value)}
-            displayEmpty
-            size="small"
-          >
-            <MenuItem value="">Tous les moyens</MenuItem>
-            <MenuItem value="mobile">Mobile</MenuItem>
-            <MenuItem value="carte">Carte RFID</MenuItem>
-          </Select>
+          
+          {activeTab === 0 ? (
+            <Select
+              value={moyenFilter}
+              onChange={(e) => setMoyenFilter(e.target.value)}
+              displayEmpty
+              size="small"
+            >
+              <MenuItem value="">Tous les moyens</MenuItem>
+              <MenuItem value="mobile">Mobile</MenuItem>
+              <MenuItem value="carte">Carte RFID</MenuItem>
+            </Select>
+          ) : (
+            <>
+              <Select
+                value={statutFilter}
+                onChange={(e) => setStatutFilter(e.target.value)}
+                displayEmpty
+                size="small"
+              >
+                <MenuItem value="">Tous les statuts</MenuItem>
+                <MenuItem value="success">Réussi</MenuItem>
+                <MenuItem value="pending">En attente</MenuItem>
+                <MenuItem value="failed">Échoué</MenuItem>
+              </Select>
+              <Select
+                value={operateurFilter}
+                onChange={(e) => setOperateurFilter(e.target.value)}
+                displayEmpty
+                size="small"
+              >
+                <MenuItem value="">Tous les opérateurs</MenuItem>
+                <MenuItem value="mpesa">M-Pesa</MenuItem>
+                <MenuItem value="airtel">Airtel Money</MenuItem>
+                <MenuItem value="orange">Orange Money</MenuItem>
+              </Select>
+              <TextField
+                label="Carte RFID"
+                value={searchRFID}
+                onChange={(e) => setSearchRFID(e.target.value)}
+                size="small"
+              />
+            </>
+          )}
+          
           <Button
             variant="outlined"
-            onClick={() => {
-              setSearchUtilisateur("");
-              setSearchTelephone("");
-              setMoyenFilter("");
-            }}
+            onClick={resetAllFilters}
           >
             Réinitialiser
           </Button>
         </Box>
       </Card>
 
+      {/* Statistiques des paiements (seulement sur l'onglet paiements) */}
+      {activeTab === 1 && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <Card sx={{ p: 2, minWidth: 200 }}>
+            <Typography variant="h6">Total: {statsPaiements.total || 0}</Typography>
+            <Typography variant="body2">Paiements</Typography>
+          </Card>
+          <Card sx={{ p: 2, minWidth: 200, bgcolor: 'success.light' }}>
+            <Typography variant="h6">{statsPaiements.reussis || 0}</Typography>
+            <Typography variant="body2">Réussis</Typography>
+          </Card>
+          <Card sx={{ p: 2, minWidth: 200, bgcolor: 'warning.light' }}>
+            <Typography variant="h6">{statsPaiements.en_attente || 0}</Typography>
+            <Typography variant="body2">En attente</Typography>
+          </Card>
+          <Card sx={{ p: 2, minWidth: 200, bgcolor: 'error.light' }}>
+            <Typography variant="h6">{statsPaiements.echecs || 0}</Typography>
+            <Typography variant="body2">Échoués</Typography>
+          </Card>
+          <Card sx={{ p: 2, minWidth: 200 }}>
+            <Typography variant="h6">{statsPaiements.montant_total ? `${statsPaiements.montant_total.toFixed(2)} $` : '0 $'}</Typography>
+            <Typography variant="body2">Montant total</Typography>
+          </Card>
+          <Card sx={{ p: 2, minWidth: 200 }}>
+            <Typography variant="h6">{statsPaiements.litres_total ? `${statsPaiements.litres_total.toFixed(2)} L` : '0 L'}</Typography>
+            <Typography variant="body2">Litres total</Typography>
+          </Card>
+        </Box>
+      )}
+
       {/* Tableau */}
       <Card>
         <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
-          {loading ? (
+          {((activeTab === 0 && loadingRecharges) || (activeTab === 1 && loadingPaiements)) ? (
             <div className="flex justify-center items-center py-10">
               <CircularProgress />
             </div>
           ) : (
             <>
-              <table className="w-full border-collapse min-w-[800px]">
-                <thead>
-                  <tr className="bg-gray-100 text-left text-sm">
-                    <th className="p-2 border-b">Date</th>
-                    <th className="p-2 border-b">Utilisateur</th>
-                    <th className="p-2 border-b">Téléphone</th>
-                    <th className="p-2 border-b">Carte RFID</th>
-                    <th className="p-2 border-b">Litres</th>
-                    <th className="p-2 border-b">Moyen</th>
-                    <th className="p-2 border-b text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.length > 0 ? (
-                    paginatedData.map((recharge, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="p-2 border-b">{formatDate(recharge.Date)}</td>
-                        <td className="p-2 border-b">{recharge.Utilisateur}</td>
-                        <td className="p-2 border-b">{recharge.Telephone}</td>
-                        <td className="p-2 border-b">{recharge["Carte RFID"] || "-"}</td>
-                        <td className="p-2 border-b">{recharge.Litre.toFixed(1)} L</td>
-                        <td className="p-2 border-b">
-                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                            {recharge.Moyen}
-                          </span>
-                        </td>
-                        <td className="p-2 border-b text-center">
-                          <IconButton onClick={(e) => handleMenuOpen(e, recharge)}>
-                            <Iconify icon="eva:more-vertical-fill" />
-                          </IconButton>
+              {activeTab === 0 ? (
+                <table className="w-full border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="bg-gray-100 text-left text-sm">
+                      <th className="p-2 border-b">Date</th>
+                      <th className="p-2 border-b">Utilisateur</th>
+                      <th className="p-2 border-b">Téléphone</th>
+                      <th className="p-2 border-b">Carte RFID</th>
+                      <th className="p-2 border-b">Litres</th>
+                      <th className="p-2 border-b">Moyen</th>
+                      <th className="p-2 border-b text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedData.length > 0 ? (
+                      paginatedData.map((recharge, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="p-2 border-b">{formatDate((recharge as Recharge).Date)}</td>
+                          <td className="p-2 border-b">{(recharge as Recharge).Utilisateur}</td>
+                          <td className="p-2 border-b">{(recharge as Recharge).Telephone}</td>
+                          <td className="p-2 border-b">{(recharge as Recharge)["Carte RFID"] || "-"}</td>
+                          <td className="p-2 border-b">{(recharge as Recharge).Litre.toFixed(1)} L</td>
+                          <td className="p-2 border-b">
+                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                              {(recharge as Recharge).Moyen}
+                            </span>
+                          </td>
+                          <td className="p-2 border-b text-center">
+                            <IconButton onClick={(e) => handleMenuOpen(e, recharge, 'recharge')}>
+                              <Iconify icon="eva:more-vertical-fill" />
+                            </IconButton>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="text-center text-gray-500 py-6">
+                          Aucune recharge trouvée
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="text-center text-gray-500 py-6">
-                        Aucune recharge trouvée
-                      </td>
+                    )}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="w-full border-collapse min-w-[1100px]">
+                  <thead>
+                    <tr className="bg-gray-100 text-left text-sm">
+                      <th className="p-2 border-b">Date</th>
+                      <th className="p-2 border-b">Utilisateur</th>
+                      <th className="p-2 border-b">Téléphone</th>
+                      <th className="p-2 border-b">Carte RFID</th>
+                      <th className="p-2 border-b">Opérateur</th>
+                      <th className="p-2 border-b">Montant</th>
+                      <th className="p-2 border-b">Litres</th>
+                      <th className="p-2 border-b">Statut</th>
+                      <th className="p-2 border-b">Transaction ID</th>
+                      <th className="p-2 border-b text-center">Actions</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedData.length > 0 ? (
+                      paginatedData.map((paiement) => (
+                        <tr key={(paiement as Paiement).id} className="hover:bg-gray-50">
+                          <td className="p-2 border-b">{formatDate((paiement as Paiement).created_at)}</td>
+                          <td className="p-2 border-b">
+                            {(paiement as Paiement).utilisateur_nom || 'N/A'}
+                            {(paiement as Paiement).utilisateur_email && (
+                              <div className="text-xs text-gray-500">{(paiement as Paiement).utilisateur_email}</div>
+                            )}
+                          </td>
+                          <td className="p-2 border-b">{(paiement as Paiement).telephone}</td>
+                          <td className="p-2 border-b">{(paiement as Paiement).rfid_uid || 'Aucune'}</td>
+                          <td className="p-2 border-b">{(paiement as Paiement).operateur}</td>
+                          <td className="p-2 border-b">{(paiement as Paiement).montant} $</td>
+                          <td className="p-2 border-b">{(paiement as Paiement).litres_credite} L</td>
+                          <td className="p-2 border-b">
+                            <Chip 
+                              label={getStatusText((paiement as Paiement).statut)} 
+                              color={getStatusColor((paiement as Paiement).statut) as any}
+                              size="small"
+                            />
+                          </td>
+                          <td className="p-2 border-b">{(paiement as Paiement).id_transaction_ext}</td>
+                          <td className="p-2 border-b text-center">
+                            <IconButton onClick={(e) => handleMenuOpen(e, paiement, 'paiement')}>
+                              <Iconify icon="eva:more-vertical-fill" />
+                            </IconButton>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={10} className="text-center text-gray-500 py-6">
+                          Aucun paiement trouvé
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
 
               {/* Pagination */}
               <Box
@@ -227,10 +500,10 @@ export function JournauxView() {
                 }}
               >
                 <Typography variant="body2">
-                  {`Affichage de ${paginatedData.length} sur ${recharges.length} recharges`}
+                  {`Affichage de ${paginatedData.length} sur ${totalItems} ${activeTab === 0 ? 'recharges' : 'paiements'}`}
                 </Typography>
                 <Pagination
-                  count={Math.ceil(recharges.length / pageSize)}
+                  count={Math.ceil(totalItems / pageSize)}
                   page={page}
                   onChange={(_, value) => setPage(value)}
                   color="primary"
@@ -246,7 +519,6 @@ export function JournauxView() {
         <MenuList>
           <MenuItemMui
             onClick={() => {
-              setSelectedRecharge(selectedRecharge);
               setOpenDialog(true);
               handleMenuClose();
             }}
@@ -257,20 +529,47 @@ export function JournauxView() {
       </Menu>
 
       {/* Dialog Détails */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="md">
         <DialogTitle>
-          Détails de la recharge
+          Détails {itemType === 'recharge' ? 'de la recharge' : 'du paiement'}
         </DialogTitle>
 
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          {selectedRecharge && (
+          {selectedItem && itemType === 'recharge' && (
             <>
-              <Typography><strong>Date:</strong> {formatDate(selectedRecharge.Date)}</Typography>
-              <Typography><strong>Utilisateur:</strong> {selectedRecharge.Utilisateur}</Typography>
-              <Typography><strong>Téléphone:</strong> {selectedRecharge.Telephone}</Typography>
-              <Typography><strong>Carte RFID:</strong> {selectedRecharge["Carte RFID"] || "Non utilisée"}</Typography>
-              <Typography><strong>Litres:</strong> {selectedRecharge.Litre.toFixed(1)} L</Typography>
-              <Typography><strong>Moyen de paiement:</strong> {selectedRecharge.Moyen}</Typography>
+              <Typography><strong>Date:</strong> {formatDate((selectedItem as Recharge).Date)}</Typography>
+              <Typography><strong>Utilisateur:</strong> {(selectedItem as Recharge).Utilisateur}</Typography>
+              <Typography><strong>Téléphone:</strong> {(selectedItem as Recharge).Telephone}</Typography>
+              <Typography><strong>Carte RFID:</strong> {(selectedItem as Recharge)["Carte RFID"] || "Non utilisée"}</Typography>
+              <Typography><strong>Litres:</strong> {(selectedItem as Recharge).Litre.toFixed(1)} L</Typography>
+              <Typography><strong>Moyen de paiement:</strong> {(selectedItem as Recharge).Moyen}</Typography>
+            </>
+          )}
+          
+          {selectedItem && itemType === 'paiement' && (
+            <>
+              <Typography><strong>Date:</strong> {formatDate((selectedItem as Paiement).created_at)}</Typography>
+              <Typography><strong>Utilisateur:</strong> {(selectedItem as Paiement).utilisateur_nom || 'N/A'}</Typography>
+              <Typography><strong>Email:</strong> {(selectedItem as Paiement).utilisateur_email || 'N/A'}</Typography>
+              <Typography><strong>Téléphone utilisateur:</strong> {(selectedItem as Paiement).utilisateur_telephone || 'N/A'}</Typography>
+              <Typography><strong>Téléphone de paiement:</strong> {(selectedItem as Paiement).telephone}</Typography>
+              <Typography><strong>Carte RFID:</strong> {(selectedItem as Paiement).rfid_uid || 'Aucune carte'}</Typography>
+              <Typography><strong>Opérateur:</strong> {(selectedItem as Paiement).operateur}</Typography>
+              <Typography><strong>Montant:</strong> {(selectedItem as Paiement).montant} $</Typography>
+              <Typography><strong>Litres crédités:</strong> {(selectedItem as Paiement).litres_credite} L</Typography>
+              <Typography><strong>Statut:</strong> 
+                <Chip 
+                  label={getStatusText((selectedItem as Paiement).statut)} 
+                  color={getStatusColor((selectedItem as Paiement).statut) as any}
+                  size="small"
+                  sx={{ ml: 1 }}
+                />
+              </Typography>
+              <Typography><strong>ID Transaction:</strong> {(selectedItem as Paiement).id_transaction_ext}</Typography>
+              <Typography><strong>Réponse brute:</strong></Typography>
+              <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
+                <pre>{JSON.stringify((selectedItem as Paiement).raw_response, null, 2)}</pre>
+              </Box>
             </>
           )}
         </DialogContent>
