@@ -88,7 +88,7 @@ export function UserView() {
     (u) =>
       u.nom.toLowerCase().includes(searchNom.toLowerCase()) &&
       u.email.toLowerCase().includes(searchEmail.toLowerCase()) &&
-      (roleFilter ? u.role === roleFilter : true)
+      (roleFilter ? u.role.toLowerCase() === roleFilter.toLowerCase() : true)
   );
 
   // Pagination locale
