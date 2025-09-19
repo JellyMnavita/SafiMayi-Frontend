@@ -23,6 +23,7 @@ export const CompteurPage = lazy(() => import('../pages').then(m => ({ default: 
 export const RfidPage = lazy(() => import('../pages').then(m => ({ default: m.RfidPage })));
 export const VenteView = lazy(() => import('../pages').then(m => ({ default: m.VenteView })));
 export const JournauxView = lazy(() => import('../pages').then(m => ({ default: m.JournauxView })));
+export const SiteForageView = lazy(() => import('../pages').then(m => ({ default: m.SiteForageView })));
 
 const renderFallback = () => (
   <Box
