@@ -5,7 +5,7 @@ import axios from "axios";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
-  Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab
+  Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel
 } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -496,25 +496,28 @@ export function CompteurView() {
               {loadingSites ? (
                 <CircularProgress size={24} />
               ) : (
-                <Select
-                  label="Site forage"
-                  value={formData.siteforage === null ? "" : String(formData.siteforage)}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    siteforage: e.target.value === "" ? null : Number(e.target.value)
-                  })}
-                  fullWidth
-                  displayEmpty
-                  disabled={submitting}
-                >
-                  <MenuItem value="">Aucun site</MenuItem>
-                  {sitesForage.map((site) => (
-                    <MenuItem key={site.id} value={String(site.id)}>
-                      {site.nom} - {site.localisation}
-                    </MenuItem>
-                  ))}
-                </Select>
-
+                <FormControl sx={{ minWidth: 200 }} size="small">
+                  <InputLabel id={`site-forage-label`}>Site forage</InputLabel>
+                  <Select
+                   labelId={`site-forage-label`}
+                    label="Site forage"
+                    value={formData.siteforage === null ? "" : String(formData.siteforage)}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      siteforage: e.target.value === "" ? null : Number(e.target.value)
+                    })}
+                    fullWidth
+                    displayEmpty
+                    disabled={submitting}
+                  >
+                    <MenuItem value="">Aucun site</MenuItem>
+                    {sitesForage.map((site) => (
+                      <MenuItem key={site.id} value={String(site.id)}>
+                        {site.nom} - {site.localisation}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               )}
               <TextField
                 label="Date d'installation"
@@ -563,11 +566,13 @@ export function CompteurView() {
                   {loadingSites ? (
                     <CircularProgress size={24} />
                   ) : (
-                    <Select
-                      label="Site forage"
-                      value={c.siteforage === null ? "" : String(c.siteforage)}
-                      onChange={(e) => {
-                        const list = [...bulkCompteurs];
+                    <FormControl sx={{ minWidth: 200 }} size="small">
+                      <InputLabel id={`site-forage-label`}>Site forage</InputLabel>
+                      <Select
+                        labelId={`site-forage-label`}
+                        value={c.siteforage === null ? "" : String(c.siteforage)}
+                        onChange={(e) => {
+                          const list = [...bulkCompteurs];
                         list[index].siteforage = e.target.value === "" ? null : Number(e.target.value);
                         setBulkCompteurs(list);
                       }}
@@ -583,6 +588,7 @@ export function CompteurView() {
                         </MenuItem>
                       ))}
                     </Select>
+                    </FormControl>
                   )}
                   <IconButton
                     color="error"
@@ -624,11 +630,13 @@ export function CompteurView() {
               {loadingSites ? (
                 <CircularProgress size={24} />
               ) : (
-                <Select
-                  label="Site forage"
-                  value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
-                  onChange={(e) => setAutoForm({
-                    ...autoForm,
+                <FormControl sx={{ minWidth: 200 }} size="small">
+                  <InputLabel id={`site-forage-label`}>Site forage</InputLabel>
+                  <Select
+                    labelId={`site-forage-label`}
+                    value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
+                    onChange={(e) => setAutoForm({
+                      ...autoForm,
                     siteforage: e.target.value === "" ? null : Number(e.target.value)
                   })}
                   fullWidth
@@ -642,6 +650,7 @@ export function CompteurView() {
                     </MenuItem>
                   ))}
                 </Select>
+                </FormControl>
               )}
               <TextField
                 label="Date d'installation"
