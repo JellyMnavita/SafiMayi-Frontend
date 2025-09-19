@@ -236,7 +236,7 @@ export function SiteForageView() {
         <Typography variant="h4" sx={{ flexGrow: 1, mb: { xs: 2, sm: 0 } }}>
           Sites de Forage
         </Typography>
-        <Button
+   {/*      <Button
           variant="contained"
           color="inherit"
           startIcon={<Iconify icon="mingcute:add-line" />}
@@ -247,7 +247,7 @@ export function SiteForageView() {
           }}
         >
           Nouveau Site
-        </Button>
+        </Button> */}
       </Box>
 
       {/* Filtres */}
