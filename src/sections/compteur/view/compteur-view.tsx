@@ -49,6 +49,8 @@ export function CompteurView() {
   const [searchNom, setSearchNom] = useState<string>("");
   const [searchCode, setSearchCode] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [siteFilter, setSiteFilter] = useState<string>("");
 
   // Menu actions
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -107,10 +109,20 @@ export function CompteurView() {
         (c) => String(c.actif) === statusFilter
       );
     }
+    if (dateFilter) {
+      filtered = filtered.filter((c) =>
+        c.date_installation && c.date_installation.includes(dateFilter)
+      );
+    }
+    if (siteFilter) {
+      filtered = filtered.filter((c) =>
+        String(c.siteforage) === siteFilter
+      );
+    }
 
     setCompteurs(filtered);
     setPage(1);
-  }, [searchNom, searchCode, statusFilter, allCompteurs]);
+  }, [searchNom, searchCode, statusFilter, dateFilter, siteFilter, allCompteurs]);
 
   // Pagination locale
   const paginatedData = compteurs.slice((page - 1) * pageSize, page * pageSize);
@@ -196,6 +208,9 @@ export function CompteurView() {
     }
   };
 
+  // Récupérer les sites uniques pour le filtre
+  const uniqueSites = Array.from(new Set(allCompteurs.map(c => c.siteforage))).sort();
+
   return (
     <DashboardContent>
       <Box sx={{ mb: 5, display: "flex", alignItems: "center" }}>
@@ -240,12 +255,35 @@ export function CompteurView() {
             <MenuItem value="true">Actifs</MenuItem>
             <MenuItem value="false">Désactivés</MenuItem>
           </Select>
+          <TextField
+            label="Date de fabrication"
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            size="small"
+            InputLabelProps={{ shrink: true }}
+          />
+          <Select
+            value={siteFilter}
+            onChange={(e) => setSiteFilter(e.target.value)}
+            displayEmpty
+            size="small"
+          >
+            <MenuItem value="">Tous les sites</MenuItem>
+            {uniqueSites.map(site => (
+              <MenuItem key={site} value={site.toString()}>
+                Site #{site}
+              </MenuItem>
+            ))}
+          </Select>
           <Button
             variant="outlined"
             onClick={() => {
               setSearchNom("");
               setSearchCode("");
               setStatusFilter("");
+              setDateFilter("");
+              setSiteFilter("");
             }}
           >
             Réinitialiser
