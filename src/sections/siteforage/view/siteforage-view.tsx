@@ -8,7 +8,6 @@ import {
 } from "@mui/material";
 import { Iconify } from "../../../components/iconify";
 import mapboxgl from "mapbox-gl";
-import 'mapbox-gl/dist/mapbox-gl.css';
 
 // Configuration Mapbox
 mapboxgl.accessToken = "pk.eyJ1IjoiamVsbHltYXdlamEiLCJhIjoiY21mcjB5ODgxMDQ3eTJpc2R6enJ6aDVuYSJ9.NqFe7j3ZcANujS0WCO8evw";
@@ -33,7 +32,7 @@ export function SiteForageView() {
   const [loading, setLoading] = useState<boolean>(true);
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
+  const markers = useRef<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
 
   // Filtres
@@ -51,9 +50,9 @@ export function SiteForageView() {
   const [dialogMode, setDialogMode] = useState<"view" | "edit" | "create">("view");
   const [formData, setFormData] = useState<Partial<SiteForage>>({});
 
-  // Initialisation de la carte
+  // Initialisation de la carte - exécutée une seule fois
   useEffect(() => {
-    if (mapContainer.current && !map.current && !mapLoaded) {
+    if (mapContainer.current && !map.current) {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v11",
@@ -72,13 +71,14 @@ export function SiteForageView() {
         }
       };
     }
-  }, [mapLoaded]);
+  }, []); // Dépendances vides pour s'exécuter une seule fois
 
   // Ajout des marqueurs sur la carte
   useEffect(() => {
     if (map.current && mapLoaded && filteredSites.length > 0) {
       // Supprimer les anciens marqueurs
-      markers.forEach(marker => marker.remove());
+      markers.current.forEach(marker => marker.remove());
+      markers.current = [];
       
       const newMarkers = filteredSites.map(site => {
         // Créer un élément HTML personnalisé pour le marqueur
@@ -99,12 +99,13 @@ export function SiteForageView() {
           setOpenDialog(true);
         });
 
-        return new mapboxgl.Marker(el)
+        const marker = new mapboxgl.Marker(el)
           .setLngLat([parseFloat(site.longitude), parseFloat(site.latitude)])
           .addTo(map.current!);
+        
+        markers.current.push(marker);
+        return marker;
       });
-      
-      setMarkers(newMarkers);
       
       // Ajuster la vue de la carte pour afficher tous les marqueurs
       if (filteredSites.length > 0) {
@@ -112,7 +113,13 @@ export function SiteForageView() {
         filteredSites.forEach(site => {
           bounds.extend([parseFloat(site.longitude), parseFloat(site.latitude)]);
         });
-        map.current!.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+        
+        // Attendre un peu pour que la carte soit complètement chargée
+        setTimeout(() => {
+          if (map.current) {
+            map.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+          }
+        }, 100);
       }
     }
   }, [mapLoaded, filteredSites]);
@@ -236,7 +243,7 @@ export function SiteForageView() {
         <Typography variant="h4" sx={{ flexGrow: 1, mb: { xs: 2, sm: 0 } }}>
           Sites de Forage
         </Typography>
-   {/*      <Button
+        <Button
           variant="contained"
           color="inherit"
           startIcon={<Iconify icon="mingcute:add-line" />}
@@ -247,7 +254,7 @@ export function SiteForageView() {
           }}
         >
           Nouveau Site
-        </Button> */}
+        </Button>
       </Box>
 
       {/* Filtres */}
