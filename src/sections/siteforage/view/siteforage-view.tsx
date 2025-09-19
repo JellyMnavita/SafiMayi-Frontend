@@ -1,3 +1,4 @@
+import 'mapbox-gl/dist/mapbox-gl.css';
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import {
@@ -31,7 +32,7 @@ export function SiteForageView() {
   const [filteredSites, setFilteredSites] = useState<SiteForage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const mapContainer = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<mapboxgl.Map | null>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
   const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
 
@@ -52,26 +53,30 @@ export function SiteForageView() {
 
   // Initialisation de la carte
   useEffect(() => {
-    if (mapContainer.current && !mapLoaded) {
-      const newMap = new mapboxgl.Map({
+    if (mapContainer.current && !map.current && !mapLoaded) {
+      map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v11",
         center: [15.3319, -4.3289], // Centre sur Kinshasa
         zoom: 10
       });
 
-      newMap.on("load", () => {
+      map.current.on("load", () => {
         setMapLoaded(true);
-        setMap(newMap);
       });
 
-      return () => newMap.remove();
+      return () => {
+        if (map.current) {
+          map.current.remove();
+          map.current = null;
+        }
+      };
     }
   }, [mapLoaded]);
 
   // Ajout des marqueurs sur la carte
   useEffect(() => {
-    if (map && mapLoaded && filteredSites.length > 0) {
+    if (map.current && mapLoaded && filteredSites.length > 0) {
       // Supprimer les anciens marqueurs
       markers.forEach(marker => marker.remove());
       
@@ -96,7 +101,7 @@ export function SiteForageView() {
 
         return new mapboxgl.Marker(el)
           .setLngLat([parseFloat(site.longitude), parseFloat(site.latitude)])
-          .addTo(map);
+          .addTo(map.current!);
       });
       
       setMarkers(newMarkers);
@@ -107,10 +112,10 @@ export function SiteForageView() {
         filteredSites.forEach(site => {
           bounds.extend([parseFloat(site.longitude), parseFloat(site.latitude)]);
         });
-        map.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+        map.current!.fitBounds(bounds, { padding: 50, maxZoom: 15 });
       }
     }
-  }, [map, mapLoaded, filteredSites]);
+  }, [mapLoaded, filteredSites]);
 
   // Charger les sites de forage
   const fetchSites = async () => {
