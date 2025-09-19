@@ -40,7 +40,7 @@ export function CompteurView() {
   const [sitesForage, setSitesForage] = useState<SiteForage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingSites, setLoadingSites] = useState<boolean>(true);
-  const [submitting, setSubmitting] = useState<boolean>(false); // État pour le loader de soumission
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Mode création : single | manual | auto
   const [mode, setMode] = useState<"single" | "manual" | "auto">("single");
@@ -167,7 +167,7 @@ export function CompteurView() {
   // Sauvegarde (création / update)
   const handleSave = async () => {
     try {
-      setSubmitting(true); // Démarre le loader
+      setSubmitting(true);
       const token = localStorage.getItem("token");
 
       if (formData.id) {
@@ -230,7 +230,7 @@ export function CompteurView() {
     } catch (error) {
       console.error("Erreur lors de la sauvegarde :", error);
     } finally {
-      setSubmitting(false); // Arrête le loader
+      setSubmitting(false);
     }
   };
 
@@ -272,6 +272,7 @@ export function CompteurView() {
             setMode("single");
             setOpenDialog(true);
           }}
+          disabled={submitting}
         >
           Ajouter un compteur
         </Button>
@@ -284,18 +285,21 @@ export function CompteurView() {
             value={searchNom}
             onChange={(e) => setSearchNom(e.target.value)}
             size="small"
+            disabled={submitting}
           />
           <TextField
             label="Code série"
             value={searchCode}
             onChange={(e) => setSearchCode(e.target.value)}
             size="small"
+            disabled={submitting}
           />
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             displayEmpty
             size="small"
+            disabled={submitting}
           >
             <MenuItem value="">Tous</MenuItem>
             <MenuItem value="true">Actifs</MenuItem>
@@ -308,12 +312,14 @@ export function CompteurView() {
             onChange={(e) => setDateFilter(e.target.value)}
             size="small"
             InputLabelProps={{ shrink: true }}
+            disabled={submitting}
           />
           <Select
             value={siteFilter}
             onChange={(e) => setSiteFilter(e.target.value)}
             displayEmpty
             size="small"
+            disabled={submitting}
           >
             <MenuItem value="">Tous les sites</MenuItem>
             {uniqueSites.map(site => (
@@ -343,7 +349,7 @@ export function CompteurView() {
         <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
           {loading ? (
             <div className="flex justify-center items-center py-10">
-              <p className="text-gray-500"><CircularProgress /></p>
+              <CircularProgress />
             </div>
           ) : (
             <>
@@ -365,8 +371,8 @@ export function CompteurView() {
                         <td className="p-2 border-b">{compteur.nom}</td>
                         <td className="p-2 border-b">{compteur.code_serie}</td>
                         <td className="p-2 border-b">
-                          {compteur.siteforage !== null ? 
-                            `Site #${compteur.siteforage} - ${sitesForage.find(s => s.id === compteur.siteforage)?.nom || 'Inconnu'}` 
+                          {compteur.siteforage !== null ?
+                            `Site #${compteur.siteforage} - ${sitesForage.find(s => s.id === compteur.siteforage)?.nom || 'Inconnu'}`
                             : "-"
                           }
                         </td>
@@ -385,9 +391,10 @@ export function CompteurView() {
                           )}
                         </td>
                         <td className="p-2 border-b text-center">
-                          <IconButton 
+                          <IconButton
                             onClick={(e) => handleMenuOpen(e, compteur)}
                             disabled={submitting}
+                            size="small"
                           >
                             <Iconify icon="eva:more-vertical-fill" />
                           </IconButton>
@@ -491,10 +498,10 @@ export function CompteurView() {
               ) : (
                 <Select
                   label="Site forage"
-                  value={formData.siteforage || ""}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    siteforage: e.target.value === "" ? null : Number(e.target.value) 
+                  value={formData.siteforage === null ? "" : String(formData.siteforage)}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    siteforage: e.target.value === "" ? null : Number(e.target.value)
                   })}
                   fullWidth
                   displayEmpty
@@ -502,11 +509,12 @@ export function CompteurView() {
                 >
                   <MenuItem value="">Aucun site</MenuItem>
                   {sitesForage.map((site) => (
-                    <MenuItem key={site.id} value={site.id}>
+                    <MenuItem key={site.id} value={String(site.id)}>
                       {site.nom} - {site.localisation}
                     </MenuItem>
                   ))}
                 </Select>
+
               )}
               <TextField
                 label="Date d'installation"
@@ -538,6 +546,7 @@ export function CompteurView() {
                     }}
                     sx={{ minWidth: 120 }}
                     disabled={submitting}
+                    size="small"
                   />
                   <TextField
                     label="Code série"
@@ -549,13 +558,14 @@ export function CompteurView() {
                     }}
                     sx={{ minWidth: 120 }}
                     disabled={submitting}
+                    size="small"
                   />
                   {loadingSites ? (
                     <CircularProgress size={24} />
                   ) : (
                     <Select
                       label="Site forage"
-                      value={c.siteforage || ""}
+                      value={c.siteforage === null ? "" : String(c.siteforage)}
                       onChange={(e) => {
                         const list = [...bulkCompteurs];
                         list[index].siteforage = e.target.value === "" ? null : Number(e.target.value);
@@ -564,6 +574,7 @@ export function CompteurView() {
                       sx={{ minWidth: 200 }}
                       displayEmpty
                       disabled={submitting}
+                      size="small"
                     >
                       <MenuItem value="">Aucun site</MenuItem>
                       {sitesForage.map((site) => (
@@ -577,6 +588,7 @@ export function CompteurView() {
                     color="error"
                     onClick={() => setBulkCompteurs(bulkCompteurs.filter((_, i) => i !== index))}
                     disabled={submitting}
+                    size="small"
                   >
                     <Iconify icon="solar:trash-bin-trash-bold" />
                   </IconButton>
@@ -614,10 +626,10 @@ export function CompteurView() {
               ) : (
                 <Select
                   label="Site forage"
-                  value={autoForm.siteforage || ""}
-                  onChange={(e) => setAutoForm({ 
-                    ...autoForm, 
-                    siteforage: e.target.value === "" ? null : Number(e.target.value) 
+                  value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
+                  onChange={(e) => setAutoForm({
+                    ...autoForm,
+                    siteforage: e.target.value === "" ? null : Number(e.target.value)
                   })}
                   fullWidth
                   displayEmpty
@@ -661,17 +673,17 @@ export function CompteurView() {
         </DialogContent>
 
         <DialogActions>
-          <Button 
-            onClick={() => setOpenDialog(false)} 
+          <Button
+            onClick={() => setOpenDialog(false)}
             disabled={submitting}
           >
             Annuler
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleSave}
             disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={16} /> : null}
+            startIcon={submitting ? <CircularProgress size={16} sx={{ color: 'white' }} /> : undefined}
           >
             {submitting ? "Enregistrement..." : "Enregistrer"}
           </Button>
