@@ -499,7 +499,7 @@ export function CompteurView() {
                 <FormControl sx={{ minWidth: 200 }} size="small">
                   <InputLabel id={`site-forage-label`}>Site forage</InputLabel>
                   <Select
-                   labelId={`site-forage-label`}
+                    labelId={`site-forage-label`}
                     label="Site forage"
                     value={formData.siteforage === null ? "" : String(formData.siteforage)}
                     onChange={(e) => setFormData({
@@ -573,21 +573,21 @@ export function CompteurView() {
                         value={c.siteforage === null ? "" : String(c.siteforage)}
                         onChange={(e) => {
                           const list = [...bulkCompteurs];
-                        list[index].siteforage = e.target.value === "" ? null : Number(e.target.value);
-                        setBulkCompteurs(list);
-                      }}
-                      sx={{ minWidth: 200 }}
-                      displayEmpty
-                      disabled={submitting}
-                      size="small"
-                    >
-                      <MenuItem value="">Aucun site</MenuItem>
-                      {sitesForage.map((site) => (
-                        <MenuItem key={site.id} value={site.id}>
-                          {site.nom}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                          list[index].siteforage = e.target.value === "" ? null : Number(e.target.value);
+                          setBulkCompteurs(list);
+                        }}
+                        sx={{ minWidth: 200 }}
+                        displayEmpty
+                        disabled={submitting}
+                        size="small"
+                      >
+                        <MenuItem value="">Aucun site</MenuItem>
+                        {sitesForage.map((site) => (
+                          <MenuItem key={site.id} value={site.id}>
+                            {site.nom}
+                          </MenuItem>
+                        ))}
+                      </Select>
                     </FormControl>
                   )}
                   <IconButton
@@ -637,19 +637,19 @@ export function CompteurView() {
                     value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
                     onChange={(e) => setAutoForm({
                       ...autoForm,
-                    siteforage: e.target.value === "" ? null : Number(e.target.value)
-                  })}
-                  fullWidth
-                  displayEmpty
-                  disabled={submitting}
-                >
-                  <MenuItem value="">Aucun site</MenuItem>
-                  {sitesForage.map((site) => (
-                    <MenuItem key={site.id} value={site.id}>
-                      {site.nom} - {site.localisation}
-                    </MenuItem>
-                  ))}
-                </Select>
+                      siteforage: e.target.value === "" ? null : Number(e.target.value)
+                    })}
+                    fullWidth
+                    displayEmpty
+                    disabled={submitting}
+                  >
+                    <MenuItem value="">Aucun site</MenuItem>
+                    {sitesForage.map((site) => (
+                      <MenuItem key={site.id} value={site.id}>
+                        {site.nom} - {site.localisation}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </FormControl>
               )}
               <TextField
