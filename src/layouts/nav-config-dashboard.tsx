@@ -39,7 +39,7 @@ export const navData = [
     icon: icon('ic-user'),
   },
   {
-    title: 'Journaux Système',
+    title: 'Journaux',
     path: '/journaux',
     icon: icon('ic-journaux'),
   }
