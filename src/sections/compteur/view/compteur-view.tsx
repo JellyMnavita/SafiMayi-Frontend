@@ -372,7 +372,7 @@ export function CompteurView() {
                         <td className="p-2 border-b">{compteur.code_serie}</td>
                         <td className="p-2 border-b">
                           {compteur.siteforage !== null ?
-                            `Site #${compteur.siteforage} - ${sitesForage.find(s => s.id === compteur.siteforage)?.nom || 'Inconnu'}`
+                            `${sitesForage.find(s => s.id === compteur.siteforage)?.nom || 'Inconnu'}`
                             : "-"
                           }
                         </td>
