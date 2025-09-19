@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 import {
-  Box, Card, Button, Typography, TextField, Select, MenuItem,CircularProgress,
+  Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab
 } from "@mui/material";
@@ -99,7 +99,7 @@ export function CompteurView() {
     }
     if (searchCode) {
       filtered = filtered.filter((c) =>
-        c.code_serie.toLowerCase().includes(searchCode.toLowerCase())
+        c.code_serie?.toLowerCase().includes(searchCode.toLowerCase())
       );
     }
     if (statusFilter) {
