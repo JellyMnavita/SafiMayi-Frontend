@@ -567,9 +567,9 @@ export function CompteurView() {
                     <CircularProgress size={24} />
                   ) : (
                     <FormControl sx={{ minWidth: 200 }} size="small">
-                      <InputLabel id={`site-forage-label`}>Site forage</InputLabel>
+                      <InputLabel id={`site-forage-manuel-label`}>Site forage</InputLabel>
                       <Select
-                        labelId={`site-forage-label`}
+                        labelId={`site-forage-manuel-label`}
                         value={c.siteforage === null ? "" : String(c.siteforage)}
                         onChange={(e) => {
                           const list = [...bulkCompteurs];
@@ -631,9 +631,9 @@ export function CompteurView() {
                 <CircularProgress size={24} />
               ) : (
                 <FormControl sx={{ minWidth: 200 }} size="small">
-                  <InputLabel id={`site-forage-label`}>Site forage</InputLabel>
+                  <InputLabel id={`site-forage-auto-label`}>Site forage</InputLabel>
                   <Select
-                    labelId={`site-forage-label`}
+                    labelId={`site-forage-auto-label`}
                     value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
                     onChange={(e) => setAutoForm({
                       ...autoForm,
