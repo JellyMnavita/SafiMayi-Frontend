@@ -17,7 +17,7 @@ interface Compteur {
   code_serie: string;
   actif: boolean;
   date_installation: string | null;
-  siteforage: number;
+  siteforage: number | null;
 }
 
 export function CompteurView() {
@@ -31,11 +31,11 @@ export function CompteurView() {
   // States pour chaque mode
   const [formData, setFormData] = useState<Partial<Compteur>>({});
   const [bulkCompteurs, setBulkCompteurs] = useState<Partial<Compteur>[]>([
-    { nom: "", code_serie: "", siteforage: 0, actif: true, date_installation: "" }
+    { nom: "", code_serie: "", siteforage: null, actif: true, date_installation: "" }
   ]);
   const [autoForm, setAutoForm] = useState({
     nom: "",
-    siteforage: 0,
+    siteforage: null as number | null,
     date_installation: "",
     code_start: "",
     code_end: ""
@@ -116,7 +116,7 @@ export function CompteurView() {
     }
     if (siteFilter) {
       filtered = filtered.filter((c) =>
-        String(c.siteforage) === siteFilter
+        c.siteforage !== null && String(c.siteforage) === siteFilter
       );
     }
 
@@ -185,8 +185,8 @@ export function CompteurView() {
       fetchCompteurs();
       setOpenDialog(false);
       setFormData({});
-      setBulkCompteurs([{ nom: "", code_serie: "", siteforage: 0, actif: true, date_installation: "" }]);
-      setAutoForm({ nom: "", siteforage: 0, date_installation: "", code_start: "", code_end: "" });
+      setBulkCompteurs([{ nom: "", code_serie: "", siteforage: null, actif: true, date_installation: "" }]);
+      setAutoForm({ nom: "", siteforage: null, date_installation: "", code_start: "", code_end: "" });
       setMode("single");
     } catch (error) {
       console.error("Erreur lors de la sauvegarde :", error);
@@ -208,8 +208,13 @@ export function CompteurView() {
     }
   };
 
-  // Récupérer les sites uniques pour le filtre
-  const uniqueSites = Array.from(new Set(allCompteurs.map(c => c.siteforage))).sort();
+  // Récupérer les sites uniques pour le filtre (en excluant les valeurs null)
+  const uniqueSites = Array.from(
+    new Set(allCompteurs
+      .filter(c => c.siteforage !== null)
+      .map(c => c.siteforage as number)
+    )
+  ).sort((a, b) => a - b);
 
   return (
     <DashboardContent>
@@ -317,7 +322,9 @@ export function CompteurView() {
                       <tr key={compteur.id} className="hover:bg-gray-50">
                         <td className="p-2 border-b">{compteur.nom}</td>
                         <td className="p-2 border-b">{compteur.code_serie}</td>
-                        <td className="p-2 border-b">Site #{compteur.siteforage}</td>
+                        <td className="p-2 border-b">
+                          {compteur.siteforage !== null ? `Site #${compteur.siteforage}` : "-"}
+                        </td>
                         <td className="p-2 border-b">
                           {compteur.date_installation || "-"}
                         </td>
@@ -430,7 +437,10 @@ export function CompteurView() {
                 label="Site forage"
                 type="number"
                 value={formData.siteforage || ""}
-                onChange={(e) => setFormData({ ...formData, siteforage: Number(e.target.value) })}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  siteforage: e.target.value === "" ? null : Number(e.target.value) 
+                })}
                 fullWidth
               />
               <TextField
@@ -478,7 +488,7 @@ export function CompteurView() {
                     value={c.siteforage || ""}
                     onChange={(e) => {
                       const list = [...bulkCompteurs];
-                      list[index].siteforage = Number(e.target.value);
+                      list[index].siteforage = e.target.value === "" ? null : Number(e.target.value);
                       setBulkCompteurs(list);
                     }}
                     fullWidth
@@ -498,7 +508,7 @@ export function CompteurView() {
                 onClick={() =>
                   setBulkCompteurs([
                     ...bulkCompteurs,
-                    { nom: "", code_serie: "", siteforage: 0, actif: true },
+                    { nom: "", code_serie: "", siteforage: null, actif: true },
                   ])
                 }
               >
