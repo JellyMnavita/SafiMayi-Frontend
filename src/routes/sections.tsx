@@ -65,6 +65,7 @@ export const routesSection: RouteObject[] = [
       { path: 'blog', element: <BlogPage /> },
       { path: 'rfid', element: <RfidPage /> },
       { path: 'journaux', element: <JournauxView /> },
+      { path: 'siteforage', element: <SiteForageView /> },
     ],
   },
   {

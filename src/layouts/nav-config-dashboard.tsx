@@ -24,15 +24,21 @@ export const navData = [
     icon: icon('ic-vente'),
   },
   {
+    title: 'Carte RFID',
+    path: '/rfid',
+    icon: icon('ic-cart'),
+  },
+  {
     title: 'Compteur',
     path: '/compteur',
     icon: icon('ic-counter'),
   },
   {
-    title: 'Carte RFID',
-    path: '/rfid',
-    icon: icon('ic-cart'),
+    title: 'Site Forage',
+    path: '/siteforage',
+    icon: icon('ic-location'),
   },
+
   {
     title: 'Utilisateurs',
     path: '/user',
@@ -49,7 +55,7 @@ export const navData = [
     icon: icon('ic-logout'),
   }, */
 
-  
+
   /*   {
       title: 'Not found',
       path: '/404',
