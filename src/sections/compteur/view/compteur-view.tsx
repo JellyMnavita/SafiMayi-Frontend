@@ -570,6 +570,7 @@ export function CompteurView() {
                       <InputLabel id={`site-forage-manuel-label`}>Site forage</InputLabel>
                       <Select
                         labelId={`site-forage-manuel-label`}
+                        label="Site forage"
                         value={c.siteforage === null ? "" : String(c.siteforage)}
                         onChange={(e) => {
                           const list = [...bulkCompteurs];
@@ -634,6 +635,7 @@ export function CompteurView() {
                   <InputLabel id={`site-forage-auto-label`}>Site forage</InputLabel>
                   <Select
                     labelId={`site-forage-auto-label`}
+                    label="Site forage"
                     value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
                     onChange={(e) => setAutoForm({
                       ...autoForm,
