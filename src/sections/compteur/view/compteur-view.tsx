@@ -1,7 +1,6 @@
 // Remplace ton code par celui-ci
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
+import apiClient from "../../../utils/api";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
@@ -86,11 +85,9 @@ export function CompteurView() {
   const fetchCompteurs = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
 
-      const response = await axios.get(
-        `https://safimayi-backend.onrender.com/api/compteur/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.get(
+        `/api/compteur/`
       );
 
       const data = response.data.results || response.data;
@@ -107,11 +104,9 @@ export function CompteurView() {
   const fetchSitesForage = async () => {
     try {
       setLoadingSites(true);
-      const token = localStorage.getItem("token");
 
-      const response = await axios.get(
-        `https://safimayi-backend.onrender.com/api/siteforage/siteforages/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.get(
+        `/api/siteforage/siteforages/`
       );
 
       setSitesForage(response.data);
@@ -168,21 +163,18 @@ export function CompteurView() {
   const handleSave = async () => {
     try {
       setSubmitting(true);
-      const token = localStorage.getItem("token");
 
       if (formData.id) {
         // Update
-        await axios.put(
-          `https://safimayi-backend.onrender.com/api/compteur/${formData.id}/`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.put(
+          `/api/compteur/${formData.id}/`,
+          formData
         );
       } else if (mode === "manual") {
         // Création multiple manuelle
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/compteur/`,
-          bulkCompteurs,
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.post(
+          `/api/compteur/`,
+          bulkCompteurs
         );
       } else if (mode === "auto") {
         // Création automatique côté frontend
@@ -207,17 +199,15 @@ export function CompteurView() {
           });
         }
 
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/compteur/`,
-          generatedCompteurs,
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.post(
+          `/api/compteur/`,
+          generatedCompteurs
         );
       } else {
         // Création simple
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/compteur/`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.post(
+          `/api/compteur/`,
+          formData
         );
       }
 
@@ -237,11 +227,9 @@ export function CompteurView() {
   // Toggle activation
   const handleToggleActivation = async (id: number) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `https://safimayi-backend.onrender.com/api/compteur/toggle-activation/${id}/`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      await apiClient.post(
+        `/api/compteur/toggle-activation/${id}/`,
+        {}
       );
       fetchCompteurs();
     } catch (error) {
