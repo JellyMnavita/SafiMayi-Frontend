@@ -1,6 +1,6 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import apiClient from "../../../utils/api";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   IconButton, Menu, MenuList, MenuItem as MenuItemMui, Chip, Dialog, 
@@ -80,7 +80,7 @@ export function SiteForageView() {
       markers.current.forEach(marker => marker.remove());
       markers.current = [];
       
-      const newMarkers = filteredSites.map(site => {
+      filteredSites.map(site => {
         // Créer un élément HTML personnalisé pour le marqueur
         const el = document.createElement('div');
         el.className = 'custom-marker';
@@ -128,10 +128,7 @@ export function SiteForageView() {
   const fetchSites = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get("https://safimayi-backend.onrender.com/api/siteforage/siteforages/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get("/api/siteforage/siteforages/");
       const data = response.data;
       setSites(data);
       setFilteredSites(data);
@@ -212,19 +209,15 @@ export function SiteForageView() {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("token");
-      
       if (dialogMode === "edit") {
-        await axios.put(
-          `https://safimayi-backend.onrender.com/api/siteforage/siteforages/${formData.id}/`,
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.put(
+          `/api/siteforage/siteforages/${formData.id}/`,
+          formData
         );
       } else if (dialogMode === "create") {
-        await axios.post(
-          "https://safimayi-backend.onrender.com/api/siteforage/siteforages/",
-          formData,
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.post(
+          "/api/siteforage/siteforages/",
+          formData
         );
       }
       

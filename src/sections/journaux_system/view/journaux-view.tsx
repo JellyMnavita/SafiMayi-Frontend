@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../../../utils/api";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -184,11 +184,8 @@ export function JournauxView() {
   const fetchRecharges = async () => {
     try {
       setLoadingRecharges(true);
-      const token = localStorage.getItem("token");
-
-      const response = await axios.get(
-        `https://safimayi-backend.onrender.com/api/litrages/all-recharges/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.get(
+        `/api/litrages/all-recharges/`
       );
 
       setAllRecharges(response.data);
@@ -204,11 +201,8 @@ export function JournauxView() {
   const fetchPaiements = async () => {
     try {
       setLoadingPaiements(true);
-      const token = localStorage.getItem("token");
-
-      const response = await axios.get(
-        `https://safimayi-backend.onrender.com/api/paiements/all/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.get(
+        `/api/paiements/all/`
       );
 
       setAllPaiements(response.data.paiements);
@@ -225,11 +219,8 @@ export function JournauxView() {
   const fetchConsommations = async () => {
     try {
       setLoadingConsommations(true);
-      const token = localStorage.getItem("token");
-
-      const response = await axios.get(
-        `https://safimayi-backend.onrender.com/api/litrages/all-consommations/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.get(
+        `/api/litrages/all-consommations/`
       );
 
       setAllConsommations(response.data);

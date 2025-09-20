@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../../../utils/api';
 import Typography from '@mui/material/Typography';
 import { DashboardContent } from '../../../layouts/dashboard';
 import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
@@ -39,10 +39,8 @@ export function OverviewAnalyticsView() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get<StatsResponse>(
-          'https://safimayi-backend.onrender.com/api/users/stats/',
-          { headers: { Authorization: `Bearer ${token}` } }
+        const res = await apiClient.get<StatsResponse>(
+          '/api/users/stats/'
         );
         setStats(res.data);
         
@@ -54,10 +52,8 @@ export function OverviewAnalyticsView() {
 
     const fetchGraphStats = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get<GraphStatsResponse>(
-          'https://safimayi-backend.onrender.com/api/compteur/global/last-date-stat/',
-          { headers: { Authorization: `Bearer ${token}` } }
+        const res = await apiClient.get<GraphStatsResponse>(
+          '/api/compteur/global/last-date-stat/'
         );
         setYearRange(res.data.year_range || '');
         setGraphStats(res.data);

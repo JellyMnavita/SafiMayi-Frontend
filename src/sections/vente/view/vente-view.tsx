@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../../../utils/api";
 import {
   Box, Card, Button, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Pagination, CircularProgress, Grid,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
-  Stepper, Step, StepLabel, Autocomplete, Chip, Accordion, AccordionSummary, AccordionDetails,
+  Stepper, Step, StepLabel, Autocomplete, Chip,
   MenuItem, Select, FormControl, InputLabel, Tabs, Tab, Alert, Snackbar
 } from "@mui/material";
 
@@ -111,10 +111,9 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "https://safimayi-backend.onrender.com/api/users/create-list/",
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.post(
+        "/api/users/create-list/",
+        formData
       );
 
       // Appeler le callback avec le nouvel utilisateur créé
@@ -239,13 +238,11 @@ export function VenteView() {
   const [selectedProduits, setSelectedProduits] = useState<any[]>([]);
   const [montantPaye, setMontantPaye] = useState<number>(0);
 
-  const fetchVentes = async (pageNumber = 1) => {
+  const fetchVentes = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        `https://safimayi-backend.onrender.com/api/ventes/`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await apiClient.get(
+        `/api/ventes/`
       );
       setVentes(res.data || []);
       setTotalPages(1);
@@ -260,10 +257,8 @@ export function VenteView() {
   const fetchStats = async () => {
     try {
       setStatsLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "https://safimayi-backend.onrender.com/api/ventes/stats/",
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await apiClient.get(
+        "/api/ventes/stats/"
       );
       setStats(res.data);
     } catch (err) {
@@ -277,11 +272,9 @@ export function VenteView() {
   // Recherche user dynamique
   useEffect(() => {
     if (searchUser.length > 2) {
-      const token = localStorage.getItem("token");
-      axios
+      apiClient
         .get(
-          `https://safimayi-backend.onrender.com/api/users/create-list/?search=${searchUser}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `/api/users/create-list/?search=${searchUser}`
         )
         .then((res) => setUsers(res.data || []))
         .catch((err) => {
@@ -295,14 +288,9 @@ export function VenteView() {
 
   const fetchCompteursEtRfids = async () => {
     try {
-      const token = localStorage.getItem("token");
       const [compteursRes, rfidsRes] = await Promise.all([
-        axios.get("https://safimayi-backend.onrender.com/api/compteur/inactifs/", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("https://safimayi-backend.onrender.com/api/rfid/", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        apiClient.get("/api/compteur/inactifs/"),
+        apiClient.get("/api/rfid/"),
       ]);
       setCompteurs(compteursRes.data || []);
       setRfids(rfidsRes.data || []);
@@ -314,7 +302,7 @@ export function VenteView() {
   };
 
   useEffect(() => {
-    fetchVentes(page);
+    fetchVentes();
     fetchStats();
     fetchCompteursEtRfids();
   }, [page]);
@@ -337,8 +325,6 @@ export function VenteView() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const token = localStorage.getItem("token");
-      
       // Validation côté client pour les montants négatifs
       if (montantPaye < 0) {
         setErrorMessage("Le montant payé ne peut pas être négatif");
@@ -356,8 +342,8 @@ export function VenteView() {
         return;
       }
 
-      await axios.post(
-        `https://safimayi-backend.onrender.com/api/ventes/create/`,
+      await apiClient.post(
+        `/api/ventes/create/`,
         {
           acheteur: selectedUser?.id || null,
           nom_acheteur: nomAcheteur,
@@ -371,8 +357,7 @@ export function VenteView() {
             rfid: p.type === "rfid" ? p.id : null,
             quantite: p.quantite,
           })),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
       setOpenDialog(false);
       setSelectedProduits([]);
@@ -383,7 +368,7 @@ export function VenteView() {
       setSexeAcheteur("");
       setAdresseAcheteur("");
       setUserCreationTab(0);
-      fetchVentes(page);
+      fetchVentes();
       fetchStats();
     } catch (error: any) {
       console.error("Erreur lors de la création :", error);

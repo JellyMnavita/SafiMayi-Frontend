@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../../../utils/api";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem,CircularProgress,
   IconButton, Menu, MenuList, MenuItem as MenuItemMui,
@@ -45,10 +45,7 @@ export function RFIDView() {
   const fetchRfids = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`https://safimayi-backend.onrender.com/api/rfid/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`/api/rfid/`);
       const data = response.data.results || response.data;
       setAllRfid(data);
       setRfids(data);
@@ -87,48 +84,42 @@ export function RFIDView() {
   // Save
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("token");
-
       if (mode === "single") {
         if (formData.id) {
           // Edition
-          await axios.put(
-            `https://safimayi-backend.onrender.com/api/rfid/update/${formData.id}/`,
+          await apiClient.put(
+            `/api/rfid/update/${formData.id}/`,
             {
               telephone: formData.telephone,
               code_uid: formData.code_uid,
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
+            }
           );
 
         } else {
           // Création
-          await axios.post(
-            `https://safimayi-backend.onrender.com/api/rfid/`,
+          await apiClient.post(
+            `/api/rfid/`,
             {
               code_uid: formData.code_uid,
               telephone: formData.telephone,
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
+            }
           );
         }
       }
 
       if (mode === "multiple") {
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/rfid/`,
-          formData.list || [],
-          { headers: { Authorization: `Bearer ${token}` } }
+        await apiClient.post(
+          `/api/rfid/`,
+          formData.list || []
         );
       }
 
       if (mode === "auto") {
-        await axios.post(
-          `https://safimayi-backend.onrender.com/api/rfid/`,
+        await apiClient.post(
+          `/api/rfid/`,
           {
             nombre: formData.nombre,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
+          }
         );
       }
 
@@ -144,8 +135,6 @@ export function RFIDView() {
   // Toggle activation
   const handleToggleActivation = async (code_uid: string) => {
     try {
-      const token = localStorage.getItem("token");
-
       setRfids(prevRfids =>
         prevRfids.map(rfid =>
           rfid.code_uid === code_uid
@@ -154,10 +143,9 @@ export function RFIDView() {
         )
       );
 
-      await axios.post(
-        `https://safimayi-backend.onrender.com/api/rfid/toggle/`,
-        { uid: code_uid },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await apiClient.post(
+        `/api/rfid/toggle/`,
+        { uid: code_uid }
       );
 
       fetchRfids();

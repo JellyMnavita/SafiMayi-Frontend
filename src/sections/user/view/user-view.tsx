@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../../../utils/api";
 import {
   Box,
   Card,
@@ -63,12 +63,8 @@ export function UserView() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "https://safimayi-backend.onrender.com/api/users/create-list/",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const res = await apiClient.get(
+        "/api/users/create-list/"
       );
       setUsers(res.data);
     } catch (err) {
@@ -129,8 +125,6 @@ export function UserView() {
     try {
       setSaveLoading(true);
       setError("");
-      const token = localStorage.getItem("token");
-      
       // Validation des champs requis
       if (!formData.nom || !formData.email || !formData.telephone || !formData.role) {
         setError("Veuillez remplir tous les champs obligatoires");
@@ -145,28 +139,16 @@ export function UserView() {
 
       if (formData.id) {
         // Modification - utiliser PUT pour la mise à jour complète
-        await axios.put(
-          `https://safimayi-backend.onrender.com/api/users/${formData.id}/`,
-          formData,
-          { 
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            } 
-          }
+        await apiClient.put(
+          `/api/users/${formData.id}/`,
+          formData
         );
         setSuccessMessage("Utilisateur modifié avec succès");
       } else {
         // Création
-        await axios.post(
-          "https://safimayi-backend.onrender.com/api/users/create-list/",
-          formData,
-          { 
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            } 
-          }
+        await apiClient.post(
+          "/api/users/create-list/",
+          formData
         );
         setSuccessMessage("Utilisateur créé avec succès");
       }
@@ -190,12 +172,8 @@ export function UserView() {
     try {
       if (!selectedUser) return;
       
-      const token = localStorage.getItem("token");
-      await axios.delete(
-        `https://safimayi-backend.onrender.com/api/users/${selectedUser.id}/`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+      await apiClient.delete(
+        `/api/users/${selectedUser.id}/`
       );
       
       setSuccessMessage("Utilisateur désactivé avec succès");
@@ -212,18 +190,11 @@ export function UserView() {
     try {
       if (!selectedUser) return;
       
-      const token = localStorage.getItem("token");
       const newState = !selectedUser.state;
       
-      await axios.patch(
-        `https://safimayi-backend.onrender.com/api/users/${selectedUser.id}/`,
-        { state: newState },
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      await apiClient.patch(
+        `/api/users/${selectedUser.id}/`,
+        { state: newState }
       );
       
       setSuccessMessage(`Utilisateur ${newState ? "activé" : "désactivé"} avec succès`);

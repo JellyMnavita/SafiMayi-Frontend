@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TextField, Button, Container, Typography, Box, Alert, Paper, CircularProgress, Link } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { LoginResponse } from '../types/api';
 import logo from '../assets/logowhite.png';
 
 const Login = () => {
@@ -16,7 +17,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await axios.post('https://safimayi-backend.onrender.com/api/users/login/', {
+      const response = await axios.post<LoginResponse>('https://api.safimayi.com/api/users/login/', {
         email,
         password,
       });
@@ -25,11 +26,18 @@ const Login = () => {
         navigate('/404');
       } else {
         localStorage.setItem('token', response.data.access);
+        localStorage.setItem('refresh', response.data.refresh);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.data.solde_litres !== undefined) {
+          localStorage.setItem('solde_litres', response.data.solde_litres.toString());
+        }
+        if (response.data.id_litrage !== undefined) {
+          localStorage.setItem('id_litrage', response.data.id_litrage.toString());
+        }
         navigate('/dashboard');
       }
 
-    } catch (err) {
+    } catch {
       setError('Email ou mot de passe incorrect');
     } finally {
       setLoading(false);
