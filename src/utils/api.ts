@@ -32,7 +32,7 @@ const refreshToken = async (): Promise<string | null> => {
     console.error('Erreur lors du refresh du token:', error);
     // Si le refresh échoue, rediriger vers la page de connexion
     localStorage.clear();
-    window.location.href = '/login';
+    window.location.href = '/';
     return null;
   }
 };
