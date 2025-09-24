@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import apiClient from "../../../utils/api";
 import {
-  Box, Card, Button, Typography, TextField, Select, MenuItem,CircularProgress,
+  Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, Tabs, Tab
 } from "@mui/material";
@@ -14,6 +14,8 @@ interface RFID {
   telephone: string;
   active: boolean;
   created_at: string;
+  prix: number;
+  solde_litres?: number;
 }
 
 export function RFIDView() {
@@ -32,8 +34,8 @@ export function RFIDView() {
 
   // Dialog
   const [openDialog, setOpenDialog] = useState(false);
-  const [mode, setMode] = useState<"single" | "multiple" | "auto" >("single");
-  const [formData, setFormData] = useState<any>({}); // peut être une carte ou plusieurs
+  const [mode, setMode] = useState<"single" | "multiple" | "auto">("single");
+  const [formData, setFormData] = useState<any>({});
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, rfid: RFID) => {
     setAnchorEl(event.currentTarget);
@@ -94,7 +96,6 @@ export function RFIDView() {
               code_uid: formData.code_uid,
             }
           );
-
         } else {
           // Création
           await apiClient.post(
@@ -177,6 +178,7 @@ export function RFIDView() {
           Ajouter une carte RFID
         </Button>
       </Box>
+
       {/* Filtres */}
       <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -214,26 +216,62 @@ export function RFIDView() {
           </Button>
         </Box>
       </Card>
-      {/* Cards */}
+
+      {/* Cards avec affichage du solde de litrage */}
       <Grid container spacing={2}>
         {loading ? (
-          <Typography><CircularProgress /></Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', p: 3 }}>
+            <CircularProgress />
+          </Box>
         ) : rfids.length > 0 ? (
           rfids.map((rfid) => (
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={rfid.id}>
-              <Card sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+              <Card sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="subtitle1">{rfid.code_uid}</Typography>
-                  <IconButton onClick={(e) => handleMenuOpen(e, rfid)}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {rfid.code_uid}
+                  </Typography>
+                  <IconButton onClick={(e) => handleMenuOpen(e, rfid)} size="small">
                     <Iconify icon="eva:more-vertical-fill" />
                   </IconButton>
                 </Box>
+                
                 <Typography variant="body2" color="text.secondary">
-                  {rfid.telephone}
+                  📞 {rfid.telephone || "Non attribué"}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(rfid.created_at).toLocaleDateString()}
-                </Typography>
+                
+                {/* Affichage du solde de litrage */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  p: 1,
+                  borderRadius: 1,
+                  bgcolor: (rfid.solde_litres || 0) > 0 ? 'success.light' : 'grey.50'
+                }}>
+                  <Typography variant="body2" fontWeight="medium">
+                    Solde litres:
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 'bold',
+                      color: (rfid.solde_litres || 0) > 0 ? 'success.dark' : 'text.secondary'
+                    }}
+                  >
+                    {rfid.solde_litres || 0} L
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(rfid.created_at).toLocaleDateString()}
+                  </Typography>
+                  <Typography variant="caption" fontWeight="medium">
+                    {rfid.prix} €
+                  </Typography>
+                </Box>
+
                 <Box>
                   {rfid.active ? (
                     <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
@@ -249,9 +287,10 @@ export function RFIDView() {
             </Grid>
           ))
         ) : (
-          <Typography>Aucune carte RFID trouvée</Typography>
+          <Typography sx={{ p: 3 }}>Aucune carte RFID trouvée</Typography>
         )}
       </Grid>
+
       {/* Menu contextuel */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
         <MenuList>
@@ -275,6 +314,7 @@ export function RFIDView() {
           </MenuItemMui>
         </MenuList>
       </Menu>
+
       {/* Dialog Ajout / Édition */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>
@@ -282,11 +322,9 @@ export function RFIDView() {
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
           <Tabs value={mode} onChange={(e, v) => setMode(v)}>
-            <Tabs value={mode} onChange={(e, v) => setMode(v)}>
-              <Tab label="Simple" value="single" />
-              {!formData.id && <Tab label="Multiple" value="multiple" />}
-              {!formData.id && <Tab label="Auto" value="auto" />}
-            </Tabs>
+            <Tab label="Simple" value="single" />
+            {!formData.id && <Tab label="Multiple" value="multiple" />}
+            {!formData.id && <Tab label="Auto" value="auto" />}
           </Tabs>
 
           {mode === "single" && (
@@ -306,7 +344,7 @@ export function RFIDView() {
             </>
           )}
        
-          {!formData.id &&
+          {!formData.id && (
             <>
               {mode === "multiple" && (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -363,23 +401,17 @@ export function RFIDView() {
                 </Box>
               )}
 
-
               {mode === "auto" && (
-                <>
-
-                  <TextField
-                    label="Nombre de cartes"
-                    type="number"
-                    value={formData.nombre || 1}
-                    onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
-                    fullWidth
-                  />
-
-                </>
+                <TextField
+                  label="Nombre de cartes"
+                  type="number"
+                  value={formData.nombre || 1}
+                  onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
+                  fullWidth
+                />
               )}
             </>
-          }
-
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
