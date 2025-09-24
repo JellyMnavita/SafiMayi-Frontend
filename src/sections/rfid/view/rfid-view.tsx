@@ -237,7 +237,7 @@ export function RFIDView() {
                 </Box>
                 
                 <Typography variant="body2" color="text.secondary">
-                  📞 {rfid.telephone || "Non attribué"}
+                  Tél:  {rfid.telephone || "Non attribué"}
                 </Typography>
                 
                 {/* Affichage du solde de litrage */}
@@ -267,9 +267,9 @@ export function RFIDView() {
                   <Typography variant="caption" color="text.secondary">
                     {new Date(rfid.created_at).toLocaleDateString()}
                   </Typography>
-                  <Typography variant="caption" fontWeight="medium">
-                    {rfid.prix} €
-                  </Typography>
+                {/*   <Typography variant="caption" fontWeight="medium">
+                    rfid.prix} €
+                  </Typography> */}
                 </Box>
 
                 <Box>
