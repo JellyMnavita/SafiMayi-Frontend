@@ -746,7 +746,7 @@ export function JournauxView() {
                   color="warning"
                   suffix=" FC"
                   isCurrency={true}
-                  icon={<img alt="Profit" src="/assets/icons/glass/ic-glass-profit.svg" />}
+                  icon={<img alt="Profit" src="/assets/icons/glass/ic-glass-users.svg" />}
                   sx={{ height: '100%' }}
                 />
               </div>
