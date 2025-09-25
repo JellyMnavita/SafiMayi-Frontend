@@ -7,7 +7,8 @@ import "slick-carousel/slick/slick-theme.css";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
-  Dialog, DialogTitle, DialogContent, DialogActions, Chip, Tabs, Tab
+  Dialog, DialogTitle, DialogContent, DialogActions, Chip, Tabs, Tab,
+  Grid, Paper
 } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -47,6 +48,8 @@ export interface Consommation {
   compteur_nom: string;
   compteur_code_serie: string;
   litres: number;
+  prix: number;
+  commission: number;
   type: string;
   access_code?: string;
   access_code_status?: string;
@@ -60,6 +63,17 @@ export interface Consommation {
   rfid_telephone?: string;
   access_code_compteur_nom?: string;
   access_code_compteur_code_serie?: string;
+}
+
+interface StatsConsommations {
+  total_consommations: number;
+  total_litres: number;
+  total_prix: number;
+  benefice_total: number;
+  taux_utilises?: {
+    prix_par_litre: number;
+    taux_commission: number;
+  };
 }
 
 // Fonctions de garde de type
@@ -95,7 +109,12 @@ export function JournauxView() {
   const [allConsommations, setAllConsommations] = useState<Consommation[]>([]);
   const [consommations, setConsommations] = useState<Consommation[]>([]);
   const [loadingConsommations, setLoadingConsommations] = useState<boolean>(true);
-  const [statsConsommations, setStatsConsommations] = useState<any>({});
+  const [statsConsommations, setStatsConsommations] = useState<StatsConsommations>({
+    total_consommations: 0,
+    total_litres: 0,
+    total_prix: 0,
+    benefice_total: 0
+  });
 
   // Pagination
   const [page, setPage] = useState<number>(1);
@@ -126,7 +145,7 @@ export function JournauxView() {
   // Dialog pour voir les détails
   const [openDialog, setOpenDialog] = useState(false);
 
-  // Configuration du Slider
+  // Configuration du Slider responsive
   const sliderSettings = {
     dots: true,
     infinite: false,
@@ -184,10 +203,7 @@ export function JournauxView() {
   const fetchRecharges = async () => {
     try {
       setLoadingRecharges(true);
-      const response = await apiClient.get(
-        `/api/litrages/all-recharges/`
-      );
-
+      const response = await apiClient.get(`/api/litrages/all-recharges/`);
       setAllRecharges(response.data);
       setRecharges(response.data);
     } catch (error) {
@@ -201,10 +217,7 @@ export function JournauxView() {
   const fetchPaiements = async () => {
     try {
       setLoadingPaiements(true);
-      const response = await apiClient.get(
-        `/api/paiements/all/`
-      );
-
+      const response = await apiClient.get(`/api/paiements/all/`);
       setAllPaiements(response.data.paiements);
       setPaiements(response.data.paiements);
       setStatsPaiements(response.data.statistiques || {});
@@ -219,27 +232,32 @@ export function JournauxView() {
   const fetchConsommations = async () => {
     try {
       setLoadingConsommations(true);
-      const response = await apiClient.get(
-        `/api/litrages/all-consommations/`
-      );
+      const response = await apiClient.get(`/api/litrages/all-consommations/`);
+      
+      // Vérifier la structure de la réponse
+      if (response.data && response.data.consommations && response.data.stats) {
+        setAllConsommations(response.data.consommations);
+        setConsommations(response.data.consommations);
+        setStatsConsommations(response.data.stats);
+      } else {
+        // Fallback pour l'ancienne structure
+        setAllConsommations(response.data);
+        setConsommations(response.data);
+        
+        const totalConsommations = response.data.length;
+        const totalLitres = Math.round(
+          response.data.reduce((sum: number, c: Consommation) => sum + c.litres, 0)
+        );
+        const totalPrix = response.data.reduce((sum: number, c: Consommation) => sum + (c.prix || 0), 0);
+        const beneficeTotal = response.data.reduce((sum: number, c: Consommation) => sum + (c.commission || 0), 0);
 
-      setAllConsommations(response.data);
-      setConsommations(response.data);
-
-      // Calculer les statistiques des consommations
-      const totalConsommations = response.data.length;
-      const totalLitres = Math.round(
-        response.data.reduce((sum: number, c: Consommation) => sum + c.litres, 0)
-      );
-      const rfidCount = response.data.filter((c: Consommation) => c.type === "RFID").length;
-      const accessCodeCount = response.data.filter((c: Consommation) => c.type === "Code d'accès").length;
-
-      setStatsConsommations({
-        total: totalConsommations,
-        total_litres: totalLitres,
-        rfid_count: rfidCount,
-        access_code_count: accessCodeCount
-      });
+        setStatsConsommations({
+          total_consommations: totalConsommations,
+          total_litres: totalLitres,
+          total_prix: totalPrix,
+          benefice_total: beneficeTotal
+        });
+      }
     } catch (error) {
       console.error("Erreur lors du chargement des consommations :", error);
     } finally {
@@ -382,6 +400,14 @@ export function JournauxView() {
     }
   };
 
+  // Formater les montants
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
   // Obtenir la couleur du statut
   const getStatusColor = (statut: string) => {
     switch (statut) {
@@ -446,6 +472,31 @@ export function JournauxView() {
     }
   };
 
+  // Composant pour afficher les taux utilisés
+  const TauxDisplay = () => {
+    if (!statsConsommations.taux_utilises) return null;
+
+    return (
+      <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
+        <Typography variant="h6" gutterBottom>
+          Taux utilisés pour les calculs
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+            <Typography variant="body2">
+              <strong>Prix par litre:</strong> {formatCurrency(statsConsommations.taux_utilises.prix_par_litre)} FC
+            </Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+            <Typography variant="body2">
+              <strong>Taux de commission:</strong> {statsConsommations.taux_utilises.taux_commission}%
+            </Typography>
+          </Grid>
+        </Grid>
+      </Paper>
+    );
+  };
+
   return (
     <DashboardContent>
       <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
@@ -462,9 +513,23 @@ export function JournauxView() {
         </Button>
       </Box>
 
-      {/* Onglets */}
-      <Card sx={{ mb: 3 }}>
-        <Tabs value={activeTab} onChange={handleTabChange} centered>
+      {/* Onglets avec style responsive */}
+      <Card sx={{ mb: 3, overflow: 'auto' }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange}
+          variant={isMobile ? "scrollable" : "standard"}
+          scrollButtons={isMobile ? "auto" : false}
+          allowScrollButtonsMobile
+          sx={{
+            minWidth: 'fit-content',
+            '& .MuiTab-root': {
+              minWidth: 'auto',
+              px: 2,
+              fontSize: isMobile ? '0.75rem' : '0.875rem'
+            }
+          }}
+        >
           <Tab label="Journal des Recharges" />
           <Tab label="Journal des Paiements" />
           <Tab label="Journal des Consommations" />
@@ -479,12 +544,14 @@ export function JournauxView() {
             value={searchUtilisateur}
             onChange={(e) => setSearchUtilisateur(e.target.value)}
             size="small"
+            sx={{ minWidth: isMobile ? '100%' : 150 }}
           />
           <TextField
             label="Téléphone"
             value={searchTelephone}
             onChange={(e) => setSearchTelephone(e.target.value)}
             size="small"
+            sx={{ minWidth: isMobile ? '100%' : 150 }}
           />
 
           {activeTab === 0 ? (
@@ -493,6 +560,7 @@ export function JournauxView() {
               onChange={(e) => setMoyenFilter(e.target.value)}
               displayEmpty
               size="small"
+              sx={{ minWidth: isMobile ? '100%' : 150 }}
             >
               <MenuItem value="">Tous les moyens</MenuItem>
               <MenuItem value="mobile">Mobile</MenuItem>
@@ -504,6 +572,7 @@ export function JournauxView() {
                 onChange={(e) => setStatutFilter(e.target.value)}
                 displayEmpty
                 size="small"
+                sx={{ minWidth: isMobile ? '100%' : 150 }}
               >
                 <MenuItem value="">Tous les statuts</MenuItem>
                 <MenuItem value="success">Réussi</MenuItem>
@@ -515,6 +584,7 @@ export function JournauxView() {
                 onChange={(e) => setOperateurFilter(e.target.value)}
                 displayEmpty
                 size="small"
+                sx={{ minWidth: isMobile ? '100%' : 150 }}
               >
                 <MenuItem value="">Tous les opérateurs</MenuItem>
                 <MenuItem value="mpesa">M-Pesa</MenuItem>
@@ -526,6 +596,7 @@ export function JournauxView() {
                 value={searchRFID}
                 onChange={(e) => setSearchRFID(e.target.value)}
                 size="small"
+                sx={{ minWidth: isMobile ? '100%' : 150 }}
               />
             </>
           ) : (
@@ -535,6 +606,7 @@ export function JournauxView() {
                 onChange={(e) => setTypeFilter(e.target.value)}
                 displayEmpty
                 size="small"
+                sx={{ minWidth: isMobile ? '100%' : 150 }}
               >
                 <MenuItem value="">Tous les types</MenuItem>
                 <MenuItem value="RFID">RFID</MenuItem>
@@ -545,18 +617,21 @@ export function JournauxView() {
                 value={searchCompteur}
                 onChange={(e) => setSearchCompteur(e.target.value)}
                 size="small"
+                sx={{ minWidth: isMobile ? '100%' : 150 }}
               />
               <TextField
                 label="Carte RFID"
                 value={searchRFID}
                 onChange={(e) => setSearchRFID(e.target.value)}
                 size="small"
+                sx={{ minWidth: isMobile ? '100%' : 150 }}
               />
               <TextField
                 label="Code d'Accès"
                 value={searchAccessCode}
                 onChange={(e) => setSearchAccessCode(e.target.value)}
                 size="small"
+                sx={{ minWidth: isMobile ? '100%' : 150 }}
               />
             </>
           )}
@@ -564,11 +639,15 @@ export function JournauxView() {
           <Button
             variant="outlined"
             onClick={resetAllFilters}
+            sx={{ minWidth: isMobile ? '100%' : 'auto' }}
           >
             Réinitialiser
           </Button>
         </Box>
       </Card>
+
+      {/* Affichage des taux utilisés pour les consommations */}
+      {activeTab === 2 && statsConsommations.taux_utilises && <TauxDisplay />}
 
       {/* Statistiques avec Slider */}
       {(activeTab === 1 || activeTab === 2) && (
@@ -633,7 +712,7 @@ export function JournauxView() {
               <div>
                 <AnalyticsWidgetSummary
                   title="Total Consommations"
-                  total={statsConsommations.total || 0}
+                  total={statsConsommations.total_consommations || 0}
                   color="primary"
                   icon={<img alt="Total" src="/assets/icons/glass/ic-glass-bag.svg" />}
                   sx={{ height: '100%' }}
@@ -651,19 +730,23 @@ export function JournauxView() {
               </div>
               <div>
                 <AnalyticsWidgetSummary
-                  title="Consommations RFID"
-                  total={statsConsommations.rfid_count || 0}
+                  title="Prix Total"
+                  total={statsConsommations.total_prix || 0}
                   color="info"
-                  icon={<img alt="RFID" src="/assets/icons/glass/ic-glass-users.svg" />}
+                  suffix=" FC"
+                  isCurrency={true}
+                  icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
                   sx={{ height: '100%' }}
                 />
               </div>
               <div>
                 <AnalyticsWidgetSummary
-                  title="Codes d'Accès"
-                  total={statsConsommations.access_code_count || 0}
+                  title="Bénéfice Total"
+                  total={statsConsommations.benefice_total || 0}
                   color="warning"
-                  icon={<img alt="Revenue" src="/assets/icons/glass/ic-glass-buy.svg" />}
+                  suffix=" FC"
+                  isCurrency={true}
+                  icon={<img alt="Profit" src="/assets/icons/glass/ic-glass-profit.svg" />}
                   sx={{ height: '100%' }}
                 />
               </div>
@@ -794,13 +877,15 @@ export function JournauxView() {
                   </tbody>
                 </table>
               ) : (
-                <table className="w-full border-collapse min-w-[1300px]">
+                <table className="w-full border-collapse min-w-[1400px]">
                   <thead>
                     <tr className="bg-gray-100 text-left text-sm">
                       <th className="p-2 border-b">ID</th>
                       <th className="p-2 border-b">Date</th>
                       <th className="p-2 border-b">Compteur</th>
                       <th className="p-2 border-b">Litres</th>
+                      <th className="p-2 border-b">Prix</th>
+                      <th className="p-2 border-b">Commission</th>
                       <th className="p-2 border-b">Type</th>
                       <th className="p-2 border-b">Utilisateur</th>
                       <th className="p-2 border-b">Téléphone</th>
@@ -823,6 +908,8 @@ export function JournauxView() {
                                 <div className="text-xs text-gray-500">{consommation.compteur_code_serie}</div>
                               </td>
                               <td className="p-2 border-b">{consommation.litres} L</td>
+                              <td className="p-2 border-b">{formatCurrency(consommation.prix || 0)} FC</td>
+                              <td className="p-2 border-b">{formatCurrency(consommation.commission || 0)} FC</td>
                               <td className="p-2 border-b">
                                 <Chip
                                   label={consommation.type}
@@ -861,7 +948,7 @@ export function JournauxView() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={10} className="text-center text-gray-500 py-6">
+                        <td colSpan={12} className="text-center text-gray-500 py-6">
                           Aucune consommation trouvée
                         </td>
                       </tr>
@@ -964,6 +1051,8 @@ export function JournauxView() {
               <Typography><strong>Date:</strong> {formatDate(selectedItem.date)}</Typography>
               <Typography><strong>Compteur:</strong> {selectedItem.compteur_nom} ({selectedItem.compteur_code_serie})</Typography>
               <Typography><strong>Litres consommés:</strong> {selectedItem.litres} L</Typography>
+              <Typography><strong>Prix:</strong> {formatCurrency(selectedItem.prix || 0)} FC</Typography>
+              <Typography><strong>Commission:</strong> {formatCurrency(selectedItem.commission || 0)} FC</Typography>
               <Typography><strong>Type:</strong>
                 <Chip
                   label={selectedItem.type}
