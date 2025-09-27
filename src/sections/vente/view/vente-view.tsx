@@ -66,6 +66,7 @@ interface Compteur {
   nom: string;
   code_serie: string;
   prix?: number;
+  statut?: string; // Ajout du champ statut
 }
 
 interface RFID {
@@ -73,6 +74,18 @@ interface RFID {
   code_uid: string;
   telephone: string;
   prix?: number;
+  solde_litres?: number;
+  user_nom?: string;
+  statut?: string; // Ajout du champ statut
+}
+
+interface User {
+  id: number;
+  nom: string;
+  email: string;
+  telephone: string;
+  role: string;
+  state: boolean;
 }
 
 // Composant pour créer un nouvel utilisateur
@@ -110,7 +123,6 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
       const response = await apiClient.post(
         "/api/users/create-list/",
         formData
@@ -225,25 +237,101 @@ export function VenteView() {
 
   // Acheteur
   const [searchUser, setSearchUser] = useState("");
-  const [users, setUsers] = useState<any[]>([]);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [nomAcheteur, setNomAcheteur] = useState("");
   const [telAcheteur, setTelAcheteur] = useState("");
   const [sexeAcheteur, setSexeAcheteur] = useState("");
   const [adresseAcheteur, setAdresseAcheteur] = useState("");
 
   // Produits
+  const [searchCompteur, setSearchCompteur] = useState("");
+  const [searchRFID, setSearchRFID] = useState("");
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
   const [rfids, setRfids] = useState<RFID[]>([]);
   const [selectedProduits, setSelectedProduits] = useState<any[]>([]);
   const [montantPaye, setMontantPaye] = useState<number>(0);
 
+  // Fonctions de recherche optimisées avec debounce
+  const searchUsers = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setUsers([]);
+      return;
+    }
+    
+    try {
+      const response = await apiClient.get(
+        `/api/users/search/?search=${encodeURIComponent(searchTerm)}&page_size=10`
+      );
+      setUsers(response.data.results || []);
+    } catch (err) {
+      console.error("Erreur lors de la recherche d'utilisateurs:", err);
+      setUsers([]);
+    }
+  };
+
+  const searchCompteursAPI = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setCompteurs([]);
+      return;
+    }
+    
+    try {
+      // AJOUT DU FILTRE statut=stock
+      const response = await apiClient.get(
+        `/api/compteurs/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
+      );
+      setCompteurs(response.data.results || []);
+    } catch (err) {
+      console.error("Erreur lors de la recherche de compteurs:", err);
+      setCompteurs([]);
+    }
+  };
+
+  const searchRFIDsAPI = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setRfids([]);
+      return;
+    }
+    
+    try {
+      // AJOUT DU FILTRE statut=stock
+      const response = await apiClient.get(
+        `/api/rfid/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
+      );
+      setRfids(response.data.results || []);
+    } catch (err) {
+      console.error("Erreur lors de la recherche de RFID:", err);
+      setRfids([]);
+    }
+  };
+
+  // Debounce pour les recherches
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchUsers(searchUser);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchUser]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchCompteursAPI(searchCompteur);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchCompteur]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchRFIDsAPI(searchRFID);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchRFID]);
+
   const fetchVentes = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get(
-        `/api/ventes/`
-      );
+      const res = await apiClient.get(`/api/ventes/`);
       setVentes(res.data || []);
       setTotalPages(1);
     } catch (err) {
@@ -257,9 +345,7 @@ export function VenteView() {
   const fetchStats = async () => {
     try {
       setStatsLoading(true);
-      const res = await apiClient.get(
-        "/api/ventes/stats/"
-      );
+      const res = await apiClient.get("/api/ventes/stats/");
       setStats(res.data);
     } catch (err) {
       console.error("Erreur lors du fetch des statistiques :", err);
@@ -269,42 +355,10 @@ export function VenteView() {
     }
   };
 
-  // Recherche user dynamique
-  useEffect(() => {
-    if (searchUser.length > 2) {
-      apiClient
-        .get(
-          `/api/users/create-list/?search=${searchUser}`
-        )
-        .then((res) => setUsers(res.data || []))
-        .catch((err) => {
-          console.error(err);
-          setUsers([]);
-        });
-    } else {
-      setUsers([]);
-    }
-  }, [searchUser]);
-
-  const fetchCompteursEtRfids = async () => {
-    try {
-      const [compteursRes, rfidsRes] = await Promise.all([
-        apiClient.get("/api/compteur/inactifs/"),
-        apiClient.get("/api/rfid/"),
-      ]);
-      setCompteurs(compteursRes.data || []);
-      setRfids(rfidsRes.data || []);
-    } catch (err) {
-      console.error("Erreur lors du fetch des compteurs ou RFID :", err);
-      setCompteurs([]);
-      setRfids([]);
-    }
-  };
-
+  // Chargement initial des données
   useEffect(() => {
     fetchVentes();
     fetchStats();
-    fetchCompteursEtRfids();
   }, [page]);
 
   const handleAddProduit = (produit: any, type: string) => {
@@ -409,13 +463,13 @@ export function VenteView() {
   };
 
   // Gérer la création d'un nouvel utilisateur
-  const handleUserCreated = (newUser: any) => {
+  const handleUserCreated = (newUser: User) => {
     setUsers(prev => [...prev, newUser]);
     setSelectedUser(newUser);
     setNomAcheteur(newUser.nom || "");
     setTelAcheteur(newUser.telephone || "");
-    setSexeAcheteur(newUser.sexe || "");
-    setAdresseAcheteur(newUser.adresse || "");
+    setSexeAcheteur("");
+    setAdresseAcheteur("");
     setUserCreationTab(0);
   };
 
@@ -648,6 +702,9 @@ export function VenteView() {
           setSexeAcheteur("");
           setAdresseAcheteur("");
           setUserCreationTab(0);
+          setSearchUser("");
+          setSearchCompteur("");
+          setSearchRFID("");
         }
       }} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
@@ -677,8 +734,8 @@ export function VenteView() {
                       if (v) {
                         setNomAcheteur(v.nom || "");
                         setTelAcheteur(v.telephone || "");
-                        setSexeAcheteur(v.sexe || "");
-                        setAdresseAcheteur(v.adresse || "");
+                        setSexeAcheteur("");
+                        setAdresseAcheteur("");
                       }
                     }}
                     onInputChange={(_, v) => setSearchUser(v)}
@@ -686,7 +743,7 @@ export function VenteView() {
                       <TextField 
                         {...params} 
                         label="Rechercher un utilisateur" 
-                        helperText="Tapez au moins 3 caractères pour rechercher"
+                        helperText="Tapez au moins 2 caractères pour rechercher"
                       />
                     )}
                   />
@@ -745,24 +802,39 @@ export function VenteView() {
               <Box sx={{ flex: 1 }}>
                 <Autocomplete
                   options={compteurs}
-                  getOptionLabel={(p) => `${p.nom} (${p.code_serie})`}
+                  getOptionLabel={(p) => `${p.nom} (${p.code_serie})${p.statut ? ` - ${p.statut}` : ''}`}
+                  onInputChange={(_, v) => setSearchCompteur(v)}
                   onChange={(_, v) =>
-                    v && handleAddProduit({ ...v, prix: v.prix }, "compteur")
+                    v && handleAddProduit({ ...v, prix: v.prix || 0 }, "compteur")
                   }
                   renderInput={(params) => (
-                    <TextField {...params} label="Rechercher un compteur" />
+                    <TextField 
+                      {...params} 
+                      label="Rechercher un compteur (stock uniquement)" 
+                      helperText="Tapez au moins 2 caractères pour rechercher - Seuls les compteurs en stock sont affichés"
+                    />
                   )}
                 />
 
                 <Autocomplete
                   sx={{ mt: 2 }}
                   options={rfids}
-                  getOptionLabel={(r) => `${r.code_uid} (${r.telephone || "Anonyme"})`}
+                  getOptionLabel={(r) => {
+                    const solde = r.solde_litres ? ` - Solde: ${r.solde_litres}L` : '';
+                    const user = r.user_nom ? ` (${r.user_nom})` : '';
+                    const statut = r.statut ? ` - ${r.statut}` : '';
+                    return `${r.code_uid}${user}${solde}${statut}`;
+                  }}
+                  onInputChange={(_, v) => setSearchRFID(v)}
                   onChange={(_, v) =>
-                    v && handleAddProduit({ ...v, prix: v.prix }, "rfid")
+                    v && handleAddProduit({ ...v, prix: v.prix || 0 }, "rfid")
                   }
                   renderInput={(params) => (
-                    <TextField {...params} label="Rechercher une carte RFID" />
+                    <TextField 
+                      {...params} 
+                      label="Rechercher une carte RFID (stock uniquement)" 
+                      helperText="Tapez au moins 2 caractères pour rechercher - Seules les cartes RFID en stock sont affichées"
+                    />
                   )}
                 />
               </Box>
@@ -786,9 +858,14 @@ export function VenteView() {
                         backgroundColor: "#fafafa",
                       }}
                     >
-                      <Typography>
-                        {p.nom || p.code_uid} x {p.quantite}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2">
+                          {p.nom || p.code_uid} x {p.quantite}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {p.type} - {p.prix || 0} ${p.statut ? ` - ${p.statut}` : ''}
+                        </Typography>
+                      </Box>
                       <IconButton color="error" onClick={() => handleRemoveProduit(i)}>
                         <DeleteIcon />
                       </IconButton>
