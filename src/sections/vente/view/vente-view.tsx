@@ -279,7 +279,7 @@ export function VenteView() {
     try {
       // AJOUT DU FILTRE statut=stock
       const response = await apiClient.get(
-        `/api/compteurs/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
+        `/api/compteur/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
       );
       setCompteurs(response.data.results || []);
     } catch (err) {
