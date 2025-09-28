@@ -66,7 +66,7 @@ interface Compteur {
   nom: string;
   code_serie: string;
   prix?: number;
-  statut?: string; // Ajout du champ statut
+  statut?: string;
 }
 
 interface RFID {
@@ -76,7 +76,7 @@ interface RFID {
   prix?: number;
   solde_litres?: number;
   user_nom?: string;
-  statut?: string; // Ajout du champ statut
+  statut?: string;
 }
 
 interface User {
@@ -86,6 +86,16 @@ interface User {
   telephone: string;
   role: string;
   state: boolean;
+}
+
+interface PaginatedResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page_size: number;
+  total_pages: number;
+  current_page: number;
+  results: Vente[];
 }
 
 // Composant pour créer un nouvel utilisateur
@@ -100,7 +110,6 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Gestionnaire pour les champs TextField
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -109,7 +118,6 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
     }));
   };
 
-  // Gestionnaire spécifique pour les Select
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -127,8 +135,6 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
         "/api/users/create-list/",
         formData
       );
-
-      // Appeler le callback avec le nouvel utilisateur créé
       onUserCreated(response.data);
     } catch (err: any) {
       console.error("Erreur lors de la création de l'utilisateur:", err);
@@ -199,7 +205,6 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
             </Select>
           </FormControl>
         </Grid>
-        
       </Grid>
 
       <DialogActions sx={{ px: 0, mt: 2}}>
@@ -222,6 +227,8 @@ export function VenteView() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10); // ✅ Taille de page par défaut
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
@@ -252,6 +259,84 @@ export function VenteView() {
   const [selectedProduits, setSelectedProduits] = useState<any[]>([]);
   const [montantPaye, setMontantPaye] = useState<number>(0);
 
+  // ✅ FILTRER LES PRODUITS DÉJÀ SÉLECTIONNÉS
+  const filteredCompteurs = compteurs.filter(compteur => 
+    !selectedProduits.some(produit => produit.type === 'compteur' && produit.id === compteur.id)
+  );
+
+  const filteredRFIDs = rfids.filter(rfid => 
+    !selectedProduits.some(produit => produit.type === 'rfid' && produit.id === rfid.id)
+  );
+
+  // ✅ CHARGEMENT DES COMPTEURS ET RFID AU DÉMARRAGE
+  useEffect(() => {
+    // Charger les compteurs et RFID en stock au démarrage du composant
+    fetchDefaultCompteurs();
+    fetchDefaultRFIDs();
+    
+    // Charger les données initiales
+    fetchVentes();
+    fetchStats();
+  }, [page, pageSize]); // ✅ Recharger quand page ou pageSize change
+
+  // ✅ FONCTION POUR CHARGER LES VENTES AVEC PAGINATION
+  const fetchVentes = async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get(`/api/ventes/?page=${page}&page_size=${pageSize}`);
+      const data: PaginatedResponse = res.data;
+      
+      setVentes(data.results || []);
+      setTotalPages(data.total_pages || 1);
+      setTotalCount(data.count || 0);
+    } catch (err) {
+      console.error("Erreur lors du fetch des ventes :", err);
+      setVentes([]);
+      setTotalPages(1);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ FONCTION POUR CHARGER LES COMPTEURS PAR DÉFAUT
+  const fetchDefaultCompteurs = async () => {
+    try {
+      console.log("Chargement des compteurs en stock...");
+      const response = await apiClient.get(
+        `/api/compteur/list-compteur-pagination/?statut=stock&page_size=10`
+      );
+      console.log("Compteurs chargés:", response.data.results);
+      setCompteurs(response.data.results || []);
+    } catch (err) {
+      console.error("Erreur lors du chargement des compteurs par défaut:", err);
+      setCompteurs([]);
+    }
+  };
+
+  // ✅ FONCTION POUR CHARGER LES RFID PAR DÉFAUT
+  const fetchDefaultRFIDs = async () => {
+    try {
+      console.log("Chargement des RFID en stock...");
+      const response = await apiClient.get(
+        `/api/rfid/search/?statut=stock&page_size=10`
+      );
+      console.log("RFID chargés:", response.data.results);
+      setRfids(response.data.results || []);
+    } catch (err) {
+      console.error("Erreur lors du chargement des RFID par défaut:", err);
+      setRfids([]);
+    }
+  };
+
+  // ✅ RECHARGE LES COMPTEURS ET RFID QUAND LE DIALOG S'OUVRE
+  useEffect(() => {
+    if (openDialog && activeStep === 1) {
+      fetchDefaultCompteurs();
+      fetchDefaultRFIDs();
+    }
+  }, [openDialog, activeStep]);
+
   // Fonctions de recherche optimisées avec debounce
   const searchUsers = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
@@ -272,37 +357,35 @@ export function VenteView() {
 
   const searchCompteursAPI = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
-      setCompteurs([]);
+      // Ne pas vider la liste si on a déjà des compteurs chargés par défaut
       return;
     }
     
     try {
-      // AJOUT DU FILTRE statut=stock
       const response = await apiClient.get(
         `/api/compteur/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
       );
       setCompteurs(response.data.results || []);
     } catch (err) {
       console.error("Erreur lors de la recherche de compteurs:", err);
-      setCompteurs([]);
+      // Garder les compteurs déjà chargés en cas d'erreur
     }
   };
 
   const searchRFIDsAPI = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
-      setRfids([]);
+      // Ne pas vider la liste si on a déjà des RFID chargés par défaut
       return;
     }
     
     try {
-      // AJOUT DU FILTRE statut=stock
       const response = await apiClient.get(
         `/api/rfid/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
       );
       setRfids(response.data.results || []);
     } catch (err) {
       console.error("Erreur lors de la recherche de RFID:", err);
-      setRfids([]);
+      // Garder les RFID déjà chargés en cas d'erreur
     }
   };
 
@@ -316,31 +399,27 @@ export function VenteView() {
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      searchCompteursAPI(searchCompteur);
+      if (searchCompteur.trim() === "") {
+        // Si la recherche est vide, recharger les compteurs par défaut
+        fetchDefaultCompteurs();
+      } else {
+        searchCompteursAPI(searchCompteur);
+      }
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchCompteur]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      searchRFIDsAPI(searchRFID);
+      if (searchRFID.trim() === "") {
+        // Si la recherche est vide, recharger les RFID par défaut
+        fetchDefaultRFIDs();
+      } else {
+        searchRFIDsAPI(searchRFID);
+      }
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchRFID]);
-
-  const fetchVentes = async () => {
-    try {
-      setLoading(true);
-      const res = await apiClient.get(`/api/ventes/`);
-      setVentes(res.data || []);
-      setTotalPages(1);
-    } catch (err) {
-      console.error("Erreur lors du fetch des ventes :", err);
-      setVentes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchStats = async () => {
     try {
@@ -354,12 +433,6 @@ export function VenteView() {
       setStatsLoading(false);
     }
   };
-
-  // Chargement initial des données
-  useEffect(() => {
-    fetchVentes();
-    fetchStats();
-  }, [page]);
 
   const handleAddProduit = (produit: any, type: string) => {
     setSelectedProduits([...selectedProduits, { ...produit, quantite: 1, type }]);
@@ -379,7 +452,6 @@ export function VenteView() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      // Validation côté client pour les montants négatifs
       if (montantPaye < 0) {
         setErrorMessage("Le montant payé ne peut pas être négatif");
         setOpenSnackbar(true);
@@ -387,7 +459,6 @@ export function VenteView() {
         return;
       }
 
-      // Vérifier si les produits ont des prix négatifs
       const produitAvecPrixNegatif = selectedProduits.find(p => (p.prix || 0) < 0);
       if (produitAvecPrixNegatif) {
         setErrorMessage("Le prix d'un produit ne peut pas être négatif");
@@ -422,12 +493,15 @@ export function VenteView() {
       setSexeAcheteur("");
       setAdresseAcheteur("");
       setUserCreationTab(0);
-      fetchVentes();
+      setSearchCompteur(""); // ✅ Réinitialiser la recherche compteur
+      setSearchRFID(""); // ✅ Réinitialiser la recherche RFID
+      fetchVentes(); // ✅ Recharger les ventes après création
       fetchStats();
+      fetchDefaultCompteurs(); // ✅ Recharger les compteurs après vente
+      fetchDefaultRFIDs(); // ✅ Recharger les RFID après vente
     } catch (error: any) {
       console.error("Erreur lors de la création :", error);
       
-      // Gestion des erreurs de validation du backend
       if (error.response?.data) {
         const errorData = error.response.data;
         
@@ -436,7 +510,6 @@ export function VenteView() {
         } else if (errorData.details) {
           setErrorMessage(errorData.details);
         } else if (typeof errorData === 'object') {
-          // Parcourir toutes les erreurs possibles
           const firstError = Object.values(errorData)[0];
           if (Array.isArray(firstError)) {
             setErrorMessage(firstError[0]);
@@ -561,6 +634,29 @@ export function VenteView() {
         </Grid>
       )}
 
+      {/* ✅ Contrôle de la pagination */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="body2" color="textSecondary">
+          Total: {totalCount} ventes
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="body2">Ventes par page:</Typography>
+          <Select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1); // Retour à la première page quand on change la taille
+            }}
+            size="small"
+            sx={{ minWidth: 80 }}
+          >
+            <MenuItem value={10}>10</MenuItem>
+            <MenuItem value={20}>20</MenuItem>
+            <MenuItem value={50}>50</MenuItem>
+          </Select>
+        </Box>
+      </Box>
+
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
           <CircularProgress />
@@ -678,13 +774,19 @@ export function VenteView() {
             </Table>
           </TableContainer>
 
+          {/* ✅ Pagination améliorée */}
           {totalPages > 1 && (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, p: 2 }}>
+              <Typography variant="body2" color="textSecondary">
+                Page {page} sur {totalPages} - {ventes.length} ventes affichées
+              </Typography>
               <Pagination
                 count={totalPages}
                 page={page}
                 onChange={(_, value) => setPage(value)}
                 color="primary"
+                showFirstButton
+                showLastButton
               />
             </Box>
           )}
@@ -705,6 +807,8 @@ export function VenteView() {
           setSearchUser("");
           setSearchCompteur("");
           setSearchRFID("");
+          fetchDefaultCompteurs(); // ✅ Recharger les compteurs à la fermeture
+          fetchDefaultRFIDs(); // ✅ Recharger les RFID à la fermeture
         }
       }} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
@@ -801,7 +905,7 @@ export function VenteView() {
             >
               <Box sx={{ flex: 1 }}>
                 <Autocomplete
-                  options={compteurs}
+                  options={filteredCompteurs} // ✅ Utilise les compteurs filtrés
                   getOptionLabel={(p) => `${p.nom} (${p.code_serie})${p.statut ? ` - ${p.statut}` : ''}`}
                   onInputChange={(_, v) => setSearchCompteur(v)}
                   onChange={(_, v) =>
@@ -811,14 +915,14 @@ export function VenteView() {
                     <TextField 
                       {...params} 
                       label="Rechercher un compteur (stock uniquement)" 
-                      helperText="Tapez au moins 2 caractères pour rechercher - Seuls les compteurs en stock sont affichés"
+                      helperText={`${filteredCompteurs.length} compteurs disponibles - Les compteurs sélectionnés sont masqués`}
                     />
                   )}
                 />
 
                 <Autocomplete
                   sx={{ mt: 2 }}
-                  options={rfids}
+                  options={filteredRFIDs} // ✅ Utilise les RFID filtrés
                   getOptionLabel={(r) => {
                     const solde = r.solde_litres ? ` - Solde: ${r.solde_litres}L` : '';
                     const user = r.user_nom ? ` (${r.user_nom})` : '';
@@ -833,7 +937,7 @@ export function VenteView() {
                     <TextField 
                       {...params} 
                       label="Rechercher une carte RFID (stock uniquement)" 
-                      helperText="Tapez au moins 2 caractères pour rechercher - Seules les cartes RFID en stock sont affichées"
+                      helperText={`${filteredRFIDs.length} cartes RFID disponibles - Les cartes sélectionnées sont masquées`}
                     />
                   )}
                 />
