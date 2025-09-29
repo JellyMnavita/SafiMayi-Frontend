@@ -5,12 +5,16 @@ import {
   DialogActions, TextField, Pagination, CircularProgress, Grid,
   Table, TableHead, TableRow, TableCell, TableBody, TableContainer,
   Stepper, Step, StepLabel, Autocomplete, Chip,
-  MenuItem, Select, FormControl, InputLabel, Tabs, Tab, Alert, Snackbar
+  MenuItem, Select, FormControl, InputLabel, Tabs, Tab, Alert, Snackbar,
+  Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemText,
+  Divider
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import PaymentIcon from "@mui/icons-material/Payment";
+import AddIcon from "@mui/icons-material/Add";
 import { IconButton } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -26,6 +30,17 @@ interface VenteDetail {
   montant: string;
 }
 
+interface PaiementVente {
+  id: number;
+  montant: string;
+  date_paiement: string;
+  mode_paiement: string;
+  transaction_id: string | null;
+  note: string | null;
+  effectue_par: number;
+  effectue_par_nom: string;
+}
+
 interface Vente {
   id: number;
   vendeur: number;
@@ -36,12 +51,15 @@ interface Vente {
   adresse_acheteur: string | null;
   montant_total: string;
   montant_paye: string;
+  reste_a_payer: string;
   mode_paiement: string;
   transaction_id: string | null;
   date_vente: string;
   statut: string;
   note: string | null;
   details_read: VenteDetail[];
+  paiements?: PaiementVente[];
+  historique_paiements?: PaiementVente[];
 }
 
 interface Stats {
@@ -59,6 +77,8 @@ interface Stats {
   };
   ventes_compteur: number;
   ventes_rfid: number;
+  total_dettes: number;
+  nombre_ventes_acompte: number;
 }
 
 interface Compteur {
@@ -222,20 +242,157 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
   );
 }
 
+// Composant pour ajouter un paiement
+function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: { 
+  vente: Vente, 
+  onPaiementAdded: () => void, 
+  onCancel: () => void 
+}) {
+  const [formData, setFormData] = useState({
+    montant: "",
+    mode_paiement: "cash",
+    transaction_id: "",
+    note: ""
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await apiClient.post(
+        `/api/ventes/ventes/${vente.id}/paiements/`,
+        {
+          ...formData,
+          montant: parseFloat(formData.montant)
+        }
+      );
+      onPaiementAdded();
+    } catch (err: any) {
+      console.error("Erreur lors de l'ajout du paiement:", err);
+      setError(err.response?.data?.message || "Erreur lors de l'ajout du paiement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resteAPayer = parseFloat(vente.reste_a_payer);
+
+  return (
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      <Typography variant="h6" gutterBottom>
+        Ajouter un paiement - Vente #{vente.id}
+      </Typography>
+
+      <Grid container spacing={2}>
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <TextField
+            fullWidth
+            label="Montant"
+            name="montant"
+            type="number"
+            value={formData.montant}
+            onChange={handleInputChange}
+            required
+            inputProps={{ 
+              min: 0, 
+              max: resteAPayer,
+              step: 0.01
+            }}
+            helperText={`Reste à payer: ${resteAPayer.toFixed(2)} $`}
+          />
+        </Grid>
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <FormControl fullWidth>
+            <InputLabel>Mode de paiement</InputLabel>
+            <Select
+              name="mode_paiement"
+              value={formData.mode_paiement}
+              label="Mode de paiement"
+              onChange={(e) => handleSelectChange("mode_paiement", e.target.value as string)}
+            >
+              <MenuItem value="cash">Espèces</MenuItem>
+              <MenuItem value="mobile_money">Mobile Money</MenuItem>
+              <MenuItem value="carte">Carte Bancaire</MenuItem>
+              <MenuItem value="mixte">Mixte</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <TextField
+            fullWidth
+            label="ID de transaction (optionnel)"
+            name="transaction_id"
+            value={formData.transaction_id}
+            onChange={handleInputChange}
+          />
+        </Grid>
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <TextField
+            fullWidth
+            label="Note (optionnel)"
+            name="note"
+            value={formData.note}
+            onChange={handleInputChange}
+            multiline
+            rows={2}
+          />
+        </Grid>
+      </Grid>
+
+      <DialogActions sx={{ px: 0, mt: 2}}>
+        <Button onClick={onCancel}>Annuler</Button>
+        <Button 
+          type="submit" 
+          variant="contained" 
+          disabled={loading || !formData.montant || parseFloat(formData.montant) <= 0}
+          startIcon={loading ? <CircularProgress size={16} /> : <PaymentIcon />}
+        >
+          Ajouter le paiement
+        </Button>
+      </DialogActions>
+    </Box>
+  );
+}
+
 export function VenteView() {
   const [ventes, setVentes] = useState<Vente[]>([]);
+  const [ventesAcompte, setVentesAcompte] = useState<Vente[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10); // ✅ Taille de page par défaut
+  const [pageSize, setPageSize] = useState<number>(10);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<number>(0);
 
   const [openDialog, setOpenDialog] = useState(false);
+  const [openPaiementDialog, setOpenPaiementDialog] = useState(false);
+  const [selectedVenteForPaiement, setSelectedVenteForPaiement] = useState<Vente | null>(null);
   const [userCreationTab, setUserCreationTab] = useState(0);
 
   // Stepper state
@@ -270,14 +427,12 @@ export function VenteView() {
 
   // ✅ CHARGEMENT DES COMPTEURS ET RFID AU DÉMARRAGE
   useEffect(() => {
-    // Charger les compteurs et RFID en stock au démarrage du composant
     fetchDefaultCompteurs();
     fetchDefaultRFIDs();
-    
-    // Charger les données initiales
     fetchVentes();
     fetchStats();
-  }, [page, pageSize]); // ✅ Recharger quand page ou pageSize change
+    fetchVentesAcompte();
+  }, [page, pageSize, activeTab]);
 
   // ✅ FONCTION POUR CHARGER LES VENTES AVEC PAGINATION
   const fetchVentes = async () => {
@@ -299,14 +454,24 @@ export function VenteView() {
     }
   };
 
+  // ✅ FONCTION POUR CHARGER LES VENTES AVEC ACOMPTE
+  const fetchVentesAcompte = async () => {
+    try {
+      const res = await apiClient.get(`/api/ventes/ventes/acomptes/?page=${page}&page_size=${pageSize}`);
+      const data: PaginatedResponse = res.data;
+      setVentesAcompte(data.results || []);
+    } catch (err) {
+      console.error("Erreur lors du fetch des ventes avec acompte :", err);
+      setVentesAcompte([]);
+    }
+  };
+
   // ✅ FONCTION POUR CHARGER LES COMPTEURS PAR DÉFAUT
   const fetchDefaultCompteurs = async () => {
     try {
-      console.log("Chargement des compteurs en stock...");
       const response = await apiClient.get(
         `/api/compteur/list-compteur-pagination/?statut=stock&page_size=10`
       );
-      console.log("Compteurs chargés:", response.data.results);
       setCompteurs(response.data.results || []);
     } catch (err) {
       console.error("Erreur lors du chargement des compteurs par défaut:", err);
@@ -317,11 +482,9 @@ export function VenteView() {
   // ✅ FONCTION POUR CHARGER LES RFID PAR DÉFAUT
   const fetchDefaultRFIDs = async () => {
     try {
-      console.log("Chargement des RFID en stock...");
       const response = await apiClient.get(
         `/api/rfid/search/?statut=stock&page_size=10`
       );
-      console.log("RFID chargés:", response.data.results);
       setRfids(response.data.results || []);
     } catch (err) {
       console.error("Erreur lors du chargement des RFID par défaut:", err);
@@ -357,7 +520,6 @@ export function VenteView() {
 
   const searchCompteursAPI = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
-      // Ne pas vider la liste si on a déjà des compteurs chargés par défaut
       return;
     }
     
@@ -368,13 +530,11 @@ export function VenteView() {
       setCompteurs(response.data.results || []);
     } catch (err) {
       console.error("Erreur lors de la recherche de compteurs:", err);
-      // Garder les compteurs déjà chargés en cas d'erreur
     }
   };
 
   const searchRFIDsAPI = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
-      // Ne pas vider la liste si on a déjà des RFID chargés par défaut
       return;
     }
     
@@ -385,7 +545,6 @@ export function VenteView() {
       setRfids(response.data.results || []);
     } catch (err) {
       console.error("Erreur lors de la recherche de RFID:", err);
-      // Garder les RFID déjà chargés en cas d'erreur
     }
   };
 
@@ -400,7 +559,6 @@ export function VenteView() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchCompteur.trim() === "") {
-        // Si la recherche est vide, recharger les compteurs par défaut
         fetchDefaultCompteurs();
       } else {
         searchCompteursAPI(searchCompteur);
@@ -412,7 +570,6 @@ export function VenteView() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchRFID.trim() === "") {
-        // Si la recherche est vide, recharger les RFID par défaut
         fetchDefaultRFIDs();
       } else {
         searchRFIDsAPI(searchRFID);
@@ -493,12 +650,13 @@ export function VenteView() {
       setSexeAcheteur("");
       setAdresseAcheteur("");
       setUserCreationTab(0);
-      setSearchCompteur(""); // ✅ Réinitialiser la recherche compteur
-      setSearchRFID(""); // ✅ Réinitialiser la recherche RFID
-      fetchVentes(); // ✅ Recharger les ventes après création
+      setSearchCompteur("");
+      setSearchRFID("");
+      fetchVentes();
       fetchStats();
-      fetchDefaultCompteurs(); // ✅ Recharger les compteurs après vente
-      fetchDefaultRFIDs(); // ✅ Recharger les RFID après vente
+      fetchVentesAcompte();
+      fetchDefaultCompteurs();
+      fetchDefaultRFIDs();
     } catch (error: any) {
       console.error("Erreur lors de la création :", error);
       
@@ -546,6 +704,20 @@ export function VenteView() {
     setUserCreationTab(0);
   };
 
+  // Gérer l'ajout d'un paiement
+  const handleAjouterPaiement = (vente: Vente) => {
+    setSelectedVenteForPaiement(vente);
+    setOpenPaiementDialog(true);
+  };
+
+  const handlePaiementAdded = () => {
+    setOpenPaiementDialog(false);
+    setSelectedVenteForPaiement(null);
+    fetchVentes();
+    fetchStats();
+    fetchVentesAcompte();
+  };
+
   const defaultStats = {
     total_ventes: 0,
     montant_total: 0,
@@ -560,7 +732,9 @@ export function VenteView() {
       carte: 0
     },
     ventes_compteur: 0,
-    ventes_rfid: 0
+    ventes_rfid: 0,
+    total_dettes: 0,
+    nombre_ventes_acompte: 0
   };
 
   const displayStats = stats || defaultStats;
@@ -573,6 +747,184 @@ export function VenteView() {
       return `Utilisateur #${vente.acheteur}`;
     }
     return "Anonyme";
+  };
+
+  const renderVentesTable = (ventesList: Vente[], showPaiementButton: boolean = false) => {
+    return (
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Client</TableCell>
+              <TableCell>Téléphone</TableCell>
+              <TableCell>Montant Total</TableCell>
+              <TableCell>Montant Payé</TableCell>
+              <TableCell>Reste à Payer</TableCell>
+              <TableCell>Mode Paiement</TableCell>
+              <TableCell>Statut</TableCell>
+              <TableCell>Date</TableCell>
+              {showPaiementButton && <TableCell>Actions</TableCell>}
+              <TableCell>Détails</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {ventesList.length > 0 ? (
+              ventesList.map((vente) => (
+                <React.Fragment key={vente.id}>
+                  <TableRow>
+                    <TableCell>{vente.id}</TableCell>
+                    <TableCell>{formatClientName(vente)}</TableCell>
+                    <TableCell>{vente.telephone_acheteur || "N/A"}</TableCell>
+                    <TableCell>{vente.montant_total} $</TableCell>
+                    <TableCell>{vente.montant_paye} $</TableCell>
+                    <TableCell>
+                      <Typography 
+                        color={parseFloat(vente.reste_a_payer) > 0 ? "error" : "success"}
+                        fontWeight="bold"
+                      >
+                        {vente.reste_a_payer} $
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={vente.mode_paiement}
+                        color={vente.mode_paiement === "cash" ? "success" : "primary"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={vente.statut}
+                        color={
+                          vente.statut === "payé" ? "success" : 
+                          vente.statut === "acompte" ? "warning" : "default"
+                        }
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{new Date(vente.date_vente).toLocaleString()}</TableCell>
+                    {showPaiementButton && (
+                      <TableCell>
+                        {parseFloat(vente.reste_a_payer) > 0 && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<PaymentIcon />}
+                            onClick={() => handleAjouterPaiement(vente)}
+                          >
+                            Payer
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const detailsElement = document.getElementById(`details-${vente.id}`);
+                          if (detailsElement) {
+                            detailsElement.style.display = detailsElement.style.display === 'none' ? 'table-row' : 'none';
+                          }
+                        }}
+                      >
+                        <ExpandMoreIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow id={`details-${vente.id}`} style={{ display: 'none' }}>
+                    <TableCell colSpan={showPaiementButton ? 11 : 10}>
+                      <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+                        <Typography variant="h6" gutterBottom>Détails de la vente</Typography>
+                        
+                        <Grid container spacing={2} sx={{ mb: 2 }}>
+                          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+                            <Typography variant="body2">
+                              <strong>Sexe:</strong> {vente.sexe_acheteur || "N/A"}
+                            </Typography>
+                          </Grid>
+                          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+                            <Typography variant="body2">
+                              <strong>Adresse:</strong> {vente.adresse_acheteur || "N/A"}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                        
+                        {vente.note && (
+                          <Typography variant="body2" color="textSecondary" gutterBottom>
+                            <strong>Note:</strong> {vente.note}
+                          </Typography>
+                        )}
+
+                        {/* Historique des paiements */}
+                        {(vente.paiements && vente.paiements.length > 0) || 
+                         (vente.historique_paiements && vente.historique_paiements.length > 0) ? (
+                          <Accordion sx={{ mt: 2 }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                              <Typography variant="subtitle1">
+                                Historique des paiements ({vente.paiements?.length || vente.historique_paiements?.length || 0})
+                              </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                              <List>
+                                {(vente.paiements || vente.historique_paiements || []).map((paiement, index) => (
+                                  <React.Fragment key={paiement.id}>
+                                    <ListItem>
+                                      <ListItemText
+                                        primary={`${paiement.montant} $ - ${paiement.mode_paiement}`}
+                                        secondary={
+                                          `Par ${paiement.effectue_par_nom} le ${new Date(paiement.date_paiement).toLocaleString()}${paiement.note ? ` - ${paiement.note}` : ''}`
+                                        }
+                                      />
+                                    </ListItem>
+                                    {index < (vente.paiements?.length || vente.historique_paiements?.length || 0) - 1 && <Divider />}
+                                  </React.Fragment>
+                                ))}
+                              </List>
+                            </AccordionDetails>
+                          </Accordion>
+                        ) : null}
+
+                        {/* Détails des produits */}
+                        <Table size="small" sx={{ mt: 2 }}>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Produit</TableCell>
+                              <TableCell>Quantité</TableCell>
+                              <TableCell>Prix unitaire</TableCell>
+                              <TableCell>Montant</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {vente.details_read.map((detail) => (
+                              <TableRow key={detail.id}>
+                                <TableCell>{detail.produit_nom}</TableCell>
+                                <TableCell>{detail.quantite}</TableCell>
+                                <TableCell>{detail.prix_unitaire} $</TableCell>
+                                <TableCell>{detail.montant} $</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell 
+                  colSpan={showPaiementButton ? 11 : 10} 
+                  align="center"
+                >
+                  Aucune vente trouvée
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
   };
 
   return (
@@ -621,8 +973,16 @@ export function VenteView() {
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Par RFID</Typography>
-              <Typography variant="h5">{displayStats.ventes_rfid}</Typography>
+              <Typography variant="subtitle2">Ventes avec acompte</Typography>
+              <Typography variant="h5">{displayStats.nombre_ventes_acompte}</Typography>
+            </Card>
+          </Grid>
+          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+            <Card sx={{ p: 2, textAlign: "center" }}>
+              <Typography variant="subtitle2">Total dettes</Typography>
+              <Typography variant="h5" color="error">
+                {displayStats.total_dettes.toLocaleString()} $
+              </Typography>
             </Card>
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
@@ -634,10 +994,18 @@ export function VenteView() {
         </Grid>
       )}
 
+      {/* Tabs pour naviguer entre toutes les ventes et les acomptes */}
+      <Card sx={{ mb: 2 }}>
+        <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+          <Tab label="Toutes les ventes" />
+          <Tab label="Ventes avec acompte" />
+        </Tabs>
+      </Card>
+
       {/* ✅ Contrôle de la pagination */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="body2" color="textSecondary">
-          Total: {totalCount} ventes
+          Total: {activeTab === 0 ? totalCount : ventesAcompte.length} ventes
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Typography variant="body2">Ventes par page:</Typography>
@@ -645,11 +1013,12 @@ export function VenteView() {
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
-              setPage(1); // Retour à la première page quand on change la taille
+              setPage(1);
             }}
             size="small"
             sx={{ minWidth: 80 }}
           >
+            <MenuItem value={5}>5</MenuItem>
             <MenuItem value={10}>10</MenuItem>
             <MenuItem value={20}>20</MenuItem>
             <MenuItem value={50}>50</MenuItem>
@@ -663,122 +1032,13 @@ export function VenteView() {
         </Box>
       ) : (
         <Card sx={{ p: 2 }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Client</TableCell>
-                  <TableCell>Téléphone</TableCell>
-                  <TableCell>Montant Calculé</TableCell>
-                  <TableCell>Montant Payé</TableCell>
-                  <TableCell>Mode Paiement</TableCell>
-                  <TableCell>Statut</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Détails</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {ventes.length > 0 ? (
-                  ventes.map((vente) => (
-                    <React.Fragment key={vente.id}>
-                      <TableRow>
-                        <TableCell>{vente.id}</TableCell>
-                        <TableCell>{formatClientName(vente)}</TableCell>
-                        <TableCell>{vente.telephone_acheteur || "N/A"}</TableCell>
-                        <TableCell>{vente.montant_total} $</TableCell>
-                        <TableCell>{vente.montant_paye} $</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={vente.mode_paiement}
-                            color={vente.mode_paiement === "cash" ? "success" : "primary"}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={vente.statut}
-                            color={vente.statut === "payé" ? "success" : "default"}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>{new Date(vente.date_vente).toLocaleString()}</TableCell>
-                        <TableCell>
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              const detailsElement = document.getElementById(`details-${vente.id}`);
-                              if (detailsElement) {
-                                detailsElement.style.display = detailsElement.style.display === 'none' ? 'table-row' : 'none';
-                              }
-                            }}
-                          >
-                            <ExpandMoreIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow id={`details-${vente.id}`} style={{ display: 'none' }}>
-                        <TableCell colSpan={9}>
-                          <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
-                            <Typography variant="h6" gutterBottom>Détails de la vente</Typography>
-                            <Grid container spacing={2} sx={{ mb: 2 }}>
-                              <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
-                                <Typography variant="body2">
-                                  <strong>Sexe:</strong> {vente.sexe_acheteur || "N/A"}
-                                </Typography>
-                              </Grid>
-                              <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
-                                <Typography variant="body2">
-                                  <strong>Adresse:</strong> {vente.adresse_acheteur || "N/A"}
-                                </Typography>
-                              </Grid>
-                            </Grid>
-                            {vente.note && (
-                              <Typography variant="body2" color="textSecondary" gutterBottom>
-                                <strong>Note:</strong> {vente.note}
-                              </Typography>
-                            )}
-                            <Table size="small">
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>Produit</TableCell>
-                                  <TableCell>Quantité</TableCell>
-                                  <TableCell>Prix unitaire</TableCell>
-                                  <TableCell>Montant</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {vente.details_read.map((detail) => (
-                                  <TableRow key={detail.id}>
-                                    <TableCell>{detail.produit_nom}</TableCell>
-                                    <TableCell>{detail.quantite}</TableCell>
-                                    <TableCell>{detail.prix_unitaire} $</TableCell>
-                                    <TableCell>{detail.montant} $</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center">
-                      Aucune vente trouvée
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          {activeTab === 0 ? renderVentesTable(ventes) : renderVentesTable(ventesAcompte, true)}
 
           {/* ✅ Pagination améliorée */}
           {totalPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, p: 2 }}>
               <Typography variant="body2" color="textSecondary">
-                Page {page} sur {totalPages} - {ventes.length} ventes affichées
+                Page {page} sur {totalPages} - {activeTab === 0 ? ventes.length : ventesAcompte.length} ventes affichées
               </Typography>
               <Pagination
                 count={totalPages}
@@ -793,6 +1053,7 @@ export function VenteView() {
         </Card>
       )}
 
+      {/* Dialog pour nouvelle vente */}
       <Dialog open={openDialog} onClose={() => {
         if (!saving) {
           setOpenDialog(false);
@@ -807,8 +1068,8 @@ export function VenteView() {
           setSearchUser("");
           setSearchCompteur("");
           setSearchRFID("");
-          fetchDefaultCompteurs(); // ✅ Recharger les compteurs à la fermeture
-          fetchDefaultRFIDs(); // ✅ Recharger les RFID à la fermeture
+          fetchDefaultCompteurs();
+          fetchDefaultRFIDs();
         }
       }} fullWidth maxWidth="md">
         <DialogTitle>Nouvelle vente</DialogTitle>
@@ -905,7 +1166,7 @@ export function VenteView() {
             >
               <Box sx={{ flex: 1 }}>
                 <Autocomplete
-                  options={filteredCompteurs} // ✅ Utilise les compteurs filtrés
+                  options={filteredCompteurs}
                   getOptionLabel={(p) => `${p.nom} (${p.code_serie})${p.statut ? ` - ${p.statut}` : ''}`}
                   onInputChange={(_, v) => setSearchCompteur(v)}
                   onChange={(_, v) =>
@@ -922,7 +1183,7 @@ export function VenteView() {
 
                 <Autocomplete
                   sx={{ mt: 2 }}
-                  options={filteredRFIDs} // ✅ Utilise les RFID filtrés
+                  options={filteredRFIDs}
                   getOptionLabel={(r) => {
                     const solde = r.solde_litres ? ` - Solde: ${r.solde_litres}L` : '';
                     const user = r.user_nom ? ` (${r.user_nom})` : '';
@@ -1029,6 +1290,31 @@ export function VenteView() {
             </>
           )}
         </DialogActions>
+      </Dialog>
+
+      {/* Dialog pour ajouter un paiement */}
+      <Dialog 
+        open={openPaiementDialog} 
+        onClose={() => {
+          setOpenPaiementDialog(false);
+          setSelectedVenteForPaiement(null);
+        }} 
+        fullWidth 
+        maxWidth="sm"
+      >
+        <DialogTitle>Ajouter un paiement</DialogTitle>
+        <DialogContent>
+          {selectedVenteForPaiement && (
+            <AjouterPaiementForm
+              vente={selectedVenteForPaiement}
+              onPaiementAdded={handlePaiementAdded}
+              onCancel={() => {
+                setOpenPaiementDialog(false);
+                setSelectedVenteForPaiement(null);
+              }}
+            />
+          )}
+        </DialogContent>
       </Dialog>
     </DashboardContent>
   );
