@@ -1118,68 +1118,124 @@ export function VenteView() {
           Chargement des statistiques...
         </Box>
       ) : (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid  sx={{
-            flex: '1 1 20%',
-            minWidth: 200,
-            maxWidth: '20%'
+        <Box sx={{ mb: 3 }}>
+          {/* Slider pour mobile */}
+          <Box sx={{
+            display: { xs: 'block', sm: 'none' },
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            '&::-webkit-scrollbar': {
+              display: 'none'
+            },
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none'
           }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Total ventes</Typography>
-              <Typography variant="h5">{displayStats.total_ventes}</Typography>
-            </Card>
-          </Grid>
-          <Grid  sx={{
-            flex: '1 1 20%',
-            minWidth: 200,
-            maxWidth: '20%'
-          }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Chiffre d'affaires</Typography>
-              <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
-            </Card>
-          </Grid>
-          {/* <Grid  sx={{
-            flex: '1 1 20%',
-            minWidth: 200,
-            maxWidth: '20%'
-          }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">En cours de paiement</Typography>
-              <Typography variant="h5">{displayStats.nombre_ventes_acompte}</Typography>
-            </Card>
-          </Grid> */}
-          <Grid  sx={{
-            flex: '1 1 20%',
-            minWidth: 200,
-            maxWidth: '20%'
-          }}>
-            <Card sx={{
-              p: 2, textAlign: "center",
-              backgroundColor: displayStats.total_dettes > 0 ? '#fff3cd' : 'inherit'
+            <Box sx={{
+              display: 'flex',
+              gap: 2,
+              minWidth: 'max-content',
+              pb: 1
             }}>
-              <Typography variant="subtitle2">Dettes en cours</Typography>
-              <Typography variant="h5" color={displayStats.total_dettes > 0 ? "error" : "success"}>
-                {displayStats.total_dettes.toLocaleString()} $
-              </Typography>
-            </Card>
+              <Card sx={{ p: 2, textAlign: "center", minWidth: 200 }}>
+                <Typography variant="subtitle2">Total ventes</Typography>
+                <Typography variant="h5">{displayStats.total_ventes}</Typography>
+              </Card>
+              <Card sx={{ p: 2, textAlign: "center", minWidth: 200 }}>
+                <Typography variant="subtitle2">Chiffre d'affaires</Typography>
+                <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
+              </Card>
+              <Card sx={{ p: 2, textAlign: "center", minWidth: 200 }}>
+                <Typography variant="subtitle2">En cours de paiement</Typography>
+                <Typography variant="h5">{displayStats.nombre_ventes_acompte}</Typography>
+              </Card>
+              <Card sx={{
+                p: 2,
+                textAlign: "center",
+                minWidth: 200,
+                backgroundColor: displayStats.total_dettes > 0 ? '#fff3cd' : 'inherit'
+              }}>
+                <Typography variant="subtitle2">Dettes en cours</Typography>
+                <Typography variant="h5" color={displayStats.total_dettes > 0 ? "error" : "success"}>
+                  {displayStats.total_dettes.toLocaleString()} $
+                </Typography>
+              </Card>
+              <Card sx={{ p: 2, textAlign: "center", minWidth: 200 }}>
+                <Typography variant="subtitle2">Taux de recouvrement</Typography>
+                <Typography variant="h5">
+                  {displayStats.montant_total > 0
+                    ? `${((displayStats.montant_total - displayStats.total_dettes) / displayStats.montant_total * 100).toFixed(1)}%`
+                    : '100%'
+                  }
+                </Typography>
+              </Card>
+            </Box>
+          </Box>
+
+          {/* Grille normale pour desktop */}
+          <Grid container spacing={2} sx={{ display: { xs: 'none', sm: 'flex' } }}>
+            <Grid sx={{
+              flex: '1 1 20%',
+              minWidth: 200,
+              maxWidth: '20%'
+            }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">Total ventes</Typography>
+                <Typography variant="h5">{displayStats.total_ventes}</Typography>
+              </Card>
+            </Grid>
+            <Grid sx={{
+              flex: '1 1 20%',
+              minWidth: 200,
+              maxWidth: '20%'
+            }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">Chiffre d'affaires</Typography>
+                <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
+              </Card>
+            </Grid>
+            <Grid sx={{
+              flex: '1 1 20%',
+              minWidth: 200,
+              maxWidth: '20%'
+            }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">En cours de paiement</Typography>
+                <Typography variant="h5">{displayStats.nombre_ventes_acompte}</Typography>
+              </Card>
+            </Grid>
+            <Grid sx={{
+              flex: '1 1 20%',
+              minWidth: 200,
+              maxWidth: '20%'
+            }}>
+              <Card sx={{
+                p: 2,
+                textAlign: "center",
+                backgroundColor: displayStats.total_dettes > 0 ? '#fff3cd' : 'inherit'
+              }}>
+                <Typography variant="subtitle2">Dettes en cours</Typography>
+                <Typography variant="h5" color={displayStats.total_dettes > 0 ? "error" : "success"}>
+                  {displayStats.total_dettes.toLocaleString()} $
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid sx={{
+              flex: '1 1 20%',
+              minWidth: 200,
+              maxWidth: '20%'
+            }}>
+              <Card sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="subtitle2">Taux de recouvrement</Typography>
+                <Typography variant="h5">
+                  {displayStats.montant_total > 0
+                    ? `${((displayStats.montant_total - displayStats.total_dettes) / displayStats.montant_total * 100).toFixed(1)}%`
+                    : '100%'
+                  }
+                </Typography>
+              </Card>
+            </Grid>
           </Grid>
-          <Grid  sx={{
-            flex: '1 1 20%',
-            minWidth: 200,
-            maxWidth: '20%'
-          }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Taux de recouvrement</Typography>
-              <Typography variant="h5">
-                {displayStats.montant_total > 0
-                  ? `${((displayStats.montant_total - displayStats.total_dettes) / displayStats.montant_total * 100).toFixed(1)}%`
-                  : '100%'
-                }
-              </Typography>
-            </Card>
-          </Grid>
-        </Grid>
+        </Box>
       )}
 
       {/* Bouton pour ouvrir les filtres */}
