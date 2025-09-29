@@ -1193,7 +1193,7 @@ export function VenteView() {
                 <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
               </Card>
             </Grid>
-            <Grid sx={{
+            {/* <Grid sx={{
               flex: '1 1 20%',
               minWidth: 200,
               maxWidth: '20%'
@@ -1202,7 +1202,7 @@ export function VenteView() {
                 <Typography variant="subtitle2">En cours de paiement</Typography>
                 <Typography variant="h5">{displayStats.nombre_ventes_acompte}</Typography>
               </Card>
-            </Grid>
+            </Grid> */}
             <Grid sx={{
               flex: '1 1 20%',
               minWidth: 200,
