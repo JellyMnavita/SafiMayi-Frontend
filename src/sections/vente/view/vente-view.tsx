@@ -279,7 +279,7 @@ function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: {
 
     try {
       await apiClient.post(
-        `/api/ventes/ventes/${vente.id}/paiements/`,
+        `/api/ventes/${vente.id}/paiements/`,
         {
           ...formData,
           montant: parseFloat(formData.montant)
@@ -434,7 +434,7 @@ export function VenteView() {
     fetchVentesAcompte();
   }, [page, pageSize, activeTab]);
 
-  // ✅ FONCTION POUR CHARGER LES VENTES AVEC PAGINATION
+  // FONCTION POUR CHARGER LES VENTES AVEC PAGINATION
   const fetchVentes = async () => {
     try {
       setLoading(true);
@@ -454,10 +454,10 @@ export function VenteView() {
     }
   };
 
-  // ✅ FONCTION POUR CHARGER LES VENTES AVEC ACOMPTE
+  // FONCTION POUR CHARGER LES VENTES AVEC ACOMPTE
   const fetchVentesAcompte = async () => {
     try {
-      const res = await apiClient.get(`/api/ventes/ventes/acomptes/?page=${page}&page_size=${pageSize}`);
+      const res = await apiClient.get(`/api/ventes/acomptes/?page=${page}&page_size=${pageSize}`);
       const data: PaginatedResponse = res.data;
       setVentesAcompte(data.results || []);
     } catch (err) {
@@ -466,7 +466,7 @@ export function VenteView() {
     }
   };
 
-  // ✅ FONCTION POUR CHARGER LES COMPTEURS PAR DÉFAUT
+  // FONCTION POUR CHARGER LES COMPTEURS PAR DÉFAUT
   const fetchDefaultCompteurs = async () => {
     try {
       const response = await apiClient.get(
@@ -1002,7 +1002,7 @@ export function VenteView() {
         </Tabs>
       </Card>
 
-      {/* ✅ Contrôle de la pagination */}
+      {/* Contrôle de la pagination */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography variant="body2" color="textSecondary">
           Total: {activeTab === 0 ? totalCount : ventesAcompte.length} ventes
@@ -1034,7 +1034,7 @@ export function VenteView() {
         <Card sx={{ p: 2 }}>
           {activeTab === 0 ? renderVentesTable(ventes) : renderVentesTable(ventesAcompte, true)}
 
-          {/* ✅ Pagination améliorée */}
+          {/* Pagination améliorée */}
           {totalPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, p: 2 }}>
               <Typography variant="body2" color="textSecondary">
