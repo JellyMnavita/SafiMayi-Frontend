@@ -7,7 +7,7 @@ import {
   Stepper, Step, StepLabel, Autocomplete, Chip,
   MenuItem, Select, FormControl, InputLabel, Tabs, Tab, Alert, Snackbar,
   Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemText,
-  Divider
+  Divider, Paper
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -15,6 +15,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PaymentIcon from "@mui/icons-material/Payment";
 import AddIcon from "@mui/icons-material/Add";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import { IconButton } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -375,13 +376,107 @@ function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: {
   );
 }
 
+// Composant pour les filtres
+function FiltresVentes({ 
+  filtres, 
+  onFiltresChange, 
+  onResetFiltres 
+}: {
+  filtres: any;
+  onFiltresChange: (newFiltres: any) => void;
+  onResetFiltres: () => void;
+}) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Grid container spacing={2}>
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <TextField
+            fullWidth
+            label="Recherche"
+            value={filtres.search}
+            onChange={(e) => onFiltresChange({ ...filtres, search: e.target.value })}
+            placeholder="Nom, téléphone..."
+            size="small"
+          />
+        </Grid>
+        
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Mode paiement</InputLabel>
+            <Select
+              value={filtres.mode_paiement}
+              label="Mode paiement"
+              onChange={(e) => onFiltresChange({ ...filtres, mode_paiement: e.target.value })}
+            >
+              <MenuItem value="">Tous</MenuItem>
+              <MenuItem value="cash">Espèces</MenuItem>
+              <MenuItem value="mobile_money">Mobile Money</MenuItem>
+              <MenuItem value="carte">Carte Bancaire</MenuItem>
+              <MenuItem value="mixte">Mixte</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Statut</InputLabel>
+            <Select
+              value={filtres.statut}
+              label="Statut"
+              onChange={(e) => onFiltresChange({ ...filtres, statut: e.target.value })}
+            >
+              <MenuItem value="">Tous</MenuItem>
+              <MenuItem value="payé">Payé</MenuItem>
+              <MenuItem value="acompte">Acompte</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <TextField
+            fullWidth
+            label="Date début"
+            type="date"
+            value={filtres.date_debut}
+            onChange={(e) => onFiltresChange({ ...filtres, date_debut: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+            size="small"
+          />
+        </Grid>
+        
+        <Grid sx={{ width: { xs: '100%' } }}>
+          <TextField
+            fullWidth
+            label="Date fin"
+            type="date"
+            value={filtres.date_fin}
+            onChange={(e) => onFiltresChange({ ...filtres, date_fin: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+            size="small"
+          />
+        </Grid>
+      </Grid>
+      
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+        <Button 
+          onClick={onResetFiltres}
+          variant="outlined"
+          size="small"
+        >
+          Réinitialiser les filtres
+        </Button>
+      </Box>
+    </Box>
+  );
+}
+
 export function VenteView() {
   const [ventes, setVentes] = useState<Vente[]>([]);
   const [ventesAcompte, setVentesAcompte] = useState<Vente[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize, setPageSize] = useState<number>(5); // Par défaut 5 ventes par page
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
@@ -390,8 +485,19 @@ export function VenteView() {
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<number>(0);
 
+  // État pour les filtres
+  const [filtres, setFiltres] = useState({
+    search: "",
+    mode_paiement: "",
+    statut: "",
+    date_debut: "",
+    date_fin: ""
+  });
+
+  // États pour les dialogues
   const [openDialog, setOpenDialog] = useState(false);
   const [openPaiementDialog, setOpenPaiementDialog] = useState(false);
+  const [openFiltresDialog, setOpenFiltresDialog] = useState(false);
   const [selectedVenteForPaiement, setSelectedVenteForPaiement] = useState<Vente | null>(null);
   const [userCreationTab, setUserCreationTab] = useState(0);
 
@@ -432,13 +538,27 @@ export function VenteView() {
     fetchVentes();
     fetchStats();
     fetchVentesAcompte();
-  }, [page, pageSize, activeTab]);
+  }, [page, pageSize, activeTab, filtres]); // Ajout de filtres dans les dépendances
 
-  // FONCTION POUR CHARGER LES VENTES AVEC PAGINATION
+  // FONCTION POUR CHARGER LES VENTES AVEC PAGINATION ET FILTRES
   const fetchVentes = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get(`/api/ventes/?page=${page}&page_size=${pageSize}`);
+      
+      // Construction des paramètres de requête
+      const params = new URLSearchParams({
+        page: page.toString(),
+        page_size: pageSize.toString()
+      });
+
+      // Ajout des filtres s'ils sont définis
+      if (filtres.search) params.append('search', filtres.search);
+      if (filtres.mode_paiement) params.append('mode_paiement', filtres.mode_paiement);
+      if (filtres.statut) params.append('statut', filtres.statut);
+      if (filtres.date_debut) params.append('date_debut', filtres.date_debut);
+      if (filtres.date_fin) params.append('date_fin', filtres.date_fin);
+
+      const res = await apiClient.get(`/api/ventes/?${params}`);
       const data: PaginatedResponse = res.data;
 
       setVentes(data.results || []);
@@ -499,6 +619,31 @@ export function VenteView() {
       fetchDefaultRFIDs();
     }
   }, [openDialog, activeStep]);
+
+  // Gestion des changements de filtres
+  const handleFiltresChange = (newFiltres: any) => {
+    setFiltres(newFiltres);
+    setPage(1); // Reset à la première page quand les filtres changent
+  };
+
+  // Réinitialisation des filtres
+  const handleResetFiltres = () => {
+    setFiltres({
+      search: "",
+      mode_paiement: "",
+      statut: "",
+      date_debut: "",
+      date_fin: ""
+    });
+    setPage(1);
+    setOpenFiltresDialog(false);
+  };
+
+  // Appliquer les filtres et fermer la boîte de dialogue
+  const handleApplyFiltres = () => {
+    setOpenFiltresDialog(false);
+    setPage(1);
+  };
 
   // Fonctions de recherche optimisées avec debounce
   const searchUsers = async (searchTerm: string) => {
@@ -747,6 +892,17 @@ export function VenteView() {
       return `Utilisateur #${vente.acheteur}`;
     }
     return "Anonyme";
+  };
+
+  // Afficher un badge avec le nombre de filtres actifs
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filtres.search) count++;
+    if (filtres.mode_paiement) count++;
+    if (filtres.statut) count++;
+    if (filtres.date_debut) count++;
+    if (filtres.date_fin) count++;
+    return count;
   };
 
   const renderVentesTable = (ventesList: Vente[], showPaiementButton: boolean = false) => {
@@ -1006,6 +1162,39 @@ export function VenteView() {
         </Grid>
       )}
 
+      {/* Bouton pour ouvrir les filtres */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Button 
+          startIcon={<FilterListIcon />}
+          onClick={() => setOpenFiltresDialog(true)}
+          variant="outlined"
+          sx={{ position: 'relative' }}
+        >
+          Filtres
+          {getActiveFiltersCount() > 0 && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: -8,
+                right: -8,
+                backgroundColor: 'primary.main',
+                color: 'white',
+                borderRadius: '50%',
+                width: 20,
+                height: 20,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: 'bold'
+              }}
+            >
+              {getActiveFiltersCount()}
+            </Box>
+          )}
+        </Button>
+      </Box>
+
       {/* Tabs pour naviguer entre toutes les ventes et les acomptes */}
       <Card sx={{ mb: 2 }}>
         <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
@@ -1064,6 +1253,45 @@ export function VenteView() {
           )}
         </Card>
       )}
+
+      {/* Dialog pour les filtres */}
+      <Dialog 
+        open={openFiltresDialog} 
+        onClose={() => setOpenFiltresDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <FilterListIcon sx={{ mr: 1 }} />
+            Filtres des ventes
+            {getActiveFiltersCount() > 0 && (
+              <Chip 
+                label={`${getActiveFiltersCount()} actif(s)`} 
+                size="small" 
+                color="primary" 
+                sx={{ ml: 2 }}
+              />
+            )}
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <FiltresVentes 
+            filtres={filtres}
+            onFiltresChange={handleFiltresChange}
+            onResetFiltres={handleResetFiltres}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenFiltresDialog(false)}>Fermer</Button>
+          <Button 
+            onClick={handleApplyFiltres}
+            variant="contained"
+          >
+            Appliquer les filtres
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Dialog pour nouvelle vente */}
       <Dialog open={openDialog} onClose={() => {
