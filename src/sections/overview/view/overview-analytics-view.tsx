@@ -309,7 +309,7 @@ export function OverviewAnalyticsView() {
       }}>
         <Box>
           <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-            Hey, {username} 👋
+            Hey, {username} 
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
             Bienvenue dans l'espace d'administration

@@ -10,6 +10,7 @@ import { Iconify } from "../../../components/iconify";
 
 interface RFID {
   id: number;
+  code: string; // Nouveau champ code
   code_uid: string;
   telephone: string;
   active: boolean;
@@ -67,8 +68,10 @@ export function RFIDView() {
     let filtered = [...allRfid];
     if (searchCode) {
       filtered = filtered.filter((c) => {
-        if (!c.code_uid) return false;
-        return c.code_uid.toLowerCase().includes(searchCode.toLowerCase());
+        // Recherche à la fois dans code et code_uid
+        const matchesCode = c.code && c.code.toLowerCase().includes(searchCode.toLowerCase());
+        const matchesCodeUid = c.code_uid && c.code_uid.toLowerCase().includes(searchCode.toLowerCase());
+        return matchesCode || matchesCodeUid;
       });
     }
     if (searchTel) {
@@ -94,6 +97,7 @@ export function RFIDView() {
             {
               telephone: formData.telephone,
               code_uid: formData.code_uid,
+              code: formData.code, // Inclure le code dans l'édition
             }
           );
         } else {
@@ -103,6 +107,7 @@ export function RFIDView() {
             {
               code_uid: formData.code_uid,
               telephone: formData.telephone,
+              // Le code sera généré automatiquement côté serveur
             }
           );
         }
@@ -183,10 +188,11 @@ export function RFIDView() {
       <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           <TextField
-            label="Code UID"
+            label="Code UID ou Code"
             value={searchCode}
             onChange={(e) => setSearchCode(e.target.value)}
             size="small"
+            placeholder="Rechercher par UID ou code"
           />
           <TextField
             label="Téléphone"
@@ -217,7 +223,7 @@ export function RFIDView() {
         </Box>
       </Card>
 
-      {/* Cards avec affichage du solde de litrage */}
+      {/* Cards avec affichage du code et du solde de litrage */}
       <Grid container spacing={2}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', p: 3 }}>
@@ -236,8 +242,26 @@ export function RFIDView() {
                   </IconButton>
                 </Box>
                 
+                {/* Affichage du code à 6 chiffres */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1,
+                  p: 1,
+                  borderRadius: 1,
+                  bgcolor: 'primary.light',
+                  color: 'primary.contrastText'
+                }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Code:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {rfid.code || "N/A"}
+                  </Typography>
+                </Box>
+                
                 <Typography variant="body2" color="text.secondary">
-                  Tél:  {rfid.telephone || "Non attribué"}
+                  Tél: {rfid.telephone || "Non attribué"}
                 </Typography>
                 
                 {/* Affichage du solde de litrage */}
@@ -267,9 +291,6 @@ export function RFIDView() {
                   <Typography variant="caption" color="text.secondary">
                     {new Date(rfid.created_at).toLocaleDateString()}
                   </Typography>
-                {/*   <Typography variant="caption" fontWeight="medium">
-                    rfid.prix} €
-                  </Typography> */}
                 </Box>
 
                 <Box>
@@ -335,6 +356,17 @@ export function RFIDView() {
                 onChange={(e) => setFormData({ ...formData, code_uid: e.target.value })}
                 fullWidth
               />
+              {/* Champ pour éditer le code (seulement en mode édition) */}
+              {formData.id && (
+                <TextField
+                  label="Code (6 chiffres)"
+                  value={formData.code || ""}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  fullWidth
+                  inputProps={{ maxLength: 6 }}
+                  helperText="Code à 6 chiffres unique"
+                />
+              )}
               <TextField
                 label="Téléphone"
                 value={formData.telephone || ""}
