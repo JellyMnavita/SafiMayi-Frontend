@@ -168,7 +168,7 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Grid container spacing={2} sx={{ mt: 2}}>
+      <Grid container spacing={2} sx={{ mt: 2 }}>
         <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
@@ -227,11 +227,11 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
         </Grid>
       </Grid>
 
-      <DialogActions sx={{ px: 0, mt: 2}}>
+      <DialogActions sx={{ px: 0, mt: 2 }}>
         <Button onClick={onCancel}>Annuler</Button>
-        <Button 
-          type="submit" 
-          variant="contained" 
+        <Button
+          type="submit"
+          variant="contained"
           disabled={loading}
           startIcon={loading ? <CircularProgress size={16} /> : <PersonAddIcon />}
         >
@@ -243,10 +243,10 @@ function CreateUserForm({ onUserCreated, onCancel }: { onUserCreated: (user: any
 }
 
 // Composant pour ajouter un paiement
-function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: { 
-  vente: Vente, 
-  onPaiementAdded: () => void, 
-  onCancel: () => void 
+function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: {
+  vente: Vente,
+  onPaiementAdded: () => void,
+  onCancel: () => void
 }) {
   const [formData, setFormData] = useState({
     montant: "",
@@ -314,8 +314,8 @@ function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: {
             value={formData.montant}
             onChange={handleInputChange}
             required
-            inputProps={{ 
-              min: 0, 
+            inputProps={{
+              min: 0,
               max: resteAPayer,
               step: 0.01
             }}
@@ -360,11 +360,11 @@ function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: {
         </Grid>
       </Grid>
 
-      <DialogActions sx={{ px: 0, mt: 2}}>
+      <DialogActions sx={{ px: 0, mt: 2 }}>
         <Button onClick={onCancel}>Annuler</Button>
-        <Button 
-          type="submit" 
-          variant="contained" 
+        <Button
+          type="submit"
+          variant="contained"
           disabled={loading || !formData.montant || parseFloat(formData.montant) <= 0}
           startIcon={loading ? <CircularProgress size={16} /> : <PaymentIcon />}
         >
@@ -417,11 +417,11 @@ export function VenteView() {
   const [montantPaye, setMontantPaye] = useState<number>(0);
 
   // ✅ FILTRER LES PRODUITS DÉJÀ SÉLECTIONNÉS
-  const filteredCompteurs = compteurs.filter(compteur => 
+  const filteredCompteurs = compteurs.filter(compteur =>
     !selectedProduits.some(produit => produit.type === 'compteur' && produit.id === compteur.id)
   );
 
-  const filteredRFIDs = rfids.filter(rfid => 
+  const filteredRFIDs = rfids.filter(rfid =>
     !selectedProduits.some(produit => produit.type === 'rfid' && produit.id === rfid.id)
   );
 
@@ -440,7 +440,7 @@ export function VenteView() {
       setLoading(true);
       const res = await apiClient.get(`/api/ventes/?page=${page}&page_size=${pageSize}`);
       const data: PaginatedResponse = res.data;
-      
+
       setVentes(data.results || []);
       setTotalPages(data.total_pages || 1);
       setTotalCount(data.count || 0);
@@ -506,7 +506,7 @@ export function VenteView() {
       setUsers([]);
       return;
     }
-    
+
     try {
       const response = await apiClient.get(
         `/api/users/search/?search=${encodeURIComponent(searchTerm)}&page_size=10`
@@ -522,7 +522,7 @@ export function VenteView() {
     if (searchTerm.length < 2) {
       return;
     }
-    
+
     try {
       const response = await apiClient.get(
         `/api/compteur/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
@@ -537,7 +537,7 @@ export function VenteView() {
     if (searchTerm.length < 2) {
       return;
     }
-    
+
     try {
       const response = await apiClient.get(
         `/api/rfid/search/?search=${encodeURIComponent(searchTerm)}&statut=stock&page_size=10`
@@ -659,10 +659,10 @@ export function VenteView() {
       fetchDefaultRFIDs();
     } catch (error: any) {
       console.error("Erreur lors de la création :", error);
-      
+
       if (error.response?.data) {
         const errorData = error.response.data;
-        
+
         if (errorData.montant_paye) {
           setErrorMessage(errorData.montant_paye);
         } else if (errorData.details) {
@@ -761,9 +761,7 @@ export function VenteView() {
               <TableCell>Montant Total</TableCell>
               <TableCell>Montant Payé</TableCell>
               <TableCell>Reste à Payer</TableCell>
-              <TableCell>Mode Paiement</TableCell>
               <TableCell>Statut</TableCell>
-              <TableCell>Date</TableCell>
               {showPaiementButton && <TableCell>Actions</TableCell>}
               <TableCell>Détails</TableCell>
             </TableRow>
@@ -779,7 +777,7 @@ export function VenteView() {
                     <TableCell>{vente.montant_total} $</TableCell>
                     <TableCell>{vente.montant_paye} $</TableCell>
                     <TableCell>
-                      <Typography 
+                      <Typography
                         color={parseFloat(vente.reste_a_payer) > 0 ? "error" : "success"}
                         fontWeight="bold"
                       >
@@ -788,22 +786,14 @@ export function VenteView() {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={vente.mode_paiement}
-                        color={vente.mode_paiement === "cash" ? "success" : "primary"}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
                         label={vente.statut}
                         color={
-                          vente.statut === "payé" ? "success" : 
-                          vente.statut === "acompte" ? "warning" : "default"
+                          vente.statut === "payé" ? "success" :
+                            vente.statut === "acompte" ? "warning" : "default"
                         }
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{new Date(vente.date_vente).toLocaleString()}</TableCell>
                     {showPaiementButton && (
                       <TableCell>
                         {parseFloat(vente.reste_a_payer) > 0 && (
@@ -833,32 +823,43 @@ export function VenteView() {
                     </TableCell>
                   </TableRow>
                   <TableRow id={`details-${vente.id}`} style={{ display: 'none' }}>
-                    <TableCell colSpan={showPaiementButton ? 11 : 10}>
+                    <TableCell colSpan={showPaiementButton ? 9 : 8}>
                       <Box sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
-                        <Typography variant="h6" gutterBottom>Détails de la vente</Typography>
-                        
+                        <Typography variant="h6" gutterBottom>Détails de la vente #{vente.id}</Typography>
+
                         <Grid container spacing={2} sx={{ mb: 2 }}>
-                          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
+                          <Grid sx={{ width: { xs: '100%', sm: '33%' } }}>
+                            <Typography variant="body2">
+                              <strong>Mode paiement:</strong> {vente.mode_paiement}
+                            </Typography>
+                          </Grid>
+                          <Grid sx={{ width: { xs: '100%', sm: '33%' } }}>
+                            <Typography variant="body2">
+                              <strong>Date:</strong> {new Date(vente.date_vente).toLocaleString()}
+                            </Typography>
+                          </Grid>
+                          <Grid sx={{ width: { xs: '100%', sm: '33%' } }}>
                             <Typography variant="body2">
                               <strong>Sexe:</strong> {vente.sexe_acheteur || "N/A"}
                             </Typography>
                           </Grid>
-                          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
-                            <Typography variant="body2">
-                              <strong>Adresse:</strong> {vente.adresse_acheteur || "N/A"}
-                            </Typography>
-                          </Grid>
                         </Grid>
-                        
+
+                        {vente.adresse_acheteur && (
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            <strong>Adresse:</strong> {vente.adresse_acheteur}
+                          </Typography>
+                        )}
+
                         {vente.note && (
-                          <Typography variant="body2" color="textSecondary" gutterBottom>
+                          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                             <strong>Note:</strong> {vente.note}
                           </Typography>
                         )}
 
                         {/* Historique des paiements */}
-                        {(vente.paiements && vente.paiements.length > 0) || 
-                         (vente.historique_paiements && vente.historique_paiements.length > 0) ? (
+                        {(vente.paiements && vente.paiements.length > 0) ||
+                          (vente.historique_paiements && vente.historique_paiements.length > 0) ? (
                           <Accordion sx={{ mt: 2 }}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                               <Typography variant="subtitle1">
@@ -886,7 +887,10 @@ export function VenteView() {
                         ) : null}
 
                         {/* Détails des produits */}
-                        <Table size="small" sx={{ mt: 2 }}>
+                        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+                          Produits vendus
+                        </Typography>
+                        <Table size="small">
                           <TableHead>
                             <TableRow>
                               <TableCell>Produit</TableCell>
@@ -913,8 +917,8 @@ export function VenteView() {
               ))
             ) : (
               <TableRow>
-                <TableCell 
-                  colSpan={showPaiementButton ? 11 : 10} 
+                <TableCell
+                  colSpan={showPaiementButton ? 9 : 8}
                   align="center"
                 >
                   Aucune vente trouvée
@@ -967,28 +971,36 @@ export function VenteView() {
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Montant calculé</Typography>
+              <Typography variant="subtitle2">Chiffre d'affaires</Typography>
               <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
             </Card>
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Ventes avec acompte</Typography>
+              <Typography variant="subtitle2">En cours de paiement</Typography>
               <Typography variant="h5">{displayStats.nombre_ventes_acompte}</Typography>
             </Card>
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
-            <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Total dettes</Typography>
-              <Typography variant="h5" color="error">
+            <Card sx={{
+              p: 2, textAlign: "center",
+              backgroundColor: displayStats.total_dettes > 0 ? '#fff3cd' : 'inherit'
+            }}>
+              <Typography variant="subtitle2">Dettes en cours</Typography>
+              <Typography variant="h5" color={displayStats.total_dettes > 0 ? "error" : "success"}>
                 {displayStats.total_dettes.toLocaleString()} $
               </Typography>
             </Card>
           </Grid>
           <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="subtitle2">Par Compteur</Typography>
-              <Typography variant="h5">{displayStats.ventes_compteur}</Typography>
+              <Typography variant="subtitle2">Taux de recouvrement</Typography>
+              <Typography variant="h5">
+                {displayStats.montant_total > 0
+                  ? `${((displayStats.montant_total - displayStats.total_dettes) / displayStats.montant_total * 100).toFixed(1)}%`
+                  : '100%'
+                }
+              </Typography>
             </Card>
           </Grid>
         </Grid>
@@ -1105,16 +1117,16 @@ export function VenteView() {
                     }}
                     onInputChange={(_, v) => setSearchUser(v)}
                     renderInput={(params) => (
-                      <TextField 
-                        {...params} 
-                        label="Rechercher un utilisateur" 
+                      <TextField
+                        {...params}
+                        label="Rechercher un utilisateur"
                         helperText="Tapez au moins 2 caractères pour rechercher"
                       />
                     )}
                   />
                 </>
               ) : (
-                <CreateUserForm 
+                <CreateUserForm
                   onUserCreated={handleUserCreated}
                   onCancel={() => setUserCreationTab(0)}
                 />
@@ -1173,9 +1185,9 @@ export function VenteView() {
                     v && handleAddProduit({ ...v, prix: v.prix || 0 }, "compteur")
                   }
                   renderInput={(params) => (
-                    <TextField 
-                      {...params} 
-                      label="Rechercher un compteur (stock uniquement)" 
+                    <TextField
+                      {...params}
+                      label="Rechercher un compteur (stock uniquement)"
                       helperText={`${filteredCompteurs.length} compteurs disponibles - Les compteurs sélectionnés sont masqués`}
                     />
                   )}
@@ -1195,9 +1207,9 @@ export function VenteView() {
                     v && handleAddProduit({ ...v, prix: v.prix || 0 }, "rfid")
                   }
                   renderInput={(params) => (
-                    <TextField 
-                      {...params} 
-                      label="Rechercher une carte RFID (stock uniquement)" 
+                    <TextField
+                      {...params}
+                      label="Rechercher une carte RFID (stock uniquement)"
                       helperText={`${filteredRFIDs.length} cartes RFID disponibles - Les cartes sélectionnées sont masquées`}
                     />
                   )}
@@ -1270,17 +1282,17 @@ export function VenteView() {
             <>
               <Button disabled={activeStep === 0} onClick={() => setActiveStep(activeStep - 1)}>Retour</Button>
               {activeStep < steps.length - 1 ? (
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   onClick={() => setActiveStep(activeStep + 1)}
                   disabled={!nomAcheteur || !telAcheteur}
                 >
                   Suivant
                 </Button>
               ) : (
-                <Button 
-                  variant="contained" 
-                  color="success" 
+                <Button
+                  variant="contained"
+                  color="success"
                   onClick={handleSave}
                   disabled={selectedProduits.length === 0 || montantPaye < 0}
                 >
@@ -1293,13 +1305,13 @@ export function VenteView() {
       </Dialog>
 
       {/* Dialog pour ajouter un paiement */}
-      <Dialog 
-        open={openPaiementDialog} 
+      <Dialog
+        open={openPaiementDialog}
         onClose={() => {
           setOpenPaiementDialog(false);
           setSelectedVenteForPaiement(null);
-        }} 
-        fullWidth 
+        }}
+        fullWidth
         maxWidth="sm"
       >
         <DialogTitle>Ajouter un paiement</DialogTitle>
