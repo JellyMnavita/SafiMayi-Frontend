@@ -3,7 +3,17 @@ import apiClient from '../../../utils/api';
 import Typography from '@mui/material/Typography';
 import { DashboardContent } from '../../../layouts/dashboard';
 import { AnalyticsWidgetSummary } from '../analytics-widget-summary';
-import { CircularProgress, Box, TextField, Button, Stack, Paper } from '@mui/material';
+import { 
+  CircularProgress, 
+  Box, 
+  Button, 
+  Stack, 
+  Chip,
+  IconButton,
+  Tooltip,
+  Menu,
+  MenuItem
+} from '@mui/material';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -13,8 +23,10 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import Grid from '@mui/material/Grid';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { format } from 'date-fns';
-import {fr} from 'date-fns/locale/fr';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { fr } from 'date-fns/locale/fr';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 interface StatsResponse {
   utilisateurs: { total: number; clients: number; admins: number };
@@ -40,6 +52,8 @@ export function OverviewAnalyticsView() {
   const [dateDebut, setDateDebut] = useState<Date | null>(null);
   const [dateFin, setDateFin] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showDatePickers, setShowDatePickers] = useState(false);
+  const [periodMenuAnchor, setPeriodMenuAnchor] = useState<null | HTMLElement>(null);
   const isMobile = useMediaQuery('(max-width:768px)');
   const isTablet = useMediaQuery('(max-width:1200px)');
 
@@ -87,12 +101,67 @@ export function OverviewAnalyticsView() {
 
   const handleFiltrer = () => {
     fetchStats(dateDebut, dateFin);
+    setShowDatePickers(false);
   };
 
   const handleResetFiltre = () => {
     setDateDebut(null);
     setDateFin(null);
+    setPeriodMenuAnchor(null);
+    setShowDatePickers(false);
     fetchStats(null, null);
+  };
+
+  // Périodes prédéfinies
+  const applyPredefinedPeriod = (period: string) => {
+    const today = new Date();
+    let startDate: Date;
+    let endDate: Date = today;
+
+    switch (period) {
+      case 'today':
+        startDate = today;
+        break;
+      case 'yesterday':
+        startDate = subDays(today, 1);
+        endDate = subDays(today, 1);
+        break;
+      case 'last7days':
+        startDate = subDays(today, 7);
+        break;
+      case 'last30days':
+        startDate = subDays(today, 30);
+        break;
+      case 'thisWeek':
+        startDate = startOfWeek(today, { weekStartsOn: 1 });
+        endDate = endOfWeek(today, { weekStartsOn: 1 });
+        break;
+      case 'thisMonth':
+        startDate = startOfMonth(today);
+        endDate = endOfMonth(today);
+        break;
+      case 'thisYear':
+        startDate = startOfYear(today);
+        endDate = endOfYear(today);
+        break;
+      default:
+        startDate = today;
+    }
+
+    setDateDebut(startDate);
+    setDateFin(endDate);
+    fetchStats(startDate, endDate);
+    setPeriodMenuAnchor(null);
+  };
+
+  const getPeriodLabel = () => {
+    if (!dateDebut) return 'Toute période';
+    
+    const start = format(dateDebut, 'dd/MM/yyyy');
+    const end = dateFin ? format(dateFin, 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy');
+    
+    if (start === end) return `Le ${start}`;
+    return `Du ${start} au ${end}`;
   };
 
   const settings = {
@@ -135,60 +204,137 @@ export function OverviewAnalyticsView() {
 
   return (
     <DashboardContent maxWidth="xl">
-      <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
-        Hey, {username} bienvenue dans l'espace administrateur
-      </Typography>
-
-      {/* Filtre de période */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Filtrer par période
+      {/* En-tête avec filtre compact */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: 3,
+        gap: 2
+      }}>
+        <Typography variant="h4">
+          Hey, {username} 👋
         </Typography>
-        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-            <DatePicker
-              label="Date de début"
-              value={dateDebut}
-              onChange={setDateDebut}
-              slotProps={{ textField: { fullWidth: true } }}
-            />
-            <DatePicker
-              label="Date de fin"
-              value={dateFin}
-              onChange={setDateFin}
-              slotProps={{ textField: { fullWidth: true } }}
-            />
-            <Button 
-              variant="contained" 
-              onClick={handleFiltrer}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Filtrer'}
-            </Button>
-            <Button 
-              variant="outlined" 
-              onClick={handleResetFiltre}
-              disabled={loading}
-            >
-              Réinitialiser
-            </Button>
-          </Stack>
-        </LocalizationProvider>
         
-        {/* Affichage de la période active */}
-        {stats?.periode?.date_debut && (
-          <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
-            Période affichée: du {stats.periode.date_debut} au {stats.periode.date_fin || 'aujourd\'hui'}
-          </Typography>
-        )}
-      </Paper>
+        {/* Filtre compact */}
+        <Stack direction="row" spacing={1} alignItems="center">
+          {/* Chip de période active */}
+          <Chip
+            label={getPeriodLabel()}
+            onClick={() => setShowDatePickers(!showDatePickers)}
+            onDelete={dateDebut ? handleResetFiltre : undefined}
+            deleteIcon={<FilterListIcon />}
+            variant="outlined"
+            color={dateDebut ? "primary" : "default"}
+          />
+          
+          {/* Menu des périodes prédéfinies */}
+          <Tooltip title="Périodes rapides">
+            <IconButton
+              size="small"
+              onClick={(e) => setPeriodMenuAnchor(e.currentTarget)}
+            >
+              <CalendarTodayIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Box>
+
+      {/* Date pickers (affichage conditionnel) */}
+      {showDatePickers && (
+        <Box sx={{ 
+          mb: 3, 
+          p: 2, 
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
+          backgroundColor: 'background.default'
+        }}>
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              spacing={2} 
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+            >
+              <DatePicker
+                label="Date de début"
+                value={dateDebut}
+                onChange={setDateDebut}
+                slotProps={{ 
+                  textField: { 
+                    size: 'small',
+                    fullWidth: true 
+                  } 
+                }}
+              />
+              <DatePicker
+                label="Date de fin"
+                value={dateFin}
+                onChange={setDateFin}
+                slotProps={{ 
+                  textField: { 
+                    size: 'small',
+                    fullWidth: true 
+                  } 
+                }}
+              />
+              <Button 
+                variant="contained" 
+                onClick={handleFiltrer}
+                disabled={loading || !dateDebut}
+                size="small"
+                sx={{ minWidth: 100 }}
+              >
+                {loading ? <CircularProgress size={20} /> : 'Appliquer'}
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={() => setShowDatePickers(false)}
+                size="small"
+              >
+                Annuler
+              </Button>
+            </Stack>
+          </LocalizationProvider>
+        </Box>
+      )}
+
+      {/* Menu des périodes prédéfinies */}
+      <Menu
+        anchorEl={periodMenuAnchor}
+        open={Boolean(periodMenuAnchor)}
+        onClose={() => setPeriodMenuAnchor(null)}
+      >
+        <MenuItem onClick={() => applyPredefinedPeriod('today')}>
+          Aujourd'hui
+        </MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('yesterday')}>
+          Hier
+        </MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('last7days')}>
+          7 derniers jours
+        </MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('last30days')}>
+          30 derniers jours
+        </MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('thisWeek')}>
+          Cette semaine
+        </MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('thisMonth')}>
+          Ce mois
+        </MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('thisYear')}>
+          Cette année
+        </MenuItem>
+      </Menu>
 
       {!stats ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
           <CircularProgress />
         </Box>
       ) : (
-        <Box sx={{ px: 2 }}>
+        <Box sx={{ px: { xs: 0, sm: 2 } }}>
           <Slider {...settings}>
             <div>
               <AnalyticsWidgetSummary
