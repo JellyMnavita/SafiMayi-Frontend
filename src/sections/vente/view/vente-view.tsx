@@ -377,10 +377,10 @@ function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: {
 }
 
 // Composant pour les filtres
-function FiltresVentes({ 
-  filtres, 
-  onFiltresChange, 
-  onResetFiltres 
+function FiltresVentes({
+  filtres,
+  onFiltresChange,
+  onResetFiltres
 }: {
   filtres: any;
   onFiltresChange: (newFiltres: any) => void;
@@ -399,7 +399,7 @@ function FiltresVentes({
             size="small"
           />
         </Grid>
-        
+
         <Grid sx={{ width: { xs: '100%' } }}>
           <FormControl fullWidth size="small">
             <InputLabel>Mode paiement</InputLabel>
@@ -416,7 +416,7 @@ function FiltresVentes({
             </Select>
           </FormControl>
         </Grid>
-        
+
         <Grid sx={{ width: { xs: '100%' } }}>
           <FormControl fullWidth size="small">
             <InputLabel>Statut</InputLabel>
@@ -431,7 +431,7 @@ function FiltresVentes({
             </Select>
           </FormControl>
         </Grid>
-        
+
         <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
@@ -443,7 +443,7 @@ function FiltresVentes({
             size="small"
           />
         </Grid>
-        
+
         <Grid sx={{ width: { xs: '100%' } }}>
           <TextField
             fullWidth
@@ -456,9 +456,9 @@ function FiltresVentes({
           />
         </Grid>
       </Grid>
-      
+
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-        <Button 
+        <Button
           onClick={onResetFiltres}
           variant="outlined"
           size="small"
@@ -544,7 +544,7 @@ export function VenteView() {
   const fetchVentes = async () => {
     try {
       setLoading(true);
-      
+
       // Construction des paramètres de requête
       const params = new URLSearchParams({
         page: page.toString(),
@@ -1119,25 +1119,41 @@ export function VenteView() {
         </Box>
       ) : (
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid  sx={{
+            flex: '1 1 20%',
+            minWidth: 200,
+            maxWidth: '20%'
+          }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Total ventes</Typography>
               <Typography variant="h5">{displayStats.total_ventes}</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid  sx={{
+            flex: '1 1 20%',
+            minWidth: 200,
+            maxWidth: '20%'
+          }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Chiffre d'affaires</Typography>
               <Typography variant="h5">{displayStats.montant_total.toLocaleString()} $</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid  sx={{
+            flex: '1 1 20%',
+            minWidth: 200,
+            maxWidth: '20%'
+          }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">En cours de paiement</Typography>
               <Typography variant="h5">{displayStats.nombre_ventes_acompte}</Typography>
             </Card>
           </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid  sx={{
+            flex: '1 1 20%',
+            minWidth: 200,
+            maxWidth: '20%'
+          }}>
             <Card sx={{
               p: 2, textAlign: "center",
               backgroundColor: displayStats.total_dettes > 0 ? '#fff3cd' : 'inherit'
@@ -1148,7 +1164,11 @@ export function VenteView() {
               </Typography>
             </Card>
           </Grid>
-          <Grid sx={{ flex: '1 1 20%', minWidth: 200 }}>
+          <Grid  sx={{
+            flex: '1 1 20%',
+            minWidth: 200,
+            maxWidth: '20%'
+          }}>
             <Card sx={{ p: 2, textAlign: "center" }}>
               <Typography variant="subtitle2">Taux de recouvrement</Typography>
               <Typography variant="h5">
@@ -1164,7 +1184,7 @@ export function VenteView() {
 
       {/* Bouton pour ouvrir les filtres */}
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button 
+        <Button
           startIcon={<FilterListIcon />}
           onClick={() => setOpenFiltresDialog(true)}
           variant="outlined"
@@ -1255,8 +1275,8 @@ export function VenteView() {
       )}
 
       {/* Dialog pour les filtres */}
-      <Dialog 
-        open={openFiltresDialog} 
+      <Dialog
+        open={openFiltresDialog}
         onClose={() => setOpenFiltresDialog(false)}
         maxWidth="sm"
         fullWidth
@@ -1266,17 +1286,17 @@ export function VenteView() {
             <FilterListIcon sx={{ mr: 1 }} />
             Filtres des ventes
             {getActiveFiltersCount() > 0 && (
-              <Chip 
-                label={`${getActiveFiltersCount()} actif(s)`} 
-                size="small" 
-                color="primary" 
+              <Chip
+                label={`${getActiveFiltersCount()} actif(s)`}
+                size="small"
+                color="primary"
                 sx={{ ml: 2 }}
               />
             )}
           </Box>
         </DialogTitle>
         <DialogContent>
-          <FiltresVentes 
+          <FiltresVentes
             filtres={filtres}
             onFiltresChange={handleFiltresChange}
             onResetFiltres={handleResetFiltres}
@@ -1284,7 +1304,7 @@ export function VenteView() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenFiltresDialog(false)}>Fermer</Button>
-          <Button 
+          <Button
             onClick={handleApplyFiltres}
             variant="contained"
           >
