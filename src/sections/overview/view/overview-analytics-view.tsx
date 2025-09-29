@@ -42,7 +42,8 @@ interface GraphStatsResponse {
     total_consommation_litres: number;
     total_recharge_litres: number;
   }[];
-   year_range: string;
+  year_range: string;
+  periode: { date_debut: string; date_fin: string };
 }
 
 export function OverviewAnalyticsView() {
@@ -51,9 +52,14 @@ export function OverviewAnalyticsView() {
   const [yearRange, setYearRange] = useState<string>('');
   const [dateDebut, setDateDebut] = useState<Date | null>(null);
   const [dateFin, setDateFin] = useState<Date | null>(null);
+  const [dateDebutGraph, setDateDebutGraph] = useState<Date | null>(null);
+  const [dateFinGraph, setDateFinGraph] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingGraph, setLoadingGraph] = useState(false);
   const [showDatePickers, setShowDatePickers] = useState(false);
+  const [showDatePickersGraph, setShowDatePickersGraph] = useState(false);
   const [periodMenuAnchor, setPeriodMenuAnchor] = useState<null | HTMLElement>(null);
+  const [periodMenuAnchorGraph, setPeriodMenuAnchorGraph] = useState<null | HTMLElement>(null);
   const isMobile = useMediaQuery('(max-width:768px)');
   const isTablet = useMediaQuery('(max-width:1200px)');
 
@@ -82,15 +88,28 @@ export function OverviewAnalyticsView() {
     }
   };
 
-  const fetchGraphStats = async () => {
+  const fetchGraphStats = async (dateDebutParam?: Date | null, dateFinParam?: Date | null) => {
+    setLoadingGraph(true);
     try {
+      const params: any = {};
+      
+      if (dateDebutParam) {
+        params.date_debut = format(dateDebutParam, 'yyyy-MM-dd');
+      }
+      if (dateFinParam) {
+        params.date_fin = format(dateFinParam, 'yyyy-MM-dd');
+      }
+
       const res = await apiClient.get<GraphStatsResponse>(
-        '/api/compteur/global/last-date-stat/'
+        '/api/compteur/global/last-date-stat/',
+        { params }
       );
-      setYearRange(res.data.year_range || '');
       setGraphStats(res.data);
+      setYearRange(res.data.year_range || '');
     } catch (error) {
       console.error('Erreur lors de la récupération des graph_stats:', error);
+    } finally {
+      setLoadingGraph(false);
     }
   };
 
@@ -104,6 +123,11 @@ export function OverviewAnalyticsView() {
     setShowDatePickers(false);
   };
 
+  const handleFiltrerGraph = () => {
+    fetchGraphStats(dateDebutGraph, dateFinGraph);
+    setShowDatePickersGraph(false);
+  };
+
   const handleResetFiltre = () => {
     setDateDebut(null);
     setDateFin(null);
@@ -112,7 +136,15 @@ export function OverviewAnalyticsView() {
     fetchStats(null, null);
   };
 
-  // Périodes prédéfinies
+  const handleResetFiltreGraph = () => {
+    setDateDebutGraph(null);
+    setDateFinGraph(null);
+    setPeriodMenuAnchorGraph(null);
+    setShowDatePickersGraph(false);
+    fetchGraphStats(null, null);
+  };
+
+  // Périodes prédéfinies pour les stats générales
   const applyPredefinedPeriod = (period: string) => {
     const today = new Date();
     let startDate: Date;
@@ -154,11 +186,63 @@ export function OverviewAnalyticsView() {
     setPeriodMenuAnchor(null);
   };
 
+  // Périodes prédéfinies pour le graph
+  const applyPredefinedPeriodGraph = (period: string) => {
+    const today = new Date();
+    let startDate: Date;
+    let endDate: Date = today;
+
+    switch (period) {
+      case 'today':
+        startDate = today;
+        break;
+      case 'yesterday':
+        startDate = subDays(today, 1);
+        endDate = subDays(today, 1);
+        break;
+      case 'last7days':
+        startDate = subDays(today, 7);
+        break;
+      case 'last30days':
+        startDate = subDays(today, 30);
+        break;
+      case 'thisWeek':
+        startDate = startOfWeek(today, { weekStartsOn: 1 });
+        endDate = endOfWeek(today, { weekStartsOn: 1 });
+        break;
+      case 'thisMonth':
+        startDate = startOfMonth(today);
+        endDate = endOfMonth(today);
+        break;
+      case 'thisYear':
+        startDate = startOfYear(today);
+        endDate = endOfYear(today);
+        break;
+      default:
+        startDate = today;
+    }
+
+    setDateDebutGraph(startDate);
+    setDateFinGraph(endDate);
+    fetchGraphStats(startDate, endDate);
+    setPeriodMenuAnchorGraph(null);
+  };
+
   const getPeriodLabel = () => {
     if (!dateDebut) return 'Toute période';
     
     const start = format(dateDebut, 'dd/MM/yyyy');
     const end = dateFin ? format(dateFin, 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy');
+    
+    if (start === end) return `Le ${start}`;
+    return `Du ${start} au ${end}`;
+  };
+
+  const getPeriodLabelGraph = () => {
+    if (!dateDebutGraph) return 'Toute période';
+    
+    const start = format(dateDebutGraph, 'dd/MM/yyyy');
+    const end = dateFinGraph ? format(dateFinGraph, 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy');
     
     if (start === end) return `Le ${start}`;
     return `Du ${start} au ${end}`;
@@ -214,12 +298,11 @@ export function OverviewAnalyticsView() {
         gap: 2
       }}>
         <Typography variant="h4">
-          Hey, {username} 👋
+          Hey, {username} bienvenue dans l'espace d'administration
         </Typography>
         
-        {/* Filtre compact */}
+        {/* Filtre compact pour les stats générales */}
         <Stack direction="row" spacing={1} alignItems="center">
-          {/* Chip de période active */}
           <Chip
             label={getPeriodLabel()}
             onClick={() => setShowDatePickers(!showDatePickers)}
@@ -229,7 +312,6 @@ export function OverviewAnalyticsView() {
             color={dateDebut ? "primary" : "default"}
           />
           
-          {/* Menu des périodes prédéfinies */}
           <Tooltip title="Périodes rapides">
             <IconButton
               size="small"
@@ -241,7 +323,7 @@ export function OverviewAnalyticsView() {
         </Stack>
       </Box>
 
-      {/* Date pickers (affichage conditionnel) */}
+      {/* Date pickers pour les stats générales */}
       {showDatePickers && (
         <Box sx={{ 
           mb: 3, 
@@ -300,33 +382,19 @@ export function OverviewAnalyticsView() {
         </Box>
       )}
 
-      {/* Menu des périodes prédéfinies */}
+      {/* Menu des périodes prédéfinies pour stats générales */}
       <Menu
         anchorEl={periodMenuAnchor}
         open={Boolean(periodMenuAnchor)}
         onClose={() => setPeriodMenuAnchor(null)}
       >
-        <MenuItem onClick={() => applyPredefinedPeriod('today')}>
-          Aujourd'hui
-        </MenuItem>
-        <MenuItem onClick={() => applyPredefinedPeriod('yesterday')}>
-          Hier
-        </MenuItem>
-        <MenuItem onClick={() => applyPredefinedPeriod('last7days')}>
-          7 derniers jours
-        </MenuItem>
-        <MenuItem onClick={() => applyPredefinedPeriod('last30days')}>
-          30 derniers jours
-        </MenuItem>
-        <MenuItem onClick={() => applyPredefinedPeriod('thisWeek')}>
-          Cette semaine
-        </MenuItem>
-        <MenuItem onClick={() => applyPredefinedPeriod('thisMonth')}>
-          Ce mois
-        </MenuItem>
-        <MenuItem onClick={() => applyPredefinedPeriod('thisYear')}>
-          Cette année
-        </MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('today')}>Aujourd'hui</MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('yesterday')}>Hier</MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('last7days')}>7 derniers jours</MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('last30days')}>30 derniers jours</MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('thisWeek')}>Cette semaine</MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('thisMonth')}>Ce mois</MenuItem>
+        <MenuItem onClick={() => applyPredefinedPeriod('thisYear')}>Cette année</MenuItem>
       </Menu>
 
       {!stats ? (
@@ -375,10 +443,126 @@ export function OverviewAnalyticsView() {
             </div>
           </Slider>
 
+          {/* Graphique avec son propre filtre */}
           <Grid style={{ marginTop: '25px' }} size={{ xs: 12, md: 6, lg: 8 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              mb: 2
+            }}>
+              <Box>
+                <Typography variant="h6">
+                  Statistiques Globales de Consommation et de Recharge
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {graphStats?.periode?.date_debut 
+                    ? `Période: du ${graphStats.periode.date_debut} au ${graphStats.periode.date_fin || 'aujourd\'hui'}`
+                    : `Dernières consommations et recharges ${yearRange}`
+                  }
+                </Typography>
+              </Box>
+              
+              {/* Filtre compact pour le graphique */}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  label={getPeriodLabelGraph()}
+                  onClick={() => setShowDatePickersGraph(!showDatePickersGraph)}
+                  onDelete={dateDebutGraph ? handleResetFiltreGraph : undefined}
+                  deleteIcon={<FilterListIcon />}
+                  variant="outlined"
+                  color={dateDebutGraph ? "primary" : "default"}
+                  size="small"
+                />
+                
+                <Tooltip title="Périodes rapides">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => setPeriodMenuAnchorGraph(e.currentTarget)}
+                  >
+                    <CalendarTodayIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Box>
+
+            {/* Date pickers pour le graphique */}
+            {showDatePickersGraph && (
+              <Box sx={{ 
+                mb: 2, 
+                p: 2, 
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                backgroundColor: 'background.default'
+              }}>
+                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                  <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    spacing={2} 
+                    alignItems={{ xs: 'stretch', sm: 'center' }}
+                  >
+                    <DatePicker
+                      label="Date de début"
+                      value={dateDebutGraph}
+                      onChange={setDateDebutGraph}
+                      slotProps={{ 
+                        textField: { 
+                          size: 'small',
+                          fullWidth: true 
+                        } 
+                      }}
+                    />
+                    <DatePicker
+                      label="Date de fin"
+                      value={dateFinGraph}
+                      onChange={setDateFinGraph}
+                      slotProps={{ 
+                        textField: { 
+                          size: 'small',
+                          fullWidth: true 
+                        } 
+                      }}
+                    />
+                    <Button 
+                      variant="contained" 
+                      onClick={handleFiltrerGraph}
+                      disabled={loadingGraph || !dateDebutGraph}
+                      size="small"
+                      sx={{ minWidth: 100 }}
+                    >
+                      {loadingGraph ? <CircularProgress size={20} /> : 'Appliquer'}
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      onClick={() => setShowDatePickersGraph(false)}
+                      size="small"
+                    >
+                      Annuler
+                    </Button>
+                  </Stack>
+                </LocalizationProvider>
+              </Box>
+            )}
+
+            {/* Menu des périodes prédéfinies pour le graphique */}
+            <Menu
+              anchorEl={periodMenuAnchorGraph}
+              open={Boolean(periodMenuAnchorGraph)}
+              onClose={() => setPeriodMenuAnchorGraph(null)}
+            >
+              <MenuItem onClick={() => applyPredefinedPeriodGraph('today')}>Aujourd'hui</MenuItem>
+              <MenuItem onClick={() => applyPredefinedPeriodGraph('yesterday')}>Hier</MenuItem>
+              <MenuItem onClick={() => applyPredefinedPeriodGraph('last7days')}>7 derniers jours</MenuItem>
+              <MenuItem onClick={() => applyPredefinedPeriodGraph('last30days')}>30 derniers jours</MenuItem>
+              <MenuItem onClick={() => applyPredefinedPeriodGraph('thisWeek')}>Cette semaine</MenuItem>
+              <MenuItem onClick={() => applyPredefinedPeriodGraph('thisMonth')}>Ce mois</MenuItem>
+              <MenuItem onClick={() => applyPredefinedPeriodGraph('thisYear')}>Cette année</MenuItem>
+            </Menu>
+
             <AnalyticsWebsiteVisits
-              title="Statistiques Globales de Consommation et de Recharge"
-              subheader={`Dernières consommations et recharges ${yearRange}`}
+              title=""
+              subheader=""
               chart={chartData}
             />
           </Grid>
