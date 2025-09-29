@@ -27,6 +27,7 @@ import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, star
 import { fr } from 'date-fns/locale/fr';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 
 interface StatsResponse {
   utilisateurs: { total: number; clients: number; admins: number };
@@ -142,6 +143,12 @@ export function OverviewAnalyticsView() {
     setPeriodMenuAnchorGraph(null);
     setShowDatePickersGraph(false);
     fetchGraphStats(null, null);
+  };
+
+  // Réinitialiser tous les filtres
+  const handleResetAllFilters = () => {
+    handleResetFiltre();
+    handleResetFiltreGraph();
   };
 
   // Périodes prédéfinies pour les stats générales
@@ -269,6 +276,9 @@ export function OverviewAnalyticsView() {
 
   const username = JSON.parse(localStorage.getItem('user') || '{}').nom;
 
+  // Vérifier si au moins un filtre est actif
+  const hasActiveFilters = dateDebut || dateDebutGraph;
+
   // Transformation des graph_stats pour le chart
   const chartData = graphStats
     ? {
@@ -297,9 +307,14 @@ export function OverviewAnalyticsView() {
         mb: 3,
         gap: 2
       }}>
-        <Typography variant="h4">
-          Hey, {username} bienvenue dans l'espace d'administration
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+            Hey, {username} 👋
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+            Bienvenue dans l'espace d'administration
+          </Typography>
+        </Box>
         
         {/* Filtre compact pour les stats générales */}
         <Stack direction="row" spacing={1} alignItems="center">
@@ -310,6 +325,7 @@ export function OverviewAnalyticsView() {
             deleteIcon={<FilterListIcon />}
             variant="outlined"
             color={dateDebut ? "primary" : "default"}
+            size={isMobile ? "small" : "medium"}
           />
           
           <Tooltip title="Périodes rapides">
@@ -320,6 +336,19 @@ export function OverviewAnalyticsView() {
               <CalendarTodayIcon />
             </IconButton>
           </Tooltip>
+
+          {/* Bouton reset global */}
+          {hasActiveFilters && (
+            <Tooltip title="Réinitialiser tous les filtres">
+              <IconButton
+                size="small"
+                onClick={handleResetAllFilters}
+                color="error"
+              >
+                <RestartAltIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
       </Box>
 
@@ -447,18 +476,30 @@ export function OverviewAnalyticsView() {
           <Grid style={{ marginTop: '25px' }} size={{ xs: 12, md: 6, lg: 8 }}>
             <Box sx={{ 
               display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
               justifyContent: 'space-between', 
-              alignItems: 'center',
-              mb: 2
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              mb: 2,
+              gap: 1
             }}>
-              <Box>
-                <Typography variant="h6">
-                  Statistiques Globales de Consommation et de Recharge
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    lineHeight: 1.3
+                  }}
+                >
+                  Statistiques Consommation & Recharge
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
                   {graphStats?.periode?.date_debut 
                     ? `Période: du ${graphStats.periode.date_debut} au ${graphStats.periode.date_fin || 'aujourd\'hui'}`
-                    : `Dernières consommations et recharges ${yearRange}`
+                    : `Dernières données ${yearRange}`
                   }
                 </Typography>
               </Box>
@@ -473,6 +514,14 @@ export function OverviewAnalyticsView() {
                   variant="outlined"
                   color={dateDebutGraph ? "primary" : "default"}
                   size="small"
+                  sx={{ 
+                    maxWidth: { xs: 120, sm: 'none' },
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }
+                  }}
                 />
                 
                 <Tooltip title="Périodes rapides">
