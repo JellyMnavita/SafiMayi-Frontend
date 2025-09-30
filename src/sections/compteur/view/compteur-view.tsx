@@ -4,7 +4,7 @@ import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel,
-  Grid, Chip
+  Chip
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -266,13 +266,6 @@ export function CompteurView() {
     setPageSize(8);
   };
 
-  // Fonction pour ouvrir le dialog de configuration en cliquant sur la carte
-  const handleCardClick = (compteur: Compteur) => {
-    setFormData(compteur);
-    setOpenDialog(true);
-    setMode("single");
-  };
-
   return (
     <DashboardContent>
       {/* Titre et bouton d'ajout */}
@@ -374,174 +367,177 @@ export function CompteurView() {
         </Box>
       )}
 
-      {/* Cards avec affichage des compteurs */}
-      <Grid container spacing={2}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : compteurs.length > 0 ? (
-          compteurs.map((compteur) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={compteur.id}>
-              <Card 
-                sx={{ 
-                  p: 2, 
-                  display: "flex", 
-                  flexDirection: "column", 
-                  gap: 1.5, 
-                  height: '100%',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    boxShadow: 3,
-                    transform: 'translateY(-2px)'
-                  }
+      {/* Tableau des compteurs */}
+      <Card>
+        <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <CircularProgress />
+            </div>
+          ) : (
+            <>
+              <table className="w-full border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-gray-100 text-left text-sm">
+                    <th className="p-3 border-b font-semibold">Nom</th>
+                    <th className="p-3 border-b font-semibold">Code série</th>
+                    <th className="p-3 border-b font-semibold">Site forage</th>
+                    <th className="p-3 border-b font-semibold">Propriétaire</th>
+                    <th className="p-3 border-b font-semibold">Statut</th>
+                    <th className="p-3 border-b font-semibold">Date installation</th>
+                    <th className="p-3 border-b font-semibold">Actif</th>
+                    <th className="p-3 border-b font-semibold text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compteurs.length > 0 ? (
+                    compteurs.map((compteur) => (
+                      <tr 
+                        key={compteur.id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => {
+                          setFormData(compteur);
+                          setOpenDialog(true);
+                          setMode("single");
+                        }}
+                      >
+                        <td className="p-3 border-b">
+                          <Typography variant="body2" fontWeight="medium">
+                            {compteur.nom}
+                          </Typography>
+                        </td>
+                        <td className="p-3 border-b">
+                          <Box sx={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1,
+                            bgcolor: '#0486d9',
+                            color: 'white'
+                          }}>
+                            <Typography variant="body2" fontWeight="bold">
+                              {compteur.code_serie || "N/A"}
+                            </Typography>
+                          </Box>
+                        </td>
+                        <td className="p-3 border-b">
+                          {compteur.siteforage_nom ? (
+                            <Chip 
+                              label={compteur.siteforage_nom} 
+                              size="small" 
+                              variant="outlined"
+                              color="primary"
+                            />
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              -
+                            </Typography>
+                          )}
+                        </td>
+                        <td className="p-3 border-b">
+                          {compteur.user_nom ? (
+                            <Chip 
+                              label={compteur.user_nom} 
+                              size="small" 
+                              variant="outlined"
+                              color="secondary"
+                            />
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              -
+                            </Typography>
+                          )}
+                        </td>
+                        <td className="p-3 border-b">
+                          <Chip 
+                            label={compteur.statut || 'Non défini'} 
+                            size="small"
+                            color={
+                              compteur.statut === 'installé' ? 'success' :
+                              compteur.statut === 'en panne' ? 'error' : 'default'
+                            }
+                            variant="filled"
+                          />
+                        </td>
+                        <td className="p-3 border-b">
+                          <Typography variant="body2">
+                            {compteur.date_installation ? 
+                              new Date(compteur.date_installation).toLocaleDateString() : 
+                              "Non installé"
+                            }
+                          </Typography>
+                        </td>
+                        <td className="p-3 border-b">
+                          {compteur.actif ? (
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                              Actif
+                            </span>
+                          ) : (
+                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
+                              Désactivé
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 border-b text-center">
+                          <IconButton 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMenuOpen(e, compteur);
+                            }} 
+                            size="small"
+                            disabled={toggling === compteur.id}
+                          >
+                            {toggling === compteur.id ? (
+                              <CircularProgress size={20} />
+                            ) : (
+                              <Iconify icon="eva:more-vertical-fill" />
+                            )}
+                          </IconButton>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="text-center text-gray-500 py-6">
+                        <Typography variant="h6" color="text.secondary">
+                          Aucun compteur trouvé
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Essayez de modifier vos critères de recherche
+                        </Typography>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {/* Pagination en bas */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 2,
+                  flexWrap: "wrap",
+                  gap: 2,
                 }}
-                onClick={() => handleCardClick(compteur)}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    {compteur.nom}
-                  </Typography>
-                  <IconButton 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMenuOpen(e, compteur);
-                    }} 
-                    size="small"
-                    disabled={toggling === compteur.id}
-                  >
-                    {toggling === compteur.id ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <Iconify icon="eva:more-vertical-fill" />
-                    )}
-                  </IconButton>
-                </Box>
-                
-                {/* Affichage du code série */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 1,
-                  p: 1,
-                  borderRadius: 1,
-                  bgcolor: '#0486d9',
-                  color: 'white'
-                }}>
-                  <Typography variant="body2" fontWeight="bold">
-                    Code série:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold">
-                    {compteur.code_serie || "N/A"}
-                  </Typography>
-                </Box>
-                
                 <Typography variant="body2" color="text.secondary">
-                  Créé le: {new Date(compteur.date_creation).toLocaleDateString()}
+                  {`Affichage de ${compteurs.length} sur ${pagination.count} compteurs`}
                 </Typography>
-
-                {/* Affichage du site de forage associé */}
-                {compteur.siteforage_nom && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Site:
-                    </Typography>
-                    <Chip 
-                      label={compteur.siteforage_nom} 
-                      size="small" 
-                      variant="outlined"
-                      color="primary"
-                    />
-                  </Box>
-                )}
-
-                {/* Affichage de l'utilisateur associé */}
-                {compteur.user_nom && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Propriétaire:
-                    </Typography>
-                    <Chip 
-                      label={compteur.user_nom} 
-                      size="small" 
-                      variant="outlined"
-                      color="secondary"
-                    />
-                  </Box>
-                )}
-
-                {/* Affichage du statut */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  p: 1,
-                  borderRadius: 1,
-                  bgcolor: 'grey.50'
-                }}>
-                  <Typography variant="body2" fontWeight="medium">
-                    Statut:
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 'bold',
-                      color: compteur.statut === 'installé' ? 'success.dark' : 
-                            compteur.statut === 'en panne' ? 'error.dark' : 'text.secondary'
-                    }}
-                  >
-                    {compteur.statut || 'Non défini'}
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 'auto' }}>
-                  <Typography variant="caption" color="text.secondary">
-                    {compteur.date_installation ? 
-                      `Installé: ${new Date(compteur.date_installation).toLocaleDateString()}` : 
-                      "Non installé"
-                    }
-                  </Typography>
-                  
-                  <Box>
-                    {compteur.actif ? (
-                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                        Actif
-                      </span>
-                    ) : (
-                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                        Désactivé
-                      </span>
-                    )}
-                  </Box>
-                </Box>
-              </Card>
-            </Grid>
-          ))
-        ) : (
-          <Box sx={{ width: '100%', textAlign: 'center', p: 3 }}>
-            <Typography variant="h6" color="text.secondary">
-              Aucun compteur trouvé
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Essayez de modifier vos critères de recherche
-            </Typography>
-          </Box>
-        )}
-      </Grid>
-
-      {/* Pagination en bas */}
-      {pagination.total_pages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <Pagination 
-            count={pagination.total_pages} 
-            page={pagination.current_page}
-            onChange={handlePageChange}
-            color="primary"
-            size="large"
-          />
-        </Box>
-      )}
+                <Pagination
+                  count={pagination.total_pages}
+                  page={pagination.current_page}
+                  onChange={handlePageChange}
+                  color="primary"
+                />
+              </Box>
+            </>
+          )}
+        </div>
+      </Card>
 
       {/* Menu contextuel */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
