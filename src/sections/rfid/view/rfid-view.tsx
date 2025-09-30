@@ -175,15 +175,14 @@ export function RFIDView() {
       
       if (mode === "single") {
         if (formData.id) {
-          // Edition - CORRECTION ICI : envoyer null explicitement pour retirer l'utilisateur
+          // Edition
           const updateData: any = {};
           if (formData.telephone !== undefined) updateData.telephone = formData.telephone;
           if (formData.code_uid !== undefined) updateData.code_uid = formData.code_uid;
           if (formData.code !== undefined) updateData.code = formData.code;
           
-          // CORRECTION IMPORTANTE : envoyer explicitement user_id: null si on veut retirer l'utilisateur
           if (formData.user_id !== undefined) {
-            updateData.user_id = formData.user_id; // Peut être null pour retirer l'utilisateur
+            updateData.user_id = formData.user_id;
           }
 
           await apiClient.put(
@@ -221,7 +220,8 @@ export function RFIDView() {
       fetchRfids(pagination.current_page);
       setOpenDialog(false);
       setFormData({});
-      setSearchUser(""); // Reset de la recherche utilisateur
+      setSearchUser("");
+      setUsers([]); // Reset seulement après sauvegarde
     } catch (error) {
       console.error("Erreur sauvegarde :", error);
       alert("Erreur lors de la sauvegarde de la carte RFID");
@@ -290,8 +290,8 @@ export function RFIDView() {
     setFormData(rfid);
     setOpenDialog(true);
     setMode("single");
-    setSearchUser(""); // Reset de la recherche
-    setUsers([]); // Reset de la liste des utilisateurs
+    setSearchUser(""); // Reset de la recherche seulement
+    // NE PAS reset users ici pour garder l'utilisateur actuel visible
   };
 
   return (
@@ -309,8 +309,8 @@ export function RFIDView() {
             setFormData({});
             setMode("single");
             setOpenDialog(true);
-            setSearchUser(""); // Reset de la recherche
-            setUsers([]); // Reset de la liste des utilisateurs
+            setSearchUser("");
+            setUsers([]); // Reset users seulement pour nouvelle carte
           }}
         >
           Ajouter une carte RFID
@@ -413,14 +413,14 @@ export function RFIDView() {
                   flexDirection: "column", 
                   gap: 1.5, 
                   height: '100%',
-                  cursor: 'pointer', // Ajout du curseur pointer
+                  cursor: 'pointer',
                   transition: 'all 0.2s ease-in-out',
                   '&:hover': {
                     boxShadow: 3,
                     transform: 'translateY(-2px)'
                   }
                 }}
-                onClick={() => handleCardClick(rfid)} // Click sur toute la carte
+                onClick={() => handleCardClick(rfid)}
               >
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="subtitle1" fontWeight="bold">
@@ -428,7 +428,7 @@ export function RFIDView() {
                   </Typography>
                   <IconButton 
                     onClick={(e) => {
-                      e.stopPropagation(); // Empêcher l'ouverture du dialog quand on clique sur le menu
+                      e.stopPropagation();
                       handleMenuOpen(e, rfid);
                     }} 
                     size="small"
@@ -556,8 +556,7 @@ export function RFIDView() {
               setOpenDialog(true);
               handleMenuClose();
               setMode("single");
-              setSearchUser(""); // Reset de la recherche
-              setUsers([]); // Reset de la liste des utilisateurs
+              setSearchUser(""); // Reset recherche seulement
             }}
           >
             Configurer
@@ -587,7 +586,7 @@ export function RFIDView() {
           setOpenDialog(false);
           setFormData({});
           setSearchUser("");
-          setUsers([]);
+          setUsers([]); // Reset users seulement à la fermeture
         }
       }} fullWidth maxWidth="sm">
         <DialogTitle>
@@ -674,13 +673,11 @@ export function RFIDView() {
                       color="error"
                       variant="outlined"
                       onClick={() => {
-                        // CORRECTION : Mettre explicitement user_id à null
                         setFormData({ 
                           ...formData, 
                           user_id: null 
                         });
                         setSearchUser("");
-                        setUsers([]);
                       }}
                       disabled={saving}
                       startIcon={<DeleteIcon />}
@@ -694,7 +691,7 @@ export function RFIDView() {
                   {!formData.user_id && formData.id && (
                     <Box sx={{ mt: 1, p: 1, backgroundColor: 'grey.100', borderRadius: 1 }}>
                       <Typography variant="body2" color="text.secondary">
-                        ✅ Aucun utilisateur associé - La carte n'appartient à personne
+                        Aucun utilisateur associé - La carte n'appartient à personne
                       </Typography>
                     </Box>
                   )}
