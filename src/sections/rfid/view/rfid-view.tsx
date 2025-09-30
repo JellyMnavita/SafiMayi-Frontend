@@ -64,6 +64,7 @@ export function RFIDView() {
 
   // Recherche utilisateur
   const [searchUser, setSearchUser] = useState<string>("");
+  const [currentUserLoaded, setCurrentUserLoaded] = useState<boolean>(false); // NOUVEAU ÉTAT
 
   // Menu actions
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -80,10 +81,13 @@ export function RFIDView() {
   };
   const handleMenuClose = () => setAnchorEl(null);
 
-  // Charger les utilisateurs avec debounce
+  // Charger les utilisateurs avec debounce - CORRIGÉ
   const searchUsers = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
-      setUsers([]);
+      // Ne pas vider users si on a déjà chargé l'utilisateur actuel
+      if (!currentUserLoaded) {
+        setUsers([]);
+      }
       return;
     }
 
@@ -221,7 +225,8 @@ export function RFIDView() {
       setOpenDialog(false);
       setFormData({});
       setSearchUser("");
-      setUsers([]); // Reset seulement après sauvegarde
+      setUsers([]);
+      setCurrentUserLoaded(false); // Reset de l'état
     } catch (error) {
       console.error("Erreur sauvegarde :", error);
       alert("Erreur lors de la sauvegarde de la carte RFID");
@@ -261,10 +266,9 @@ export function RFIDView() {
     return users.find(user => user.id === formData.user_id) || null;
   };
 
-  // Lors de l'ouverture du dialog d'édition, charger l'utilisateur actuel si existe
+  // Lors de l'ouverture du dialog d'édition, charger l'utilisateur actuel si existe - CORRIGÉ
   useEffect(() => {
-    if (openDialog && formData.id && formData.user_id) {
-      // Si la carte a déjà un utilisateur, on le recherche
+    if (openDialog && formData.id && formData.user_id && !currentUserLoaded) {
       const fetchCurrentUser = async () => {
         try {
           const response = await apiClient.get(`/api/users/${formData.user_id}/`);
@@ -272,10 +276,11 @@ export function RFIDView() {
           setUsers(prev => {
             // Éviter les doublons
             if (!prev.find(u => u.id === user.id)) {
-              return [...prev, user];
+              return [user]; // Remplacer par l'utilisateur actuel seulement
             }
             return prev;
           });
+          setCurrentUserLoaded(true); // Marquer comme chargé
         } catch (error) {
           console.error("Erreur lors du chargement de l'utilisateur actuel:", error);
         }
@@ -283,15 +288,15 @@ export function RFIDView() {
       
       fetchCurrentUser();
     }
-  }, [openDialog, formData.id, formData.user_id]);
+  }, [openDialog, formData.id, formData.user_id, currentUserLoaded]);
 
-  // Fonction pour ouvrir le dialog de configuration en cliquant sur la carte
+  // Fonction pour ouvrir le dialog de configuration en cliquant sur la carte - CORRIGÉ
   const handleCardClick = (rfid: RFID) => {
     setFormData(rfid);
     setOpenDialog(true);
     setMode("single");
-    setSearchUser(""); // Reset de la recherche seulement
-    // NE PAS reset users ici pour garder l'utilisateur actuel visible
+    setSearchUser("");
+    setCurrentUserLoaded(false); // Réinitialiser l'état
   };
 
   return (
@@ -310,7 +315,8 @@ export function RFIDView() {
             setMode("single");
             setOpenDialog(true);
             setSearchUser("");
-            setUsers([]); // Reset users seulement pour nouvelle carte
+            setUsers([]);
+            setCurrentUserLoaded(false);
           }}
         >
           Ajouter une carte RFID
@@ -556,7 +562,8 @@ export function RFIDView() {
               setOpenDialog(true);
               handleMenuClose();
               setMode("single");
-              setSearchUser(""); // Reset recherche seulement
+              setSearchUser("");
+              setCurrentUserLoaded(false);
             }}
           >
             Configurer
@@ -586,7 +593,8 @@ export function RFIDView() {
           setOpenDialog(false);
           setFormData({});
           setSearchUser("");
-          setUsers([]); // Reset users seulement à la fermeture
+          setUsers([]);
+          setCurrentUserLoaded(false);
         }
       }} fullWidth maxWidth="sm">
         <DialogTitle>
@@ -781,6 +789,7 @@ export function RFIDView() {
               setFormData({});
               setSearchUser("");
               setUsers([]);
+              setCurrentUserLoaded(false);
             }}
             disabled={saving}
           >
