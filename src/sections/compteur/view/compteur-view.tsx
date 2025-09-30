@@ -4,7 +4,7 @@ import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel,
-  Chip
+  Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -78,10 +78,9 @@ export function CompteurView() {
   // States pour chaque mode
   const [formData, setFormData] = useState<Partial<Compteur>>({});
   const [bulkCompteurs, setBulkCompteurs] = useState<Partial<Compteur>[]>([
-    { nom: "", code_serie: "", siteforage: null, actif: true, date_installation: "" }
+    { siteforage: null, actif: true, date_installation: "" }
   ]);
   const [autoForm, setAutoForm] = useState({
-    nom: "",
     siteforage: null as number | null,
     date_installation: "",
     code_start: "",
@@ -193,7 +192,7 @@ export function CompteurView() {
         );
       } else if (mode === "auto") {
         // Création automatique côté frontend
-        const { nom, siteforage, date_installation, code_start, code_end } = autoForm;
+        const { siteforage, date_installation, code_start, code_end } = autoForm;
         const start = parseInt(code_start, 10);
         const end = parseInt(code_end, 10);
 
@@ -206,8 +205,6 @@ export function CompteurView() {
         const generatedCompteurs = [];
         for (let i = start; i <= end; i++) {
           generatedCompteurs.push({
-            nom: nom || `Compteur-${i}`,
-            code_serie: i.toString(),
             siteforage: siteforage,
             date_installation: date_installation || null,
             actif: false,
@@ -229,8 +226,8 @@ export function CompteurView() {
       fetchCompteurs(pagination.current_page);
       setOpenDialog(false);
       setFormData({});
-      setBulkCompteurs([{ nom: "", code_serie: "", siteforage: null, actif: true, date_installation: "" }]);
-      setAutoForm({ nom: "", siteforage: null, date_installation: "", code_start: "", code_end: "" });
+      setBulkCompteurs([{ siteforage: null, actif: true, date_installation: "" }]);
+      setAutoForm({ siteforage: null, date_installation: "", code_start: "", code_end: "" });
       setMode("single");
     } catch (error) {
       console.error("Erreur lors de la sauvegarde :", error);
@@ -291,11 +288,11 @@ export function CompteurView() {
       <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
           <TextField
-            label="Rechercher (Nom, Code série)"
+            label="Rechercher (Code série)"
             value={searchNom}
             onChange={(e) => setSearchNom(e.target.value)}
             size="small"
-            placeholder="Nom ou code série..."
+            placeholder="Code série..."
             sx={{ minWidth: 200 }}
           />
           
@@ -322,7 +319,7 @@ export function CompteurView() {
               <MenuItem value="">Tous</MenuItem>
               <MenuItem value="stock">En stock</MenuItem>
               <MenuItem value="vendu">Vendu</MenuItem>
-              <MenuItem value="installé">Installé</MenuItem>
+              <MenuItem value="installe">Installé</MenuItem>
               <MenuItem value="en panne">En panne</MenuItem>
             </Select>
           </FormControl>
@@ -367,176 +364,177 @@ export function CompteurView() {
         </Box>
       )}
 
-      {/* Tableau des compteurs */}
-      <Card>
-        <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
-          {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <CircularProgress />
-            </div>
-          ) : (
-            <>
-              <table className="w-full border-collapse min-w-[800px]">
-                <thead>
-                  <tr className="bg-gray-100 text-left text-sm">
-                   {/*  <th className="p-3 border-b font-semibold">Nom</th> */}
-                    <th className="p-3 border-b font-semibold">Code série</th>
-                    <th className="p-3 border-b font-semibold">Site forage</th>
-                    <th className="p-3 border-b font-semibold">Propriétaire</th>
-                    <th className="p-3 border-b font-semibold">Statut</th>
-                    <th className="p-3 border-b font-semibold">Date installation</th>
-                    <th className="p-3 border-b font-semibold">Actif</th>
-                    <th className="p-3 border-b font-semibold text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {compteurs.length > 0 ? (
-                    compteurs.map((compteur) => (
-                      <tr 
-                        key={compteur.id} 
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => {
-                          setFormData(compteur);
-                          setOpenDialog(true);
-                          setMode("single");
-                        }}
+      {/* Tableau des compteurs avec design amélioré */}
+      <Card sx={{ overflow: 'hidden' }}>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: 'primary.main' }}>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
+                  Code série
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
+                  Site forage
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
+                  Propriétaire
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
+                  Statut
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
+                  Date installation
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
+                  Actif
+                </TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2, textAlign: 'center' }}>
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4 }}>
+                    <CircularProgress />
+                  </TableCell>
+                </TableRow>
+              ) : compteurs.length > 0 ? (
+                compteurs.map((compteur) => (
+                  <TableRow 
+                    key={compteur.id} 
+                    sx={{ 
+                      '&:hover': { backgroundColor: 'action.hover' },
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      setFormData(compteur);
+                      setOpenDialog(true);
+                      setMode("single");
+                    }}
+                  >
+                    <TableCell sx={{ py: 2 }}>
+                      <Box sx={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: 1,
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}>
+                        <Typography variant="body2" fontWeight="bold">
+                          {compteur.code_serie || "N/A"}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      {compteur.siteforage_nom ? (
+                        <Chip 
+                          label={compteur.siteforage_nom} 
+                          size="small" 
+                          variant="outlined"
+                          color="primary"
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      {compteur.user_nom ? (
+                        <Chip 
+                          label={compteur.user_nom} 
+                          size="small" 
+                          variant="outlined"
+                          color="secondary"
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Chip 
+                        label={compteur.statut || 'Non défini'} 
+                        size="small"
+                        color={
+                          compteur.statut === 'installe' ? 'success' :
+                          compteur.statut === 'en panne' ? 'error' : 
+                          compteur.statut === 'vendu' ? 'warning' : 'default'
+                        }
+                        variant="filled"
+                      />
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Typography variant="body2">
+                        {compteur.date_installation ? 
+                          new Date(compteur.date_installation).toLocaleDateString() : 
+                          "Non installé"
+                        }
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Chip 
+                        label={compteur.actif ? "Actif" : "Désactivé"} 
+                        size="small"
+                        color={compteur.actif ? "success" : "error"}
+                        variant="filled"
+                      />
+                    </TableCell>
+                    <TableCell sx={{ py: 2, textAlign: 'center' }}>
+                      <IconButton 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMenuOpen(e, compteur);
+                        }} 
+                        size="small"
+                        disabled={toggling === compteur.id}
                       >
-                       {/*  <td className="p-3 border-b">
-                          <Typography variant="body2" fontWeight="medium">
-                            {compteur.nom}
-                          </Typography>
-                        </td> */}
-                        <td className="p-3 border-b">
-                          <Box sx={{ 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            gap: 1,
-                            px: 1.5,
-                            py: 0.5,
-                            borderRadius: 1,
-                            bgcolor: '#0486d9',
-                            color: 'white'
-                          }}>
-                            <Typography variant="body2" fontWeight="bold">
-                              {compteur.code_serie || "N/A"}
-                            </Typography>
-                          </Box>
-                        </td>
-                        <td className="p-3 border-b">
-                          {compteur.siteforage_nom ? (
-                            <Chip 
-                              label={compteur.siteforage_nom} 
-                              size="small" 
-                              variant="outlined"
-                              color="primary"
-                            />
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              -
-                            </Typography>
-                          )}
-                        </td>
-                        <td className="p-3 border-b">
-                          {compteur.user_nom ? (
-                            <Chip 
-                              label={compteur.user_nom} 
-                              size="small" 
-                              variant="outlined"
-                              color="secondary"
-                            />
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              -
-                            </Typography>
-                          )}
-                        </td>
-                        <td className="p-3 border-b">
-                          <Chip 
-                            label={compteur.statut || 'Non défini'} 
-                            size="small"
-                            color={
-                              compteur.statut === 'installé' ? 'success' :
-                              compteur.statut === 'en panne' ? 'error' : 'default'
-                            }
-                            variant="filled"
-                          />
-                        </td>
-                        <td className="p-3 border-b">
-                          <Typography variant="body2">
-                            {compteur.date_installation ? 
-                              new Date(compteur.date_installation).toLocaleDateString() : 
-                              "Non installé"
-                            }
-                          </Typography>
-                        </td>
-                        <td className="p-3 border-b">
-                          {compteur.actif ? (
-                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Actif
-                            </span>
-                          ) : (
-                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Désactivé
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3 border-b text-center">
-                          <IconButton 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMenuOpen(e, compteur);
-                            }} 
-                            size="small"
-                            disabled={toggling === compteur.id}
-                          >
-                            {toggling === compteur.id ? (
-                              <CircularProgress size={20} />
-                            ) : (
-                              <Iconify icon="eva:more-vertical-fill" />
-                            )}
-                          </IconButton>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="text-center text-gray-500 py-6">
-                        <Typography variant="h6" color="text.secondary">
-                          Aucun compteur trouvé
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Essayez de modifier vos critères de recherche
-                        </Typography>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        {toggling === compteur.id ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <Iconify icon="eva:more-vertical-fill" />
+                        )}
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6 }}>
+                    <Typography variant="h6" color="text.secondary">
+                      Aucun compteur trouvé
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Essayez de modifier vos critères de recherche
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-              {/* Pagination en bas */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mt: 2,
-                  flexWrap: "wrap",
-                  gap: 2,
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  {`Affichage de ${compteurs.length} sur ${pagination.count} compteurs`}
-                </Typography>
-                <Pagination
-                  count={pagination.total_pages}
-                  page={pagination.current_page}
-                  onChange={handlePageChange}
-                  color="primary"
-                />
-              </Box>
-            </>
-          )}
-        </div>
+        {/* Pagination en bas */}
+        {pagination.total_pages > 1 && (
+          <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              {`Affichage de ${compteurs.length} sur ${pagination.count} compteurs`}
+            </Typography>
+            <Pagination
+              count={pagination.total_pages}
+              page={pagination.current_page}
+              onChange={handlePageChange}
+              color="primary"
+            />
+          </Box>
+        )}
       </Card>
 
       {/* Menu contextuel */}
@@ -591,20 +589,6 @@ export function CompteurView() {
 
           {mode === "single" && (
             <>
-              <TextField
-                label="Nom"
-                value={formData.nom || ""}
-                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                fullWidth
-                disabled={submitting}
-              />
-              <TextField
-                label="Code série"
-                value={formData.code_serie || ""}
-                onChange={(e) => setFormData({ ...formData, code_serie: e.target.value })}
-                fullWidth
-                disabled={submitting}
-              />
               {loadingSites ? (
                 <CircularProgress size={24} />
               ) : (
@@ -647,30 +631,33 @@ export function CompteurView() {
                   key={index}
                   sx={{ display: "flex", gap: 2, alignItems: "center" }}
                 >
-                  <TextField
-                    label="Nom"
-                    value={item.nom || ""}
-                    onChange={(e) => {
-                      const newList = [...bulkCompteurs];
-                      newList[index] = { ...newList[index], nom: e.target.value };
-                      setBulkCompteurs(newList);
-                    }}
-                    fullWidth
-                    disabled={submitting}
-                    size="small"
-                  />
-                  <TextField
-                    label="Code série"
-                    value={item.code_serie || ""}
-                    onChange={(e) => {
-                      const newList = [...bulkCompteurs];
-                      newList[index] = { ...newList[index], code_serie: e.target.value };
-                      setBulkCompteurs(newList);
-                    }}
-                    fullWidth
-                    disabled={submitting}
-                    size="small"
-                  />
+                  {loadingSites ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Site forage</InputLabel>
+                      <Select
+                        value={item.siteforage === null ? "" : String(item.siteforage)}
+                        label="Site forage"
+                        onChange={(e) => {
+                          const newList = [...bulkCompteurs];
+                          newList[index] = { 
+                            ...newList[index], 
+                            siteforage: e.target.value === "" ? null : Number(e.target.value)
+                          };
+                          setBulkCompteurs(newList);
+                        }}
+                        disabled={submitting}
+                      >
+                        <MenuItem value="">Aucun site</MenuItem>
+                        {sitesForage.map((site) => (
+                          <MenuItem key={site.id} value={String(site.id)}>
+                            {site.nom} - {site.localisation}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
                   <IconButton
                     color="error"
                     onClick={() => {
@@ -691,7 +678,7 @@ export function CompteurView() {
                 onClick={() =>
                   setBulkCompteurs([
                     ...bulkCompteurs,
-                    { nom: "", code_serie: "", siteforage: null, actif: true },
+                    { siteforage: null, actif: true },
                   ])
                 }
                 disabled={submitting}
@@ -703,14 +690,6 @@ export function CompteurView() {
 
           {mode === "auto" && (
             <>
-              <TextField
-                label="Nom générique"
-                value={autoForm.nom}
-                onChange={(e) => setAutoForm({ ...autoForm, nom: e.target.value })}
-                fullWidth
-                disabled={submitting}
-                helperText="Laissez vide pour utiliser 'Compteur-{numéro}'"
-              />
               {loadingSites ? (
                 <CircularProgress size={24} />
               ) : (
@@ -744,20 +723,13 @@ export function CompteurView() {
                 disabled={submitting}
               />
               <TextField
-                label="Code série début"
+                label="Nombre de compteurs à créer"
                 type="number"
                 value={autoForm.code_start}
                 onChange={(e) => setAutoForm({ ...autoForm, code_start: e.target.value })}
                 fullWidth
                 disabled={submitting}
-              />
-              <TextField
-                label="Code série fin"
-                type="number"
-                value={autoForm.code_end}
-                onChange={(e) => setAutoForm({ ...autoForm, code_end: e.target.value })}
-                fullWidth
-                disabled={submitting}
+                helperText="Nombre de compteurs à créer automatiquement"
               />
             </>
           )}
