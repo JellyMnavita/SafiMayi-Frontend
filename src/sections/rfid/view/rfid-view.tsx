@@ -175,12 +175,16 @@ export function RFIDView() {
       
       if (mode === "single") {
         if (formData.id) {
-          // Edition
+          // Edition - CORRECTION ICI : envoyer null explicitement pour retirer l'utilisateur
           const updateData: any = {};
           if (formData.telephone !== undefined) updateData.telephone = formData.telephone;
           if (formData.code_uid !== undefined) updateData.code_uid = formData.code_uid;
           if (formData.code !== undefined) updateData.code = formData.code;
-          if (formData.user_id !== undefined) updateData.user_id = formData.user_id;
+          
+          // CORRECTION IMPORTANTE : envoyer explicitement user_id: null si on veut retirer l'utilisateur
+          if (formData.user_id !== undefined) {
+            updateData.user_id = formData.user_id; // Peut être null pour retirer l'utilisateur
+          }
 
           await apiClient.put(
             `/api/rfid/update/${formData.id}/`,
@@ -280,6 +284,15 @@ export function RFIDView() {
       fetchCurrentUser();
     }
   }, [openDialog, formData.id, formData.user_id]);
+
+  // Fonction pour ouvrir le dialog de configuration en cliquant sur la carte
+  const handleCardClick = (rfid: RFID) => {
+    setFormData(rfid);
+    setOpenDialog(true);
+    setMode("single");
+    setSearchUser(""); // Reset de la recherche
+    setUsers([]); // Reset de la liste des utilisateurs
+  };
 
   return (
     <DashboardContent>
@@ -393,13 +406,31 @@ export function RFIDView() {
         ) : rfids.length > 0 ? (
           rfids.map((rfid) => (
             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={rfid.id}>
-              <Card sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5, height: '100%' }}>
+              <Card 
+                sx={{ 
+                  p: 2, 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  gap: 1.5, 
+                  height: '100%',
+                  cursor: 'pointer', // Ajout du curseur pointer
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    boxShadow: 3,
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+                onClick={() => handleCardClick(rfid)} // Click sur toute la carte
+              >
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography variant="subtitle1" fontWeight="bold">
                     {rfid.code_uid}
                   </Typography>
                   <IconButton 
-                    onClick={(e) => handleMenuOpen(e, rfid)} 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Empêcher l'ouverture du dialog quand on clique sur le menu
+                      handleMenuOpen(e, rfid);
+                    }} 
                     size="small"
                     disabled={toggling === rfid.code_uid}
                   >
@@ -618,7 +649,7 @@ export function RFIDView() {
                         {...params}
                         label="Associer à un utilisateur"
                         placeholder="Tapez au moins 2 caractères pour rechercher..."
-                        helperText="Recherchez un utilisateur par nom, email ou téléphone. Laissez vide pour retirer l'utilisateur actuel."
+                        helperText="Recherchez un utilisateur par nom, email ou téléphone. Laissez vide ou cliquez sur 'Retirer' pour que la carte n'ait pas de propriétaire."
                         disabled={saving}
                       />
                     )}
@@ -643,15 +674,19 @@ export function RFIDView() {
                       color="error"
                       variant="outlined"
                       onClick={() => {
-                        setFormData({ ...formData, user_id: null });
+                        // CORRECTION : Mettre explicitement user_id à null
+                        setFormData({ 
+                          ...formData, 
+                          user_id: null 
+                        });
                         setSearchUser("");
                         setUsers([]);
                       }}
                       disabled={saving}
-                      startIcon={ <DeleteIcon />}
+                      startIcon={<DeleteIcon />}
                       sx={{ mt: 1 }}
                     >
-                      Retirer l'utilisateur actuel
+                      Retirer l'utilisateur (devenir sans propriétaire)
                     </Button>
                   )}
 
@@ -659,7 +694,7 @@ export function RFIDView() {
                   {!formData.user_id && formData.id && (
                     <Box sx={{ mt: 1, p: 1, backgroundColor: 'grey.100', borderRadius: 1 }}>
                       <Typography variant="body2" color="text.secondary">
-                        Aucun utilisateur associé - La carte n'appartient à personne
+                        ✅ Aucun utilisateur associé - La carte n'appartient à personne
                       </Typography>
                     </Box>
                   )}
