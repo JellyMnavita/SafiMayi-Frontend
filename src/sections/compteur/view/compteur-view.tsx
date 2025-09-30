@@ -101,39 +101,39 @@ export function CompteurView() {
   const handleMenuClose = () => setAnchorEl(null);
 
   // Charger les compteurs avec pagination et filtres
-  const fetchCompteurs = async (page: number = 1) => {
-    try {
-      setLoading(true);
-      
-      const params = new URLSearchParams({
-        page: page.toString(),
-        page_size: pageSize.toString(),
-      });
+ const fetchCompteurs = async (page: number = 1) => {
+  try {
+    setLoading(true);
+    
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
 
-      // Ajouter les filtres seulement s'ils sont définis
-      if (searchNom) params.append('search', searchNom);
-      if (statusFilter) params.append('actif', statusFilter);
-      if (statutFilter) params.append('statut', statutFilter);
+    // Utiliser le même nom de paramètre que le backend
+    if (searchNom) params.append('search', searchNom);
+    if (statusFilter) params.append('actif', statusFilter);
+    if (statutFilter) params.append('statut', statutFilter);
 
-      const response = await apiClient.get(`/api/compteur/list-compteur-pagination?${params}`);
-      const data = response.data;
-      
-      setCompteurs(data.results || []);
-      setPagination({
-        count: data.count || 0,
-        next: data.next || null,
-        previous: data.previous || null,
-        page_size: data.page_size || 20,
-        current_page: data.current_page || 1,
-        total_pages: data.total_pages || 1
-      });
-    } catch (error) {
-      console.error("Erreur lors du chargement :", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    const response = await apiClient.get(`/api/compteur/list-compteur-pagination?${params}`);
+    const data = response.data;
+    
+    // S'adapter à la structure PageNumberPagination de DRF
+    setCompteurs(data.results || []);
+    setPagination({
+      count: data.count || 0,
+      next: data.next || null,
+      previous: data.previous || null,
+      page_size: data.page_size || pageSize,
+      current_page: page, // Utiliser le page passé en paramètre
+      total_pages: Math.ceil((data.count || 0) / pageSize)
+    });
+  } catch (error) {
+    console.error("Erreur lors du chargement :", error);
+  } finally {
+    setLoading(false);
+  }
+};
   // Charger les sites de forage
   const fetchSitesForage = async () => {
     try {
