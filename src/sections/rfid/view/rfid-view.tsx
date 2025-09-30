@@ -4,7 +4,7 @@ import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, Tabs, Tab,
-  Pagination, FormControl, InputLabel
+  Pagination, FormControl, InputLabel, Autocomplete, Chip
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -20,6 +20,14 @@ interface RFID {
   solde_litres?: number;
   user_nom?: string;
   user_email?: string;
+  user_id?: number;
+}
+
+interface User {
+  id: number;
+  nom: string;
+  email: string;
+  telephone: string;
 }
 
 interface PaginationInfo {
@@ -33,22 +41,28 @@ interface PaginationInfo {
 
 export function RFIDView() {
   const [rfids, setRfids] = useState<RFID[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false); // ← AJOUTÉ
+  const [toggling, setToggling] = useState<string | null>(null); // ← AJOUTÉ
   const [pagination, setPagination] = useState<PaginationInfo>({
     count: 0,
     next: null,
     previous: null,
-    page_size: 20,
+    page_size: 8,
     current_page: 1,
     total_pages: 1
   });
 
   // Filtres
   const [searchCode, setSearchCode] = useState<string>("");
-  const [searchTel, setSearchTel] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [statutFilter, setStatutFilter] = useState<string>("");
-  const [pageSize, setPageSize] = useState<number>(20);
+  const [pageSize, setPageSize] = useState<number>(8);
+
+  // Recherche utilisateur
+  const [searchUser, setSearchUser] = useState<string>("");
 
   // Menu actions
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -65,6 +79,35 @@ export function RFIDView() {
   };
   const handleMenuClose = () => setAnchorEl(null);
 
+  // Charger les utilisateurs avec debounce
+  const searchUsers = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setUsers([]);
+      return;
+    }
+
+    try {
+      setLoadingUsers(true);
+      const response = await apiClient.get(
+        `/api/users/search/?search=${encodeURIComponent(searchTerm)}&page_size=10`
+      );
+      setUsers(response.data.results || []);
+    } catch (err) {
+      console.error("Erreur lors de la recherche d'utilisateurs:", err);
+      setUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Debounce pour la recherche d'utilisateurs
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchUsers(searchUser);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchUser]);
+
   // Charger les cartes avec pagination et filtres
   const fetchRfids = async (page: number = 1) => {
     try {
@@ -77,7 +120,6 @@ export function RFIDView() {
 
       // Ajouter les filtres seulement s'ils sont définis
       if (searchCode) params.append('search', searchCode);
-      if (searchTel) params.append('search', searchTel);
       if (statusFilter) params.append('active', statusFilter);
       if (statutFilter) params.append('statut', statutFilter);
 
@@ -109,10 +151,10 @@ export function RFIDView() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchRfids(1);
-    }, 500); // Délai de 500ms pour éviter trop de requêtes
+    }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchCode, searchTel, statusFilter, statutFilter, pageSize]);
+  }, [searchCode, statusFilter, statutFilter, pageSize]);
 
   // Changement de page
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
@@ -128,16 +170,20 @@ export function RFIDView() {
   // Save
   const handleSave = async () => {
     try {
+      setSaving(true); // ← AJOUTÉ
+      
       if (mode === "single") {
         if (formData.id) {
           // Edition
+          const updateData: any = {};
+          if (formData.telephone !== undefined) updateData.telephone = formData.telephone;
+          if (formData.code_uid !== undefined) updateData.code_uid = formData.code_uid;
+          if (formData.code !== undefined) updateData.code = formData.code;
+          if (formData.user_id !== undefined) updateData.user_id = formData.user_id;
+
           await apiClient.put(
             `/api/rfid/update/${formData.id}/`,
-            {
-              telephone: formData.telephone,
-              code_uid: formData.code_uid,
-              code: formData.code,
-            }
+            updateData
           );
         } else {
           // Création
@@ -170,35 +216,69 @@ export function RFIDView() {
       fetchRfids(pagination.current_page);
       setOpenDialog(false);
       setFormData({});
+      setSearchUser(""); // Reset de la recherche utilisateur
     } catch (error) {
       console.error("Erreur sauvegarde :", error);
       alert("Erreur lors de la sauvegarde de la carte RFID");
+    } finally {
+      setSaving(false); // ← AJOUTÉ
     }
   };
 
   // Toggle activation
   const handleToggleActivation = async (code_uid: string) => {
     try {
+      setToggling(code_uid); // ← AJOUTÉ
       await apiClient.post(
         `/api/rfid/toggle/`,
         { uid: code_uid }
       );
-      fetchRfids(pagination.current_page); // Recharger la page actuelle
+      fetchRfids(pagination.current_page);
     } catch (error) {
       console.error("Erreur lors de l'activation/désactivation :", error);
       alert("Erreur lors de la modification du statut de la carte");
+    } finally {
+      setToggling(null); // ← AJOUTÉ
     }
   };
 
   // Réinitialiser les filtres
   const handleResetFilters = () => {
     setSearchCode("");
-    setSearchTel("");
     setStatusFilter("");
     setStatutFilter("");
-    setPageSize(20);
-    // Le useEffect se chargera de relancer la requête
+    setPageSize(8);
   };
+
+  // Trouver l'utilisateur sélectionné pour l'affichage
+  const getSelectedUser = () => {
+    if (!formData.user_id) return null;
+    return users.find(user => user.id === formData.user_id) || null;
+  };
+
+  // Lors de l'ouverture du dialog d'édition, charger l'utilisateur actuel si existe
+  useEffect(() => {
+    if (openDialog && formData.id && formData.user_id) {
+      // Si la carte a déjà un utilisateur, on le recherche
+      const fetchCurrentUser = async () => {
+        try {
+          const response = await apiClient.get(`/api/users/${formData.user_id}/`);
+          const user = response.data;
+          setUsers(prev => {
+            // Éviter les doublons
+            if (!prev.find(u => u.id === user.id)) {
+              return [...prev, user];
+            }
+            return prev;
+          });
+        } catch (error) {
+          console.error("Erreur lors du chargement de l'utilisateur actuel:", error);
+        }
+      };
+      
+      fetchCurrentUser();
+    }
+  }, [openDialog, formData.id, formData.user_id]);
 
   return (
     <DashboardContent>
@@ -215,6 +295,8 @@ export function RFIDView() {
             setFormData({});
             setMode("single");
             setOpenDialog(true);
+            setSearchUser(""); // Reset de la recherche
+            setUsers([]); // Reset de la liste des utilisateurs
           }}
         >
           Ajouter une carte RFID
@@ -268,9 +350,10 @@ export function RFIDView() {
               label="Par page"
               onChange={handlePageSizeChange}
             >
-              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={8}>8</MenuItem>
               <MenuItem value={20}>20</MenuItem>
-              <MenuItem value={50}>50</MenuItem>
+              <MenuItem value={40}>40</MenuItem>
+              <MenuItem value={60}>60</MenuItem>
               <MenuItem value={100}>100</MenuItem>
             </Select>
           </FormControl>
@@ -314,8 +397,16 @@ export function RFIDView() {
                   <Typography variant="subtitle1" fontWeight="bold">
                     {rfid.code_uid}
                   </Typography>
-                  <IconButton onClick={(e) => handleMenuOpen(e, rfid)} size="small">
-                    <Iconify icon="eva:more-vertical-fill" />
+                  <IconButton 
+                    onClick={(e) => handleMenuOpen(e, rfid)} 
+                    size="small"
+                    disabled={toggling === rfid.code_uid} // ← AJOUTÉ
+                  >
+                    {toggling === rfid.code_uid ? ( // ← AJOUTÉ
+                      <CircularProgress size={20} />
+                    ) : (
+                      <Iconify icon="eva:more-vertical-fill" />
+                    )}
                   </IconButton>
                 </Box>
                 
@@ -326,8 +417,8 @@ export function RFIDView() {
                   gap: 1,
                   p: 1,
                   borderRadius: 1,
-                  bgcolor: 'primary.light',
-                  color: 'primary.contrastText'
+                  bgcolor: '#0486d9',
+                  color: 'white'
                 }}>
                   <Typography variant="body2" fontWeight="bold">
                     Code:
@@ -343,9 +434,17 @@ export function RFIDView() {
 
                 {/* Affichage de l'utilisateur associé */}
                 {rfid.user_nom && (
-                  <Typography variant="body2" color="text.secondary">
-                    Utilisateur: {rfid.user_nom}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Utilisateur:
+                    </Typography>
+                    <Chip 
+                      label={rfid.user_nom} 
+                      size="small" 
+                      variant="outlined"
+                      color="primary"
+                    />
+                  </Box>
                 )}
                 
                 {/* Affichage du solde de litrage */}
@@ -425,6 +524,8 @@ export function RFIDView() {
               setOpenDialog(true);
               handleMenuClose();
               setMode("single");
+              setSearchUser(""); // Reset de la recherche
+              setUsers([]); // Reset de la liste des utilisateurs
             }}
           >
             Configurer
@@ -434,14 +535,29 @@ export function RFIDView() {
               if (selectedRfid) handleToggleActivation(selectedRfid.code_uid);
               handleMenuClose();
             }}
+            disabled={toggling === selectedRfid?.code_uid} // ← AJOUTÉ
           >
-            {selectedRfid?.active ? "Désactiver" : "Activer"}
+            {toggling === selectedRfid?.code_uid ? ( // ← AJOUTÉ
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                <span>Chargement...</span>
+              </Box>
+            ) : (
+              selectedRfid?.active ? "Désactiver" : "Activer"
+            )}
           </MenuItemMui>
         </MenuList>
       </Menu>
 
-      {/* Dialog Ajout / Édition (inchangé) */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+      {/* Dialog Ajout / Édition */}
+      <Dialog open={openDialog} onClose={() => {
+        if (!saving) {
+          setOpenDialog(false);
+          setFormData({});
+          setSearchUser("");
+          setUsers([]);
+        }
+      }} fullWidth maxWidth="sm">
         <DialogTitle>
           {formData.id ? "Éditer la carte RFID" : "Nouvelle carte RFID"}
         </DialogTitle>
@@ -459,6 +575,7 @@ export function RFIDView() {
                 value={formData.code_uid || ""}
                 onChange={(e) => setFormData({ ...formData, code_uid: e.target.value })}
                 fullWidth
+                disabled={saving} // ← AJOUTÉ
               />
               {formData.id && (
                 <TextField
@@ -468,6 +585,7 @@ export function RFIDView() {
                   fullWidth
                   inputProps={{ maxLength: 6 }}
                   helperText="Code à 6 chiffres unique"
+                  disabled={saving} // ← AJOUTÉ
                 />
               )}
               <TextField
@@ -475,7 +593,65 @@ export function RFIDView() {
                 value={formData.telephone || ""}
                 onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
                 fullWidth
+                disabled={saving} // ← AJOUTÉ
               />
+              
+              {/* Sélection de l'utilisateur avec recherche en temps réel */}
+              {formData.id && (
+                <FormControl fullWidth>
+                  <Autocomplete
+                    options={users}
+                    getOptionLabel={(option) => `${option.nom} - ${option.telephone || option.email}`}
+                    value={getSelectedUser()}
+                    onChange={(event, newValue) => {
+                      setFormData({ 
+                        ...formData, 
+                        user_id: newValue ? newValue.id : null 
+                      });
+                    }}
+                    onInputChange={(event, newValue) => {
+                      setSearchUser(newValue);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Associer à un utilisateur"
+                        placeholder="Tapez au moins 2 caractères pour rechercher..."
+                        helperText="Recherchez un utilisateur par nom, email ou téléphone"
+                        disabled={saving} // ← AJOUTÉ
+                      />
+                    )}
+                    loading={loadingUsers}
+                    noOptionsText={searchUser.length < 2 ? "Tapez au moins 2 caractères" : "Aucun utilisateur trouvé"}
+                    disabled={saving} // ← AJOUTÉ
+                  />
+                  
+                  {/* Affichage de l'utilisateur actuel */}
+                  {formData.user_id && getSelectedUser() && (
+                    <Box sx={{ mt: 1, p: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
+                      <Typography variant="body2" color="success.dark">
+                        ✅ Utilisateur associé: {getSelectedUser()?.nom} ({getSelectedUser()?.telephone})
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Option pour dissocier l'utilisateur */}
+                  {formData.user_id && (
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => {
+                        setFormData({ ...formData, user_id: null });
+                        setSearchUser("");
+                      }}
+                      sx={{ mt: 1 }}
+                      disabled={saving} // ← AJOUTÉ
+                    >
+                      Dissocier l'utilisateur
+                    </Button>
+                  )}
+                </FormControl>
+              )}
             </>
           )}
        
@@ -497,6 +673,7 @@ export function RFIDView() {
                           setFormData({ ...formData, list: newList });
                         }}
                         fullWidth
+                        disabled={saving} // ← AJOUTÉ
                       />
                       <TextField
                         label="Téléphone"
@@ -507,6 +684,7 @@ export function RFIDView() {
                           setFormData({ ...formData, list: newList });
                         }}
                         fullWidth
+                        disabled={saving} // ← AJOUTÉ
                       />
                       <IconButton
                         color="error"
@@ -515,6 +693,7 @@ export function RFIDView() {
                           newList.splice(index, 1);
                           setFormData({ ...formData, list: newList });
                         }}
+                        disabled={saving} // ← AJOUTÉ
                       >
                         <Iconify icon="solar:trash-bin-trash-bold" />
                       </IconButton>
@@ -530,6 +709,7 @@ export function RFIDView() {
                         list: [...(formData.list || []), { code_uid: "", telephone: "" }],
                       })
                     }
+                    disabled={saving} // ← AJOUTÉ
                   >
                     + Ajouter une carte
                   </Button>
@@ -543,15 +723,31 @@ export function RFIDView() {
                   value={formData.nombre || 1}
                   onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
                   fullWidth
+                  disabled={saving} // ← AJOUTÉ
                 />
               )}
             </>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
-          <Button variant="contained" onClick={handleSave}>
-            Enregistrer
+          <Button 
+            onClick={() => {
+              setOpenDialog(false);
+              setFormData({});
+              setSearchUser("");
+              setUsers([]);
+            }}
+            disabled={saving} // ← AJOUTÉ
+          >
+            Annuler
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSave}
+            disabled={saving} // ← AJOUTÉ
+            startIcon={saving ? <CircularProgress size={16} /> : null} // ← AJOUTÉ
+          >
+            {saving ? "Enregistrement..." : "Enregistrer"} {/* ← AJOUTÉ */}
           </Button>
         </DialogActions>
       </Dialog>
