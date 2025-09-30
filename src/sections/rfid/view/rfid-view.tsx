@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface RFID {
   id: number;
@@ -44,8 +45,8 @@ export function RFIDView() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
-  const [saving, setSaving] = useState<boolean>(false); // ← AJOUTÉ
-  const [toggling, setToggling] = useState<string | null>(null); // ← AJOUTÉ
+  const [saving, setSaving] = useState<boolean>(false);
+  const [toggling, setToggling] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo>({
     count: 0,
     next: null,
@@ -170,7 +171,7 @@ export function RFIDView() {
   // Save
   const handleSave = async () => {
     try {
-      setSaving(true); // ← AJOUTÉ
+      setSaving(true);
       
       if (mode === "single") {
         if (formData.id) {
@@ -221,14 +222,14 @@ export function RFIDView() {
       console.error("Erreur sauvegarde :", error);
       alert("Erreur lors de la sauvegarde de la carte RFID");
     } finally {
-      setSaving(false); // ← AJOUTÉ
+      setSaving(false);
     }
   };
 
   // Toggle activation
   const handleToggleActivation = async (code_uid: string) => {
     try {
-      setToggling(code_uid); // ← AJOUTÉ
+      setToggling(code_uid);
       await apiClient.post(
         `/api/rfid/toggle/`,
         { uid: code_uid }
@@ -238,7 +239,7 @@ export function RFIDView() {
       console.error("Erreur lors de l'activation/désactivation :", error);
       alert("Erreur lors de la modification du statut de la carte");
     } finally {
-      setToggling(null); // ← AJOUTÉ
+      setToggling(null);
     }
   };
 
@@ -400,9 +401,9 @@ export function RFIDView() {
                   <IconButton 
                     onClick={(e) => handleMenuOpen(e, rfid)} 
                     size="small"
-                    disabled={toggling === rfid.code_uid} // ← AJOUTÉ
+                    disabled={toggling === rfid.code_uid}
                   >
-                    {toggling === rfid.code_uid ? ( // ← AJOUTÉ
+                    {toggling === rfid.code_uid ? (
                       <CircularProgress size={20} />
                     ) : (
                       <Iconify icon="eva:more-vertical-fill" />
@@ -535,9 +536,9 @@ export function RFIDView() {
               if (selectedRfid) handleToggleActivation(selectedRfid.code_uid);
               handleMenuClose();
             }}
-            disabled={toggling === selectedRfid?.code_uid} // ← AJOUTÉ
+            disabled={toggling === selectedRfid?.code_uid}
           >
-            {toggling === selectedRfid?.code_uid ? ( // ← AJOUTÉ
+            {toggling === selectedRfid?.code_uid ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CircularProgress size={16} />
                 <span>Chargement...</span>
@@ -575,7 +576,7 @@ export function RFIDView() {
                 value={formData.code_uid || ""}
                 onChange={(e) => setFormData({ ...formData, code_uid: e.target.value })}
                 fullWidth
-                disabled={saving} // ← AJOUTÉ
+                disabled={saving}
               />
               {formData.id && (
                 <TextField
@@ -585,7 +586,7 @@ export function RFIDView() {
                   fullWidth
                   inputProps={{ maxLength: 6 }}
                   helperText="Code à 6 chiffres unique"
-                  disabled={saving} // ← AJOUTÉ
+                  disabled={saving}
                 />
               )}
               <TextField
@@ -593,7 +594,7 @@ export function RFIDView() {
                 value={formData.telephone || ""}
                 onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
                 fullWidth
-                disabled={saving} // ← AJOUTÉ
+                disabled={saving}
               />
               
               {/* Sélection de l'utilisateur avec recherche en temps réel */}
@@ -617,38 +618,50 @@ export function RFIDView() {
                         {...params}
                         label="Associer à un utilisateur"
                         placeholder="Tapez au moins 2 caractères pour rechercher..."
-                        helperText="Recherchez un utilisateur par nom, email ou téléphone"
-                        disabled={saving} // ← AJOUTÉ
+                        helperText="Recherchez un utilisateur par nom, email ou téléphone. Laissez vide pour retirer l'utilisateur actuel."
+                        disabled={saving}
                       />
                     )}
                     loading={loadingUsers}
                     noOptionsText={searchUser.length < 2 ? "Tapez au moins 2 caractères" : "Aucun utilisateur trouvé"}
-                    disabled={saving} // ← AJOUTÉ
+                    disabled={saving}
                   />
                   
                   {/* Affichage de l'utilisateur actuel */}
                   {formData.user_id && getSelectedUser() && (
-                    <Box sx={{ mt: 1, p: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
-                      <Typography variant="body2" color="success.dark">
-                        ✅ Utilisateur associé: {getSelectedUser()?.nom} ({getSelectedUser()?.telephone})
+                    <Box sx={{ mt: 1, p: 1, backgroundColor: 'info.light', borderRadius: 1 }}>
+                      <Typography variant="body2" color="info.dark">
+                        Utilisateur actuel: {getSelectedUser()?.nom} ({getSelectedUser()?.telephone || getSelectedUser()?.email})
                       </Typography>
                     </Box>
                   )}
                   
-                  {/* Option pour dissocier l'utilisateur */}
+                  {/* Option pour retirer complètement l'utilisateur */}
                   {formData.user_id && (
                     <Button
                       size="small"
                       color="error"
+                      variant="outlined"
                       onClick={() => {
                         setFormData({ ...formData, user_id: null });
                         setSearchUser("");
+                        setUsers([]);
                       }}
+                      disabled={saving}
+                      startIcon={ <DeleteIcon />}
                       sx={{ mt: 1 }}
-                      disabled={saving} // ← AJOUTÉ
                     >
-                      Dissocier l'utilisateur
+                      Retirer l'utilisateur actuel
                     </Button>
+                  )}
+
+                  {/* Indication quand aucun utilisateur n'est associé */}
+                  {!formData.user_id && formData.id && (
+                    <Box sx={{ mt: 1, p: 1, backgroundColor: 'grey.100', borderRadius: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Aucun utilisateur associé - La carte n'appartient à personne
+                      </Typography>
+                    </Box>
                   )}
                 </FormControl>
               )}
@@ -673,7 +686,7 @@ export function RFIDView() {
                           setFormData({ ...formData, list: newList });
                         }}
                         fullWidth
-                        disabled={saving} // ← AJOUTÉ
+                        disabled={saving}
                       />
                       <TextField
                         label="Téléphone"
@@ -684,7 +697,7 @@ export function RFIDView() {
                           setFormData({ ...formData, list: newList });
                         }}
                         fullWidth
-                        disabled={saving} // ← AJOUTÉ
+                        disabled={saving}
                       />
                       <IconButton
                         color="error"
@@ -693,7 +706,7 @@ export function RFIDView() {
                           newList.splice(index, 1);
                           setFormData({ ...formData, list: newList });
                         }}
-                        disabled={saving} // ← AJOUTÉ
+                        disabled={saving}
                       >
                         <Iconify icon="solar:trash-bin-trash-bold" />
                       </IconButton>
@@ -709,7 +722,7 @@ export function RFIDView() {
                         list: [...(formData.list || []), { code_uid: "", telephone: "" }],
                       })
                     }
-                    disabled={saving} // ← AJOUTÉ
+                    disabled={saving}
                   >
                     + Ajouter une carte
                   </Button>
@@ -723,7 +736,7 @@ export function RFIDView() {
                   value={formData.nombre || 1}
                   onChange={(e) => setFormData({ ...formData, nombre: Number(e.target.value) })}
                   fullWidth
-                  disabled={saving} // ← AJOUTÉ
+                  disabled={saving}
                 />
               )}
             </>
@@ -737,17 +750,17 @@ export function RFIDView() {
               setSearchUser("");
               setUsers([]);
             }}
-            disabled={saving} // ← AJOUTÉ
+            disabled={saving}
           >
             Annuler
           </Button>
           <Button 
             variant="contained" 
             onClick={handleSave}
-            disabled={saving} // ← AJOUTÉ
-            startIcon={saving ? <CircularProgress size={16} /> : null} // ← AJOUTÉ
+            disabled={saving}
+            startIcon={saving ? <CircularProgress size={16} /> : null}
           >
-            {saving ? "Enregistrement..." : "Enregistrer"} {/* ← AJOUTÉ */}
+            {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -335,7 +335,6 @@ function AjouterPaiementForm({ vente, onPaiementAdded, onCancel }: {
               <MenuItem value="cash">Espèces</MenuItem>
               <MenuItem value="mobile_money">Mobile Money</MenuItem>
               <MenuItem value="carte">Carte Bancaire</MenuItem>
-              <MenuItem value="mixte">Mixte</MenuItem>
             </Select>
           </FormControl>
         </Grid>
@@ -412,7 +411,6 @@ function FiltresVentes({
               <MenuItem value="cash">Espèces</MenuItem>
               <MenuItem value="mobile_money">Mobile Money</MenuItem>
               <MenuItem value="carte">Carte Bancaire</MenuItem>
-              <MenuItem value="mixte">Mixte</MenuItem>
             </Select>
           </FormControl>
         </Grid>
