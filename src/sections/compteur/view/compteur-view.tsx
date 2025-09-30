@@ -379,7 +379,7 @@ export function CompteurView() {
               <table className="w-full border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-gray-100 text-left text-sm">
-                    <th className="p-3 border-b font-semibold">Nom</th>
+                   {/*  <th className="p-3 border-b font-semibold">Nom</th> */}
                     <th className="p-3 border-b font-semibold">Code série</th>
                     <th className="p-3 border-b font-semibold">Site forage</th>
                     <th className="p-3 border-b font-semibold">Propriétaire</th>
