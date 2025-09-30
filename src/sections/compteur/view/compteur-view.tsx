@@ -4,7 +4,7 @@ import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel,
-  Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+  Chip
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -364,177 +364,170 @@ export function CompteurView() {
         </Box>
       )}
 
-      {/* Tableau des compteurs avec design amélioré */}
-      <Card sx={{ overflow: 'hidden' }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'primary.main' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
-                  Code série
-                </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
-                  Site forage
-                </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
-                  Propriétaire
-                </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
-                  Statut
-                </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
-                  Date installation
-                </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2 }}>
-                  Actif
-                </TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', py: 2, textAlign: 'center' }}>
-                  Actions
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4 }}>
-                    <CircularProgress />
-                  </TableCell>
-                </TableRow>
-              ) : compteurs.length > 0 ? (
-                compteurs.map((compteur) => (
-                  <TableRow 
-                    key={compteur.id} 
-                    sx={{ 
-                      '&:hover': { backgroundColor: 'action.hover' },
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      setFormData(compteur);
-                      setOpenDialog(true);
-                      setMode("single");
-                    }}
-                  >
-                    <TableCell sx={{ py: 2 }}>
-                      <Box sx={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: 1,
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 1,
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        fontWeight: 'bold'
-                      }}>
-                        <Typography variant="body2" fontWeight="bold">
-                          {compteur.code_serie || "N/A"}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>
-                      {compteur.siteforage_nom ? (
-                        <Chip 
-                          label={compteur.siteforage_nom} 
-                          size="small" 
-                          variant="outlined"
-                          color="primary"
-                        />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          -
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>
-                      {compteur.user_nom ? (
-                        <Chip 
-                          label={compteur.user_nom} 
-                          size="small" 
-                          variant="outlined"
-                          color="secondary"
-                        />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          -
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>
-                      <Chip 
-                        label={compteur.statut || 'Non défini'} 
-                        size="small"
-                        color={
-                          compteur.statut === 'installe' ? 'success' :
-                          compteur.statut === 'en panne' ? 'error' : 
-                          compteur.statut === 'vendu' ? 'warning' : 'default'
-                        }
-                        variant="filled"
-                      />
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>
-                      <Typography variant="body2">
-                        {compteur.date_installation ? 
-                          new Date(compteur.date_installation).toLocaleDateString() : 
-                          "Non installé"
-                        }
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>
-                      <Chip 
-                        label={compteur.actif ? "Actif" : "Désactivé"} 
-                        size="small"
-                        color={compteur.actif ? "success" : "error"}
-                        variant="filled"
-                      />
-                    </TableCell>
-                    <TableCell sx={{ py: 2, textAlign: 'center' }}>
-                      <IconButton 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMenuOpen(e, compteur);
-                        }} 
-                        size="small"
-                        disabled={toggling === compteur.id}
+      {/* Tableau des compteurs - VERSION ORIGINALE */}
+      <Card>
+        <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <CircularProgress />
+            </div>
+          ) : (
+            <>
+              <table className="w-full border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="bg-gray-100 text-left text-sm">
+                    <th className="p-3 border-b font-semibold">Code série</th>
+                    <th className="p-3 border-b font-semibold">Site forage</th>
+                    <th className="p-3 border-b font-semibold">Propriétaire</th>
+                    <th className="p-3 border-b font-semibold">Statut</th>
+                    <th className="p-3 border-b font-semibold">Date installation</th>
+                    <th className="p-3 border-b font-semibold">Actif</th>
+                    <th className="p-3 border-b font-semibold text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compteurs.length > 0 ? (
+                    compteurs.map((compteur) => (
+                      <tr 
+                        key={compteur.id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => {
+                          setFormData(compteur);
+                          setOpenDialog(true);
+                          setMode("single");
+                        }}
                       >
-                        {toggling === compteur.id ? (
-                          <CircularProgress size={20} />
-                        ) : (
-                          <Iconify icon="eva:more-vertical-fill" />
-                        )}
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6 }}>
-                    <Typography variant="h6" color="text.secondary">
-                      Aucun compteur trouvé
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Essayez de modifier vos critères de recherche
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                        <td className="p-3 border-b">
+                          <Box sx={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1,
+                            bgcolor: '#0486d9',
+                            color: 'white'
+                          }}>
+                            <Typography variant="body2" fontWeight="bold">
+                              {compteur.code_serie || "N/A"}
+                            </Typography>
+                          </Box>
+                        </td>
+                        <td className="p-3 border-b">
+                          {compteur.siteforage_nom ? (
+                            <Chip 
+                              label={compteur.siteforage_nom} 
+                              size="small" 
+                              variant="outlined"
+                              color="primary"
+                            />
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              -
+                            </Typography>
+                          )}
+                        </td>
+                        <td className="p-3 border-b">
+                          {compteur.user_nom ? (
+                            <Chip 
+                              label={compteur.user_nom} 
+                              size="small" 
+                              variant="outlined"
+                              color="secondary"
+                            />
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              -
+                            </Typography>
+                          )}
+                        </td>
+                        <td className="p-3 border-b">
+                          <Chip 
+                            label={compteur.statut || 'Non défini'} 
+                            size="small"
+                            color={
+                              compteur.statut === 'installe' ? 'success' :
+                              compteur.statut === 'en panne' ? 'error' : 'default'
+                            }
+                            variant="filled"
+                          />
+                        </td>
+                        <td className="p-3 border-b">
+                          <Typography variant="body2">
+                            {compteur.date_installation ? 
+                              new Date(compteur.date_installation).toLocaleDateString() : 
+                              "Non installé"
+                            }
+                          </Typography>
+                        </td>
+                        <td className="p-3 border-b">
+                          {compteur.actif ? (
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                              Actif
+                            </span>
+                          ) : (
+                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
+                              Désactivé
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 border-b text-center">
+                          <IconButton 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMenuOpen(e, compteur);
+                            }} 
+                            size="small"
+                            disabled={toggling === compteur.id}
+                          >
+                            {toggling === compteur.id ? (
+                              <CircularProgress size={20} />
+                            ) : (
+                              <Iconify icon="eva:more-vertical-fill" />
+                            )}
+                          </IconButton>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="text-center text-gray-500 py-6">
+                        <Typography variant="h6" color="text.secondary">
+                          Aucun compteur trouvé
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Essayez de modifier vos critères de recherche
+                        </Typography>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
 
-        {/* Pagination en bas */}
-        {pagination.total_pages > 1 && (
-          <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              {`Affichage de ${compteurs.length} sur ${pagination.count} compteurs`}
-            </Typography>
-            <Pagination
-              count={pagination.total_pages}
-              page={pagination.current_page}
-              onChange={handlePageChange}
-              color="primary"
-            />
-          </Box>
-        )}
+              {/* Pagination en bas */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 2,
+                  flexWrap: "wrap",
+                  gap: 2,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {`Affichage de ${compteurs.length} sur ${pagination.count} compteurs`}
+                </Typography>
+                <Pagination
+                  count={pagination.total_pages}
+                  page={pagination.current_page}
+                  onChange={handlePageChange}
+                  color="primary"
+                />
+              </Box>
+            </>
+          )}
+        </div>
       </Card>
 
       {/* Menu contextuel */}
