@@ -401,11 +401,11 @@ export function CompteurView() {
                           setMode("single");
                         }}
                       >
-                        <td className="p-3 border-b">
+                       {/*  <td className="p-3 border-b">
                           <Typography variant="body2" fontWeight="medium">
                             {compteur.nom}
                           </Typography>
-                        </td>
+                        </td> */}
                         <td className="p-3 border-b">
                           <Box sx={{ 
                             display: 'inline-flex', 
