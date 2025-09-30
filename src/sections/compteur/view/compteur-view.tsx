@@ -1,12 +1,11 @@
-// Remplace ton code par celui-ci
 import React, { useEffect, useState } from "react";
 import apiClient from "../../../utils/api";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
-  Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel
+  Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel,
+  Grid, Chip
 } from "@mui/material";
-
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
 
@@ -17,6 +16,12 @@ interface Compteur {
   actif: boolean;
   date_installation: string | null;
   siteforage: number | null;
+  user_nom?: string;
+  user_email?: string;
+  siteforage_nom?: string;
+  siteforage_localisation?: string;
+  date_creation: string;
+  statut?: string;
 }
 
 interface SiteForage {
@@ -33,13 +38,39 @@ interface SiteForage {
   date_creation: string;
 }
 
+interface PaginationInfo {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page_size: number;
+  current_page: number;
+  total_pages: number;
+}
+
 export function CompteurView() {
-  const [allCompteurs, setAllCompteurs] = useState<Compteur[]>([]);
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
   const [sitesForage, setSitesForage] = useState<SiteForage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingSites, setLoadingSites] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [toggling, setToggling] = useState<number | null>(null);
+
+  // Pagination
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    count: 0,
+    next: null,
+    previous: null,
+    page_size: 8,
+    current_page: 1,
+    total_pages: 1
+  });
+
+  // Filtres
+  const [searchNom, setSearchNom] = useState<string>("");
+  const [searchCode, setSearchCode] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statutFilter, setStatutFilter] = useState<string>("");
+  const [pageSize, setPageSize] = useState<number>(8);
 
   // Mode création : single | manual | auto
   const [mode, setMode] = useState<"single" | "manual" | "auto">("single");
@@ -57,17 +88,6 @@ export function CompteurView() {
     code_end: ""
   });
 
-  // Pagination
-  const [page, setPage] = useState<number>(1);
-  const [pageSize] = useState<number>(5);
-
-  // Filtres
-  const [searchNom, setSearchNom] = useState<string>("");
-  const [searchCode, setSearchCode] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [dateFilter, setDateFilter] = useState<string>("");
-  const [siteFilter, setSiteFilter] = useState<string>("");
-
   // Menu actions
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedCompteur, setSelectedCompteur] = useState<Compteur | null>(null);
@@ -81,20 +101,35 @@ export function CompteurView() {
   };
   const handleMenuClose = () => setAnchorEl(null);
 
-  // Charger les compteurs
-  const fetchCompteurs = async () => {
+  // Charger les compteurs avec pagination et filtres
+  const fetchCompteurs = async (page: number = 1) => {
     try {
       setLoading(true);
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        page_size: pageSize.toString(),
+      });
 
-      const response = await apiClient.get(
-        `/api/compteur/`
-      );
+      // Ajouter les filtres seulement s'ils sont définis
+      if (searchNom) params.append('search', searchNom);
+      if (statusFilter) params.append('actif', statusFilter);
+      if (statutFilter) params.append('statut', statutFilter);
 
-      const data = response.data.results || response.data;
-      setAllCompteurs(data);
-      setCompteurs(data);
+      const response = await apiClient.get(`/api/compteur/list-compteur-pagination?${params}`);
+      const data = response.data;
+      
+      setCompteurs(data.results || []);
+      setPagination({
+        count: data.count || 0,
+        next: data.next || null,
+        previous: data.previous || null,
+        page_size: data.page_size || 20,
+        current_page: data.current_page || 1,
+        total_pages: data.total_pages || 1
+      });
     } catch (error) {
-      console.error("Erreur lors du chargement des compteurs :", error);
+      console.error("Erreur lors du chargement :", error);
     } finally {
       setLoading(false);
     }
@@ -104,11 +139,7 @@ export function CompteurView() {
   const fetchSitesForage = async () => {
     try {
       setLoadingSites(true);
-
-      const response = await apiClient.get(
-        `/api/siteforage/siteforages/`
-      );
-
+      const response = await apiClient.get(`/api/siteforage/siteforages/`);
       setSitesForage(response.data);
     } catch (error) {
       console.error("Erreur lors du chargement des sites de forage :", error);
@@ -117,47 +148,31 @@ export function CompteurView() {
     }
   };
 
+  // Chargement initial
   useEffect(() => {
-    fetchCompteurs();
+    fetchCompteurs(1);
     fetchSitesForage();
   }, []);
 
-  // Filtrage local
+  // Recherche avec debounce
   useEffect(() => {
-    let filtered = [...allCompteurs];
+    const timeoutId = setTimeout(() => {
+      fetchCompteurs(1);
+    }, 500);
 
-    if (searchNom) {
-      filtered = filtered.filter((c) =>
-        c.nom.toLowerCase().includes(searchNom.toLowerCase())
-      );
-    }
-    if (searchCode) {
-      filtered = filtered.filter((c) =>
-        c.code_serie?.toLowerCase().includes(searchCode.toLowerCase())
-      );
-    }
-    if (statusFilter) {
-      filtered = filtered.filter(
-        (c) => String(c.actif) === statusFilter
-      );
-    }
-    if (dateFilter) {
-      filtered = filtered.filter((c) =>
-        c.date_installation && c.date_installation.includes(dateFilter)
-      );
-    }
-    if (siteFilter) {
-      filtered = filtered.filter((c) =>
-        c.siteforage !== null && String(c.siteforage) === siteFilter
-      );
-    }
+    return () => clearTimeout(timeoutId);
+  }, [searchNom, statusFilter, statutFilter, pageSize]);
 
-    setCompteurs(filtered);
-    setPage(1);
-  }, [searchNom, searchCode, statusFilter, dateFilter, siteFilter, allCompteurs]);
+  // Changement de page
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    fetchCompteurs(value);
+  };
 
-  // Pagination locale
-  const paginatedData = compteurs.slice((page - 1) * pageSize, page * pageSize);
+  // Changement de la taille de page
+  const handlePageSizeChange = (event: any) => {
+    const newSize = parseInt(event.target.value);
+    setPageSize(newSize);
+  };
 
   // Sauvegarde (création / update)
   const handleSave = async () => {
@@ -191,10 +206,10 @@ export function CompteurView() {
         const generatedCompteurs = [];
         for (let i = start; i <= end; i++) {
           generatedCompteurs.push({
-            nom: `Compteur-${i}`,
+            nom: nom || `Compteur-${i}`,
             code_serie: i.toString(),
-            siteforage: null,
-            date_installation: null,
+            siteforage: siteforage,
+            date_installation: date_installation || null,
             actif: false,
           });
         }
@@ -211,7 +226,7 @@ export function CompteurView() {
         );
       }
 
-      fetchCompteurs();
+      fetchCompteurs(pagination.current_page);
       setOpenDialog(false);
       setFormData({});
       setBulkCompteurs([{ nom: "", code_serie: "", siteforage: null, actif: true, date_installation: "" }]);
@@ -219,6 +234,7 @@ export function CompteurView() {
       setMode("single");
     } catch (error) {
       console.error("Erreur lors de la sauvegarde :", error);
+      alert("Erreur lors de la sauvegarde du compteur");
     } finally {
       setSubmitting(false);
     }
@@ -227,29 +243,42 @@ export function CompteurView() {
   // Toggle activation
   const handleToggleActivation = async (id: number) => {
     try {
+      setToggling(id);
       await apiClient.post(
         `/api/compteur/toggle-activation/${id}/`,
         {}
       );
-      fetchCompteurs();
+      fetchCompteurs(pagination.current_page);
     } catch (error) {
       console.error("Erreur lors du changement d'état :", error);
+      alert("Erreur lors de la modification du statut du compteur");
+    } finally {
+      setToggling(null);
     }
   };
 
-  // Récupérer les sites uniques pour le filtre (en excluant les valeurs null)
-  const uniqueSites = Array.from(
-    new Set(allCompteurs
-      .filter(c => c.siteforage !== null)
-      .map(c => c.siteforage as number)
-    )
-  ).sort((a, b) => a - b);
+  // Réinitialiser les filtres
+  const handleResetFilters = () => {
+    setSearchNom("");
+    setSearchCode("");
+    setStatusFilter("");
+    setStatutFilter("");
+    setPageSize(8);
+  };
+
+  // Fonction pour ouvrir le dialog de configuration en cliquant sur la carte
+  const handleCardClick = (compteur: Compteur) => {
+    setFormData(compteur);
+    setOpenDialog(true);
+    setMode("single");
+  };
 
   return (
     <DashboardContent>
+      {/* Titre et bouton d'ajout */}
       <Box sx={{ mb: 5, display: "flex", alignItems: "center" }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Compteurs
+          Compteurs ({pagination.count})
         </Typography>
         <Button
           variant="contained"
@@ -260,171 +289,259 @@ export function CompteurView() {
             setMode("single");
             setOpenDialog(true);
           }}
-          disabled={submitting}
         >
           Ajouter un compteur
         </Button>
       </Box>
+
       {/* Filtres */}
       <Card sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
           <TextField
-            label="Nom"
+            label="Rechercher (Nom, Code série)"
             value={searchNom}
             onChange={(e) => setSearchNom(e.target.value)}
             size="small"
-            disabled={submitting}
+            placeholder="Nom ou code série..."
+            sx={{ minWidth: 200 }}
           />
-          <TextField
-            label="Code série"
-            value={searchCode}
-            onChange={(e) => setSearchCode(e.target.value)}
-            size="small"
-            disabled={submitting}
-          />
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            displayEmpty
-            size="small"
-            disabled={submitting}
-          >
-            <MenuItem value="">Tous</MenuItem>
-            <MenuItem value="true">Actifs</MenuItem>
-            <MenuItem value="false">Désactivés</MenuItem>
-          </Select>
-          <TextField
-            label="Date de fabrication"
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            disabled={submitting}
-          />
-          <Select
-            value={siteFilter}
-            onChange={(e) => setSiteFilter(e.target.value)}
-            displayEmpty
-            size="small"
-            disabled={submitting}
-          >
-            <MenuItem value="">Tous les sites</MenuItem>
-            {uniqueSites.map(site => (
-              <MenuItem key={site} value={site.toString()}>
-                Site #{site}
-              </MenuItem>
-            ))}
-          </Select>
+          
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Statut actif</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Statut actif"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="">Tous</MenuItem>
+              <MenuItem value="true">Actifs</MenuItem>
+              <MenuItem value="false">Désactivés</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Statut</InputLabel>
+            <Select
+              value={statutFilter}
+              label="Statut"
+              onChange={(e) => setStatutFilter(e.target.value)}
+            >
+              <MenuItem value="">Tous</MenuItem>
+              <MenuItem value="stock">En stock</MenuItem>
+              <MenuItem value="vendu">Vendu</MenuItem>
+              <MenuItem value="installé">Installé</MenuItem>
+              <MenuItem value="en panne">En panne</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Par page</InputLabel>
+            <Select
+              value={pageSize}
+              label="Par page"
+              onChange={handlePageSizeChange}
+            >
+              <MenuItem value={8}>8</MenuItem>
+              <MenuItem value={20}>20</MenuItem>
+              <MenuItem value={40}>40</MenuItem>
+              <MenuItem value={60}>60</MenuItem>
+              <MenuItem value={100}>100</MenuItem>
+            </Select>
+          </FormControl>
+
           <Button
             variant="outlined"
-            onClick={() => {
-              setSearchNom("");
-              setSearchCode("");
-              setStatusFilter("");
-              setDateFilter("");
-              setSiteFilter("");
-            }}
-            disabled={submitting}
+            onClick={handleResetFilters}
           >
             Réinitialiser
           </Button>
         </Box>
       </Card>
 
-      {/* Tableau */}
-      <Card>
-        <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
-          {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <CircularProgress />
-            </div>
-          ) : (
-            <>
-              <table className="w-full border-collapse min-w-[700px]">
-                <thead>
-                  <tr className="bg-gray-100 text-left text-sm">
-                    <th className="p-2 border-b">Nom</th>
-                    <th className="p-2 border-b">Code série</th>
-                    <th className="p-2 border-b">Site forage</th>
-                    <th className="p-2 border-b">Date de Fabrication</th>
-                    <th className="p-2 border-b">Status</th>
-                    <th className="p-2 border-b text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.length > 0 ? (
-                    paginatedData.map((compteur) => (
-                      <tr key={compteur.id} className="hover:bg-gray-50">
-                        <td className="p-2 border-b">{compteur.nom}</td>
-                        <td className="p-2 border-b">{compteur.code_serie}</td>
-                        <td className="p-2 border-b">
-                          {compteur.siteforage !== null ?
-                            `${sitesForage.find(s => s.id === compteur.siteforage)?.nom || 'Inconnu'}`
-                            : "-"
-                          }
-                        </td>
-                        <td className="p-2 border-b">
-                          {compteur.date_installation || "-"}
-                        </td>
-                        <td className="p-2 border-b">
-                          {compteur.actif ? (
-                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Actif
-                            </span>
-                          ) : (
-                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Désactivé
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-2 border-b text-center">
-                          <IconButton
-                            onClick={(e) => handleMenuOpen(e, compteur)}
-                            disabled={submitting}
-                            size="small"
-                          >
-                            <Iconify icon="eva:more-vertical-fill" />
-                          </IconButton>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="text-center text-gray-500 py-6">
-                        Aucun compteur trouvé
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+      {/* Pagination en haut */}
+      {pagination.total_pages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Page {pagination.current_page} sur {pagination.total_pages} 
+            ({pagination.count} compteurs au total)
+          </Typography>
+          <Pagination 
+            count={pagination.total_pages} 
+            page={pagination.current_page}
+            onChange={handlePageChange}
+            color="primary"
+          />
+        </Box>
+      )}
 
-              {/* Pagination */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mt: 2,
-                  flexWrap: "wrap",
-                  gap: 2,
+      {/* Cards avec affichage des compteurs */}
+      <Grid container spacing={2}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        ) : compteurs.length > 0 ? (
+          compteurs.map((compteur) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={compteur.id}>
+              <Card 
+                sx={{ 
+                  p: 2, 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  gap: 1.5, 
+                  height: '100%',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    boxShadow: 3,
+                    transform: 'translateY(-2px)'
+                  }
                 }}
+                onClick={() => handleCardClick(compteur)}
               >
-                <Typography variant="body2">
-                  {`Affichage de ${paginatedData.length} sur ${compteurs.length} compteurs`}
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {compteur.nom}
+                  </Typography>
+                  <IconButton 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuOpen(e, compteur);
+                    }} 
+                    size="small"
+                    disabled={toggling === compteur.id}
+                  >
+                    {toggling === compteur.id ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <Iconify icon="eva:more-vertical-fill" />
+                    )}
+                  </IconButton>
+                </Box>
+                
+                {/* Affichage du code série */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1,
+                  p: 1,
+                  borderRadius: 1,
+                  bgcolor: '#0486d9',
+                  color: 'white'
+                }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Code série:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    {compteur.code_serie || "N/A"}
+                  </Typography>
+                </Box>
+                
+                <Typography variant="body2" color="text.secondary">
+                  Créé le: {new Date(compteur.date_creation).toLocaleDateString()}
                 </Typography>
-                <Pagination
-                  count={Math.ceil(compteurs.length / pageSize)}
-                  page={page}
-                  onChange={(_, value) => setPage(value)}
-                  color="primary"
-                  disabled={submitting}
-                />
-              </Box>
-            </>
-          )}
-        </div>
-      </Card>
+
+                {/* Affichage du site de forage associé */}
+                {compteur.siteforage_nom && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Site:
+                    </Typography>
+                    <Chip 
+                      label={compteur.siteforage_nom} 
+                      size="small" 
+                      variant="outlined"
+                      color="primary"
+                    />
+                  </Box>
+                )}
+
+                {/* Affichage de l'utilisateur associé */}
+                {compteur.user_nom && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Propriétaire:
+                    </Typography>
+                    <Chip 
+                      label={compteur.user_nom} 
+                      size="small" 
+                      variant="outlined"
+                      color="secondary"
+                    />
+                  </Box>
+                )}
+
+                {/* Affichage du statut */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  p: 1,
+                  borderRadius: 1,
+                  bgcolor: 'grey.50'
+                }}>
+                  <Typography variant="body2" fontWeight="medium">
+                    Statut:
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 'bold',
+                      color: compteur.statut === 'installé' ? 'success.dark' : 
+                            compteur.statut === 'en panne' ? 'error.dark' : 'text.secondary'
+                    }}
+                  >
+                    {compteur.statut || 'Non défini'}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 'auto' }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {compteur.date_installation ? 
+                      `Installé: ${new Date(compteur.date_installation).toLocaleDateString()}` : 
+                      "Non installé"
+                    }
+                  </Typography>
+                  
+                  <Box>
+                    {compteur.actif ? (
+                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                        Actif
+                      </span>
+                    ) : (
+                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
+                        Désactivé
+                      </span>
+                    )}
+                  </Box>
+                </Box>
+              </Card>
+            </Grid>
+          ))
+        ) : (
+          <Box sx={{ width: '100%', textAlign: 'center', p: 3 }}>
+            <Typography variant="h6" color="text.secondary">
+              Aucun compteur trouvé
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Essayez de modifier vos critères de recherche
+            </Typography>
+          </Box>
+        )}
+      </Grid>
+
+      {/* Pagination en bas */}
+      {pagination.total_pages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <Pagination 
+            count={pagination.total_pages} 
+            page={pagination.current_page}
+            onChange={handlePageChange}
+            color="primary"
+            size="large"
+          />
+        </Box>
+      )}
 
       {/* Menu contextuel */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
@@ -434,37 +551,48 @@ export function CompteurView() {
               setFormData(selectedCompteur || {});
               setOpenDialog(true);
               handleMenuClose();
+              setMode("single");
             }}
-            disabled={submitting}
           >
-            Modifier
+            Configurer
           </MenuItemMui>
           <MenuItemMui
             onClick={() => {
               if (selectedCompteur) handleToggleActivation(selectedCompteur.id);
               handleMenuClose();
             }}
-            disabled={submitting}
+            disabled={toggling === selectedCompteur?.id}
           >
-            {selectedCompteur?.actif ? "Désactiver" : "Activer"}
+            {toggling === selectedCompteur?.id ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} />
+                <span>Chargement...</span>
+              </Box>
+            ) : (
+              selectedCompteur?.actif ? "Désactiver" : "Activer"
+            )}
           </MenuItemMui>
         </MenuList>
       </Menu>
 
       {/* Dialog Ajout / Édition */}
-      <Dialog open={openDialog} onClose={() => !submitting && setOpenDialog(false)} fullWidth maxWidth="sm">
+      <Dialog open={openDialog} onClose={() => {
+        if (!submitting) {
+          setOpenDialog(false);
+          setFormData({});
+          setMode("single");
+        }
+      }} fullWidth maxWidth="sm">
         <DialogTitle>
-          {formData.id ? "Modifier le compteur" : "Ajouter un compteur"}
+          {formData.id ? "Éditer le compteur" : "Nouveau compteur"}
         </DialogTitle>
-
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          <Tabs value={mode} onChange={(e, v) => !submitting && setMode(v)}>
-            <Tab label="Un seul compteur" value="single" disabled={submitting} />
-            {!formData.id && <Tab label="Plusieurs manuels" value="manual" disabled={submitting} />}
-            {!formData.id && <Tab label="Auto" value="auto" disabled={submitting} />}
+          <Tabs value={mode} onChange={(e, v) => setMode(v)}>
+            <Tab label="Simple" value="single" />
+            {!formData.id && <Tab label="Multiple" value="manual" />}
+            {!formData.id && <Tab label="Auto" value="auto" />}
           </Tabs>
 
-          {/* Mode single */}
           {mode === "single" && (
             <>
               <TextField
@@ -484,18 +612,15 @@ export function CompteurView() {
               {loadingSites ? (
                 <CircularProgress size={24} />
               ) : (
-                <FormControl sx={{ minWidth: 200 }} size="small">
-                  <InputLabel id={`site-forage-label`} shrink={true}>Site forage</InputLabel>
+                <FormControl fullWidth>
+                  <InputLabel>Site forage</InputLabel>
                   <Select
-                    labelId={`site-forage-label`}
-                    label="Site forage"
                     value={formData.siteforage === null ? "" : String(formData.siteforage)}
+                    label="Site forage"
                     onChange={(e) => setFormData({
                       ...formData,
                       siteforage: e.target.value === "" ? null : Number(e.target.value)
                     })}
-                    fullWidth
-                    displayEmpty
                     disabled={submitting}
                   >
                     <MenuItem value="">Aucun site</MenuItem>
@@ -519,69 +644,43 @@ export function CompteurView() {
             </>
           )}
 
-          {/* Mode manual */}
           {mode === "manual" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {(bulkCompteurs || []).map((c, index) => (
+              {(bulkCompteurs || []).map((item, index) => (
                 <Box
                   key={index}
-                  sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: 'wrap' }}
+                  sx={{ display: "flex", gap: 2, alignItems: "center" }}
                 >
                   <TextField
                     label="Nom"
-                    value={c.nom || ""}
+                    value={item.nom || ""}
                     onChange={(e) => {
-                      const list = [...bulkCompteurs];
-                      list[index].nom = e.target.value;
-                      setBulkCompteurs(list);
+                      const newList = [...bulkCompteurs];
+                      newList[index] = { ...newList[index], nom: e.target.value };
+                      setBulkCompteurs(newList);
                     }}
-                    sx={{ minWidth: 120 }}
+                    fullWidth
                     disabled={submitting}
                     size="small"
                   />
                   <TextField
                     label="Code série"
-                    value={c.code_serie || ""}
+                    value={item.code_serie || ""}
                     onChange={(e) => {
-                      const list = [...bulkCompteurs];
-                      list[index].code_serie = e.target.value;
-                      setBulkCompteurs(list);
+                      const newList = [...bulkCompteurs];
+                      newList[index] = { ...newList[index], code_serie: e.target.value };
+                      setBulkCompteurs(newList);
                     }}
-                    sx={{ minWidth: 120 }}
+                    fullWidth
                     disabled={submitting}
                     size="small"
                   />
-                  {loadingSites ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    <FormControl sx={{ minWidth: 200 }} size="small">
-                      <InputLabel id={`site-forage-manuel-label`} shrink={true}>Site forage</InputLabel>
-                      <Select
-                        labelId={`site-forage-manuel-label`}
-                        label="Site forage"
-                        value={c.siteforage === null ? "" : String(c.siteforage)}
-                        onChange={(e) => {
-                          const list = [...bulkCompteurs];
-                          list[index].siteforage = e.target.value === "" ? null : Number(e.target.value);
-                          setBulkCompteurs(list);
-                        }}
-                        sx={{ minWidth: 200 }}
-                        displayEmpty
-                        disabled={submitting}
-                        size="small"
-                      >
-                        <MenuItem value="">Aucun site</MenuItem>
-                        {sitesForage.map((site) => (
-                          <MenuItem key={site.id} value={site.id}>
-                            {site.nom}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
                   <IconButton
                     color="error"
-                    onClick={() => setBulkCompteurs(bulkCompteurs.filter((_, i) => i !== index))}
+                    onClick={() => {
+                      const newList = bulkCompteurs.filter((_, i) => i !== index);
+                      setBulkCompteurs(newList);
+                    }}
                     disabled={submitting}
                     size="small"
                   >
@@ -606,7 +705,6 @@ export function CompteurView() {
             </Box>
           )}
 
-          {/* Mode auto */}
           {mode === "auto" && (
             <>
               <TextField
@@ -615,27 +713,25 @@ export function CompteurView() {
                 onChange={(e) => setAutoForm({ ...autoForm, nom: e.target.value })}
                 fullWidth
                 disabled={submitting}
+                helperText="Laissez vide pour utiliser 'Compteur-{numéro}'"
               />
               {loadingSites ? (
                 <CircularProgress size={24} />
               ) : (
-                <FormControl sx={{ minWidth: 200 }} size="small">
-                  <InputLabel id={`site-forage-auto-label`} shrink={true}>Site forage</InputLabel>
+                <FormControl fullWidth>
+                  <InputLabel>Site forage</InputLabel>
                   <Select
-                    labelId={`site-forage-auto-label`}
-                    label="Site forage"
                     value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
+                    label="Site forage"
                     onChange={(e) => setAutoForm({
                       ...autoForm,
                       siteforage: e.target.value === "" ? null : Number(e.target.value)
                     })}
-                    fullWidth
-                    displayEmpty
                     disabled={submitting}
                   >
                     <MenuItem value="">Aucun site</MenuItem>
                     {sitesForage.map((site) => (
-                      <MenuItem key={site.id} value={site.id}>
+                      <MenuItem key={site.id} value={String(site.id)}>
                         {site.nom} - {site.localisation}
                       </MenuItem>
                     ))}
@@ -670,19 +766,22 @@ export function CompteurView() {
             </>
           )}
         </DialogContent>
-
         <DialogActions>
-          <Button
-            onClick={() => setOpenDialog(false)}
+          <Button 
+            onClick={() => {
+              setOpenDialog(false);
+              setFormData({});
+              setMode("single");
+            }}
             disabled={submitting}
           >
             Annuler
           </Button>
-          <Button
-            variant="contained"
+          <Button 
+            variant="contained" 
             onClick={handleSave}
             disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={16} sx={{ color: 'white' }} /> : undefined}
+            startIcon={submitting ? <CircularProgress size={16} /> : null}
           >
             {submitting ? "Enregistrement..." : "Enregistrer"}
           </Button>
