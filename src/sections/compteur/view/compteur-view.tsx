@@ -4,7 +4,7 @@ import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel,
-  Chip
+  Chip, Autocomplete
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -22,6 +22,7 @@ interface Compteur {
   siteforage_localisation?: string;
   date_creation: string;
   statut?: string;
+  user?: number;
 }
 
 interface SiteForage {
@@ -38,6 +39,15 @@ interface SiteForage {
   date_creation: string;
 }
 
+interface User {
+  id: number;
+  nom: string;
+  email: string;
+  telephone: string;
+  role: string;
+  state: boolean;
+}
+
 interface PaginationInfo {
   count: number;
   next: string | null;
@@ -50,8 +60,10 @@ interface PaginationInfo {
 export function CompteurView() {
   const [compteurs, setCompteurs] = useState<Compteur[]>([]);
   const [sitesForage, setSitesForage] = useState<SiteForage[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingSites, setLoadingSites] = useState<boolean>(true);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [toggling, setToggling] = useState<number | null>(null);
 
@@ -67,9 +79,10 @@ export function CompteurView() {
 
   // Filtres
   const [searchNom, setSearchNom] = useState<string>("");
-  const [searchCode, setSearchCode] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [statutFilter, setStatutFilter] = useState<string>("");
+  const [siteForageFilter, setSiteForageFilter] = useState<string>("");
+  const [userFilter, setUserFilter] = useState<string>("");
   const [pageSize, setPageSize] = useState<number>(8);
 
   // Mode création : single | manual | auto
@@ -87,6 +100,10 @@ export function CompteurView() {
     code_end: ""
   });
 
+  // Recherche utilisateur
+  const [searchUser, setSearchUser] = useState("");
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   // Menu actions
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedCompteur, setSelectedCompteur] = useState<Compteur | null>(null);
@@ -101,39 +118,41 @@ export function CompteurView() {
   const handleMenuClose = () => setAnchorEl(null);
 
   // Charger les compteurs avec pagination et filtres
- const fetchCompteurs = async (page: number = 1) => {
-  try {
-    setLoading(true);
-    
-    const params = new URLSearchParams({
-      page: page.toString(),
-      page_size: pageSize.toString(),
-    });
+  const fetchCompteurs = async (page: number = 1) => {
+    try {
+      setLoading(true);
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        page_size: pageSize.toString(),
+      });
 
-    // Utiliser le même nom de paramètre que le backend
-    if (searchNom) params.append('search', searchNom);
-    if (statusFilter) params.append('actif', statusFilter);
-    if (statutFilter) params.append('statut', statutFilter);
+      // Ajouter les filtres seulement s'ils sont définis
+      if (searchNom) params.append('search', searchNom);
+      if (statusFilter) params.append('actif', statusFilter);
+      if (statutFilter) params.append('statut', statutFilter);
+      if (siteForageFilter) params.append('siteforage', siteForageFilter);
+      if (userFilter) params.append('user_id', userFilter);
 
-    const response = await apiClient.get(`/api/compteur/list-compteur-pagination?${params}`);
-    const data = response.data;
-    
-    // S'adapter à la structure PageNumberPagination de DRF
-    setCompteurs(data.results || []);
-    setPagination({
-      count: data.count || 0,
-      next: data.next || null,
-      previous: data.previous || null,
-      page_size: data.page_size || pageSize,
-      current_page: page, // Utiliser le page passé en paramètre
-      total_pages: Math.ceil((data.count || 0) / pageSize)
-    });
-  } catch (error) {
-    console.error("Erreur lors du chargement :", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      const response = await apiClient.get(`/api/compteur/list-compteur-pagination?${params}`);
+      const data = response.data;
+      
+      setCompteurs(data.results || []);
+      setPagination({
+        count: data.count || 0,
+        next: data.next || null,
+        previous: data.previous || null,
+        page_size: data.page_size || pageSize,
+        current_page: page,
+        total_pages: Math.ceil((data.count || 0) / pageSize)
+      });
+    } catch (error) {
+      console.error("Erreur lors du chargement :", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Charger les sites de forage
   const fetchSitesForage = async () => {
     try {
@@ -147,10 +166,40 @@ export function CompteurView() {
     }
   };
 
+  // Charger les utilisateurs
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await apiClient.get(`/api/users/search/?page_size=100`);
+      setUsers(response.data.results || []);
+    } catch (error) {
+      console.error("Erreur lors du chargement des utilisateurs :", error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Recherche d'utilisateurs
+  const searchUsers = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      return;
+    }
+
+    try {
+      const response = await apiClient.get(
+        `/api/users/search/?search=${encodeURIComponent(searchTerm)}&page_size=10`
+      );
+      setUsers(response.data.results || []);
+    } catch (err) {
+      console.error("Erreur lors de la recherche d'utilisateurs:", err);
+    }
+  };
+
   // Chargement initial
   useEffect(() => {
     fetchCompteurs(1);
     fetchSitesForage();
+    fetchUsers();
   }, []);
 
   // Recherche avec debounce
@@ -160,7 +209,15 @@ export function CompteurView() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchNom, statusFilter, statutFilter, pageSize]);
+  }, [searchNom, statusFilter, statutFilter, siteForageFilter, userFilter, pageSize]);
+
+  // Recherche utilisateur avec debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchUsers(searchUser);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchUser]);
 
   // Changement de page
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
@@ -226,6 +283,7 @@ export function CompteurView() {
       fetchCompteurs(pagination.current_page);
       setOpenDialog(false);
       setFormData({});
+      setSelectedUser(null);
       setBulkCompteurs([{ siteforage: null, actif: true, date_installation: "" }]);
       setAutoForm({ siteforage: null, date_installation: "", code_start: "", code_end: "" });
       setMode("single");
@@ -257,11 +315,22 @@ export function CompteurView() {
   // Réinitialiser les filtres
   const handleResetFilters = () => {
     setSearchNom("");
-    setSearchCode("");
     setStatusFilter("");
     setStatutFilter("");
+    setSiteForageFilter("");
+    setUserFilter("");
     setPageSize(8);
   };
+
+  // Lorsqu'on ouvre le dialog d'édition, charger l'utilisateur associé
+  useEffect(() => {
+    if (openDialog && formData.id && formData.user) {
+      const user = users.find(u => u.id === formData.user);
+      if (user) {
+        setSelectedUser(user);
+      }
+    }
+  }, [openDialog, formData.id, formData.user, users]);
 
   return (
     <DashboardContent>
@@ -276,6 +345,7 @@ export function CompteurView() {
           startIcon={<Iconify icon="mingcute:add-line" />}
           onClick={() => {
             setFormData({});
+            setSelectedUser(null);
             setMode("single");
             setOpenDialog(true);
           }}
@@ -324,6 +394,38 @@ export function CompteurView() {
             </Select>
           </FormControl>
 
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Site forage</InputLabel>
+            <Select
+              value={siteForageFilter}
+              label="Site forage"
+              onChange={(e) => setSiteForageFilter(e.target.value)}
+            >
+              <MenuItem value="">Tous les sites</MenuItem>
+              {sitesForage.map((site) => (
+                <MenuItem key={site.id} value={String(site.id)}>
+                  {site.nom}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Propriétaire</InputLabel>
+            <Select
+              value={userFilter}
+              label="Propriétaire"
+              onChange={(e) => setUserFilter(e.target.value)}
+            >
+              <MenuItem value="">Tous les propriétaires</MenuItem>
+              {users.map((user) => (
+                <MenuItem key={user.id} value={String(user.id)}>
+                  {user.nom}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Par page</InputLabel>
             <Select
@@ -364,7 +466,7 @@ export function CompteurView() {
         </Box>
       )}
 
-      {/* Tableau des compteurs - VERSION ORIGINALE */}
+      {/* Tableau des compteurs */}
       <Card>
         <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
           {loading ? (
@@ -567,6 +669,7 @@ export function CompteurView() {
         if (!submitting) {
           setOpenDialog(false);
           setFormData({});
+          setSelectedUser(null);
           setMode("single");
         }
       }} fullWidth maxWidth="sm">
@@ -582,6 +685,32 @@ export function CompteurView() {
 
           {mode === "single" && (
             <>
+              {/* Sélection du propriétaire */}
+              <Autocomplete
+                options={users}
+                getOptionLabel={(user) => `${user.nom} - ${user.email || user.telephone}`}
+                value={selectedUser}
+                onChange={(_, newValue) => {
+                  setSelectedUser(newValue);
+                  setFormData({
+                    ...formData,
+                    user: newValue?.id || undefined
+                  });
+                }}
+                onInputChange={(_, newInputValue) => {
+                  setSearchUser(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Propriétaire du compteur"
+                    placeholder="Rechercher un utilisateur..."
+                    helperText="Laissez vide si le compteur n'a pas de propriétaire"
+                  />
+                )}
+                loading={loadingUsers}
+              />
+
               {loadingSites ? (
                 <CircularProgress size={24} />
               ) : (
@@ -732,6 +861,7 @@ export function CompteurView() {
             onClick={() => {
               setOpenDialog(false);
               setFormData({});
+              setSelectedUser(null);
               setMode("single");
             }}
             disabled={submitting}
