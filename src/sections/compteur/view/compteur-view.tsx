@@ -84,6 +84,7 @@ export function CompteurView() {
   const [selectedSiteForageFilter, setSelectedSiteForageFilter] = useState<SiteForage | null>(null);
   const [selectedUserFilter, setSelectedUserFilter] = useState<User | null>(null);
   const [pageSize, setPageSize] = useState<number>(8);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Recherche pour les filtres
   const [searchSiteForageFilter, setSearchSiteForageFilter] = useState("");
@@ -444,114 +445,189 @@ export function CompteurView() {
         </Button>
       </Box>
 
-      {/* Filtres */}
+      {/* Filtres optimisés */}
       <Card sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
-          <TextField
-            label="Rechercher (Code série)"
-            value={searchNom}
-            onChange={(e) => setSearchNom(e.target.value)}
-            size="small"
-            placeholder="Code série..."
-            sx={{ minWidth: 200 }}
-          />
-          
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Statut actif</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Statut actif"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="">Tous</MenuItem>
-              <MenuItem value="true">Actifs</MenuItem>
-              <MenuItem value="false">Désactivés</MenuItem>
-            </Select>
-          </FormControl>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Ligne principale - Filtres essentiels */}
+          <Box sx={{ 
+            display: "flex", 
+            gap: 2, 
+            flexWrap: "wrap", 
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}>
+            {/* Recherche principale */}
+            <TextField
+              label="Rechercher un compteur"
+              value={searchNom}
+              onChange={(e) => setSearchNom(e.target.value)}
+              size="small"
+              placeholder="Code série, site, propriétaire..."
+              sx={{ minWidth: 250, flexGrow: 1 }}
+            />
+            
+            {/* Filtres rapides */}
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Statut</InputLabel>
+                <Select
+                  value={statutFilter}
+                  label="Statut"
+                  onChange={(e) => setStatutFilter(e.target.value)}
+                >
+                  <MenuItem value="">Tous</MenuItem>
+                  <MenuItem value="stock">En stock</MenuItem>
+                  <MenuItem value="installe">Installé</MenuItem>
+                  <MenuItem value="en panne">En panne</MenuItem>
+                </Select>
+              </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Statut</InputLabel>
-            <Select
-              value={statutFilter}
-              label="Statut"
-              onChange={(e) => setStatutFilter(e.target.value)}
-            >
-              <MenuItem value="">Tous</MenuItem>
-              <MenuItem value="stock">En stock</MenuItem>
-              <MenuItem value="vendu">Vendu</MenuItem>
-              <MenuItem value="installe">Installé</MenuItem>
-              <MenuItem value="en panne">En panne</MenuItem>
-            </Select>
-          </FormControl>
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel>Actif</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Actif"
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="">Tous</MenuItem>
+                  <MenuItem value="true">Oui</MenuItem>
+                  <MenuItem value="false">Non</MenuItem>
+                </Select>
+              </FormControl>
 
-          {/* Filtre Site Forage avec Autocomplete */}
-          <Autocomplete
-            size="small"
-            options={sitesForage}
-            getOptionLabel={(site) => `${site.nom} - ${site.localisation}`}
-            value={selectedSiteForageFilter}
-            onChange={(_, newValue) => {
-              setSelectedSiteForageFilter(newValue);
-            }}
-            onInputChange={(_, newInputValue) => {
-              setSearchSiteForageFilter(newInputValue);
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Site forage"
-                placeholder="Rechercher un site..."
-                sx={{ minWidth: 200 }}
+              {/* Bouton filtres avancés */}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon={showAdvancedFilters ? "mingcute:close-line" : "ic:round-filter-list"} />}
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                {showAdvancedFilters ? "Masquer" : "Plus de filtres"}
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleResetFilters}
+                startIcon={<Iconify icon="solar:restart-bold" />}
+              >
+                Réinitialiser
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Filtres avancés - conditionnel */}
+          {showAdvancedFilters && (
+            <Box 
+              sx={{ 
+                display: "flex", 
+                gap: 2, 
+                flexWrap: "wrap", 
+                alignItems: "center",
+                pt: 2,
+                borderTop: 1,
+                borderColor: 'divider'
+              }}
+            >
+              {/* Filtre Site Forage compact */}
+              <Autocomplete
+                size="small"
+                options={sitesForage}
+                getOptionLabel={(site) => `${site.nom}`}
+                value={selectedSiteForageFilter}
+                onChange={(_, newValue) => {
+                  setSelectedSiteForageFilter(newValue);
+                }}
+                onInputChange={(_, newInputValue) => {
+                  setSearchSiteForageFilter(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Site forage"
+                    placeholder="Rechercher un site..."
+                    sx={{ minWidth: 180 }}
+                  />
+                )}
+                loading={loadingSites}
               />
-            )}
-            loading={loadingSites}
-          />
 
-          {/* Filtre Propriétaire avec Autocomplete */}
-          <Autocomplete
-            size="small"
-            options={users}
-            getOptionLabel={(user) => `${user.nom} - ${user.email || user.telephone}`}
-            value={selectedUserFilter}
-            onChange={(_, newValue) => {
-              setSelectedUserFilter(newValue);
-            }}
-            onInputChange={(_, newInputValue) => {
-              setSearchUserFilter(newInputValue);
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Propriétaire"
-                placeholder="Rechercher un propriétaire..."
-                sx={{ minWidth: 200 }}
-                helperText="Seuls les owners sont affichés"
+              {/* Filtre Propriétaire compact */}
+              <Autocomplete
+                size="small"
+                options={users}
+                getOptionLabel={(user) => `${user.nom}`}
+                value={selectedUserFilter}
+                onChange={(_, newValue) => {
+                  setSelectedUserFilter(newValue);
+                }}
+                onInputChange={(_, newInputValue) => {
+                  setSearchUserFilter(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Propriétaire"
+                    placeholder="Rechercher..."
+                    sx={{ minWidth: 180 }}
+                  />
+                )}
+                loading={loadingUsers}
               />
-            )}
-            loading={loadingUsers}
-          />
 
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Par page</InputLabel>
-            <Select
-              value={pageSize}
-              label="Par page"
-              onChange={handlePageSizeChange}
-            >
-              <MenuItem value={8}>8</MenuItem>
-              <MenuItem value={20}>20</MenuItem>
-              <MenuItem value={40}>40</MenuItem>
-              <MenuItem value={60}>60</MenuItem>
-              <MenuItem value={100}>100</MenuItem>
-            </Select>
-          </FormControl>
+              {/* Sélection du nombre d'éléments par page */}
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel>Par page</InputLabel>
+                <Select
+                  value={pageSize}
+                  label="Par page"
+                  onChange={handlePageSizeChange}
+                >
+                  <MenuItem value={8}>8</MenuItem>
+                  <MenuItem value={20}>20</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
 
-          <Button
-            variant="outlined"
-            onClick={handleResetFilters}
-          >
-            Réinitialiser
-          </Button>
+          {/* Indicateur de filtres actifs */}
+          {(selectedSiteForageFilter || selectedUserFilter || statutFilter || statusFilter) && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              <Typography variant="body2" color="text.secondary">
+                Filtres actifs:
+              </Typography>
+              {selectedSiteForageFilter && (
+                <Chip 
+                  size="small"
+                  label={`Site: ${selectedSiteForageFilter.nom}`}
+                  onDelete={() => setSelectedSiteForageFilter(null)}
+                />
+              )}
+              {selectedUserFilter && (
+                <Chip 
+                  size="small"
+                  label={`Propriétaire: ${selectedUserFilter.nom}`}
+                  onDelete={() => setSelectedUserFilter(null)}
+                />
+              )}
+              {statutFilter && (
+                <Chip 
+                  size="small"
+                  label={`Statut: ${statutFilter}`}
+                  onDelete={() => setStatutFilter("")}
+                />
+              )}
+              {statusFilter && (
+                <Chip 
+                  size="small"
+                  label={`Actif: ${statusFilter === "true" ? "Oui" : "Non"}`}
+                  onDelete={() => setStatusFilter("")}
+                />
+              )}
+            </Box>
+          )}
         </Box>
       </Card>
 
