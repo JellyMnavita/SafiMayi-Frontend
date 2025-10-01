@@ -104,6 +104,10 @@ export function CompteurView() {
   const [searchUser, setSearchUser] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+  // Recherche site forage
+  const [searchSiteForage, setSearchSiteForage] = useState("");
+  const [selectedSiteForage, setSelectedSiteForage] = useState<SiteForage | null>(null);
+
   // Menu actions
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedCompteur, setSelectedCompteur] = useState<Compteur | null>(null);
@@ -153,53 +157,81 @@ export function CompteurView() {
     }
   };
 
-  // Charger les sites de forage
-  const fetchSitesForage = async () => {
+  // Charger les sites de forage par défaut
+  const fetchDefaultSitesForage = async () => {
     try {
       setLoadingSites(true);
-      const response = await apiClient.get(`/api/siteforage/siteforages/`);
-      setSitesForage(response.data);
+      const response = await apiClient.get(`/api/siteforage/search-pagination/?page_size=10`);
+      setSitesForage(response.data.results || []);
     } catch (error) {
       console.error("Erreur lors du chargement des sites de forage :", error);
+      setSitesForage([]);
     } finally {
       setLoadingSites(false);
     }
   };
 
-  // Charger les utilisateurs avec rôle "owner"
-  const fetchUsers = async () => {
+  // Recherche de sites de forage avec debounce
+  const searchSitesForage = async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      fetchDefaultSitesForage();
+      return;
+    }
+
+    try {
+      setLoadingSites(true);
+      const response = await apiClient.get(
+        `/api/siteforage/search-pagination/?search=${encodeURIComponent(searchTerm)}&page_size=10`
+      );
+      setSitesForage(response.data.results || []);
+    } catch (error) {
+      console.error("Erreur lors de la recherche des sites de forage :", error);
+      setSitesForage([]);
+    } finally {
+      setLoadingSites(false);
+    }
+  };
+
+  // Charger les utilisateurs "owner" par défaut
+  const fetchDefaultUsers = async () => {
     try {
       setLoadingUsers(true);
-      const response = await apiClient.get(`/api/users/search/?role=owner&page_size=100`);
+      const response = await apiClient.get(`/api/users/search/?role=owner&page_size=10`);
       setUsers(response.data.results || []);
     } catch (error) {
       console.error("Erreur lors du chargement des utilisateurs :", error);
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
   };
 
-  // Recherche d'utilisateurs avec rôle "owner"
+  // Recherche d'utilisateurs "owner" avec debounce
   const searchUsers = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
+      fetchDefaultUsers();
       return;
     }
 
     try {
+      setLoadingUsers(true);
       const response = await apiClient.get(
         `/api/users/search/?search=${encodeURIComponent(searchTerm)}&role=owner&page_size=10`
       );
       setUsers(response.data.results || []);
     } catch (err) {
       console.error("Erreur lors de la recherche d'utilisateurs:", err);
+      setUsers([]);
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
   // Chargement initial
   useEffect(() => {
     fetchCompteurs(1);
-    fetchSitesForage();
-    fetchUsers();
+    fetchDefaultSitesForage();
+    fetchDefaultUsers();
   }, []);
 
   // Recherche avec debounce
@@ -215,13 +247,45 @@ export function CompteurView() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchUser.trim() === "") {
-        fetchUsers(); // Recharger tous les owners si la recherche est vide
+        fetchDefaultUsers();
       } else {
         searchUsers(searchUser);
       }
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchUser]);
+
+  // Recherche site forage avec debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchSiteForage.trim() === "") {
+        fetchDefaultSitesForage();
+      } else {
+        searchSitesForage(searchSiteForage);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchSiteForage]);
+
+  // Lors de l'ouverture du dialog, charger le site forage sélectionné si en mode édition
+  useEffect(() => {
+    if (openDialog && formData.id && formData.siteforage) {
+      const site = sitesForage.find(s => s.id === formData.siteforage);
+      if (site) {
+        setSelectedSiteForage(site);
+      }
+    }
+  }, [openDialog, formData.id, formData.siteforage, sitesForage]);
+
+  // Lors de l'ouverture du dialog, charger l'utilisateur sélectionné si en mode édition
+  useEffect(() => {
+    if (openDialog && formData.id && formData.user) {
+      const user = users.find(u => u.id === formData.user);
+      if (user) {
+        setSelectedUser(user);
+      }
+    }
+  }, [openDialog, formData.id, formData.user, users]);
 
   // Changement de page
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
@@ -288,6 +352,7 @@ export function CompteurView() {
       setOpenDialog(false);
       setFormData({});
       setSelectedUser(null);
+      setSelectedSiteForage(null);
       setBulkCompteurs([{ siteforage: null, actif: true, date_installation: "" }]);
       setAutoForm({ siteforage: null, date_installation: "", code_start: "", code_end: "" });
       setMode("single");
@@ -326,19 +391,6 @@ export function CompteurView() {
     setPageSize(8);
   };
 
-  // Lorsqu'on ouvre le dialog d'édition, charger l'utilisateur associé
-  useEffect(() => {
-    if (openDialog && formData.id && formData.user) {
-      const user = users.find(u => u.id === formData.user);
-      if (user) {
-        setSelectedUser(user);
-      }
-    }
-  }, [openDialog, formData.id, formData.user, users]);
-
-  // Filtrer les utilisateurs pour n'afficher que les owners dans les filtres
-  const ownerUsers = users.filter(user => user.role === "owner");
-
   return (
     <DashboardContent>
       {/* Titre et bouton d'ajout */}
@@ -353,6 +405,7 @@ export function CompteurView() {
           onClick={() => {
             setFormData({});
             setSelectedUser(null);
+            setSelectedSiteForage(null);
             setMode("single");
             setOpenDialog(true);
           }}
@@ -425,7 +478,7 @@ export function CompteurView() {
               onChange={(e) => setUserFilter(e.target.value)}
             >
               <MenuItem value="">Tous les propriétaires</MenuItem>
-              {ownerUsers.map((user) => (
+              {users.map((user) => (
                 <MenuItem key={user.id} value={String(user.id)}>
                   {user.nom}
                 </MenuItem>
@@ -677,6 +730,7 @@ export function CompteurView() {
           setOpenDialog(false);
           setFormData({});
           setSelectedUser(null);
+          setSelectedSiteForage(null);
           setMode("single");
         }
       }} fullWidth maxWidth="sm">
@@ -692,9 +746,9 @@ export function CompteurView() {
 
           {mode === "single" && (
             <>
-              {/* Sélection du propriétaire (uniquement owners) */}
+              {/* Sélection du propriétaire avec recherche debounce */}
               <Autocomplete
-                options={ownerUsers}
+                options={users}
                 getOptionLabel={(user) => `${user.nom} - ${user.email || user.telephone}`}
                 value={selectedUser}
                 onChange={(_, newValue) => {
@@ -718,29 +772,32 @@ export function CompteurView() {
                 loading={loadingUsers}
               />
 
-              {loadingSites ? (
-                <CircularProgress size={24} />
-              ) : (
-                <FormControl fullWidth>
-                  <InputLabel>Site forage</InputLabel>
-                  <Select
-                    value={formData.siteforage === null ? "" : String(formData.siteforage)}
-                    label="Site forage"
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      siteforage: e.target.value === "" ? null : Number(e.target.value)
-                    })}
-                    disabled={submitting}
-                  >
-                    <MenuItem value="">Aucun site</MenuItem>
-                    {sitesForage.map((site) => (
-                      <MenuItem key={site.id} value={String(site.id)}>
-                        {site.nom} - {site.localisation}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
+              {/* Sélection du site de forage avec recherche debounce */}
+              <Autocomplete
+                options={sitesForage}
+                getOptionLabel={(site) => `${site.nom} - ${site.localisation} (${site.type})`}
+                value={selectedSiteForage}
+                onChange={(_, newValue) => {
+                  setSelectedSiteForage(newValue);
+                  setFormData({
+                    ...formData,
+                    siteforage: newValue?.id || null
+                  });
+                }}
+                onInputChange={(_, newInputValue) => {
+                  setSearchSiteForage(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Site de forage"
+                    placeholder="Rechercher un site de forage..."
+                    helperText="Tapez au moins 2 caractères pour rechercher"
+                  />
+                )}
+                loading={loadingSites}
+              />
+
               <TextField
                 label="Date d'installation"
                 type="date"
@@ -760,33 +817,33 @@ export function CompteurView() {
                   key={index}
                   sx={{ display: "flex", gap: 2, alignItems: "center" }}
                 >
-                  {loadingSites ? (
-                    <CircularProgress size={24} />
-                  ) : (
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Site forage</InputLabel>
-                      <Select
-                        value={item.siteforage === null ? "" : String(item.siteforage)}
-                        label="Site forage"
-                        onChange={(e) => {
-                          const newList = [...bulkCompteurs];
-                          newList[index] = { 
-                            ...newList[index], 
-                            siteforage: e.target.value === "" ? null : Number(e.target.value)
-                          };
-                          setBulkCompteurs(newList);
-                        }}
-                        disabled={submitting}
-                      >
-                        <MenuItem value="">Aucun site</MenuItem>
-                        {sitesForage.map((site) => (
-                          <MenuItem key={site.id} value={String(site.id)}>
-                            {site.nom} - {site.localisation}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
+                  {/* Site de forage avec recherche pour chaque compteur en mode multiple */}
+                  <Autocomplete
+                    options={sitesForage}
+                    getOptionLabel={(site) => `${site.nom} - ${site.localisation}`}
+                    value={sitesForage.find(site => site.id === item.siteforage) || null}
+                    onChange={(_, newValue) => {
+                      const newList = [...bulkCompteurs];
+                      newList[index] = { 
+                        ...newList[index], 
+                        siteforage: newValue?.id || null
+                      };
+                      setBulkCompteurs(newList);
+                    }}
+                    onInputChange={(_, newInputValue) => {
+                      setSearchSiteForage(newInputValue);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Site de forage"
+                        placeholder="Rechercher un site..."
+                        size="small"
+                      />
+                    )}
+                    loading={loadingSites}
+                    fullWidth
+                  />
                   <IconButton
                     color="error"
                     onClick={() => {
@@ -819,29 +876,31 @@ export function CompteurView() {
 
           {mode === "auto" && (
             <>
-              {loadingSites ? (
-                <CircularProgress size={24} />
-              ) : (
-                <FormControl fullWidth>
-                  <InputLabel>Site forage</InputLabel>
-                  <Select
-                    value={autoForm.siteforage === null ? "" : String(autoForm.siteforage)}
-                    label="Site forage"
-                    onChange={(e) => setAutoForm({
-                      ...autoForm,
-                      siteforage: e.target.value === "" ? null : Number(e.target.value)
-                    })}
-                    disabled={submitting}
-                  >
-                    <MenuItem value="">Aucun site</MenuItem>
-                    {sitesForage.map((site) => (
-                      <MenuItem key={site.id} value={String(site.id)}>
-                        {site.nom} - {site.localisation}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
+              {/* Site de forage avec recherche pour le mode auto */}
+              <Autocomplete
+                options={sitesForage}
+                getOptionLabel={(site) => `${site.nom} - ${site.localisation}`}
+                value={sitesForage.find(site => site.id === autoForm.siteforage) || null}
+                onChange={(_, newValue) => {
+                  setAutoForm({
+                    ...autoForm,
+                    siteforage: newValue?.id || null
+                  });
+                }}
+                onInputChange={(_, newInputValue) => {
+                  setSearchSiteForage(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Site de forage"
+                    placeholder="Rechercher un site de forage..."
+                    helperText="Site où seront installés les compteurs"
+                  />
+                )}
+                loading={loadingSites}
+              />
+              
               <TextField
                 label="Date d'installation"
                 type="date"
@@ -869,6 +928,7 @@ export function CompteurView() {
               setOpenDialog(false);
               setFormData({});
               setSelectedUser(null);
+              setSelectedSiteForage(null);
               setMode("single");
             }}
             disabled={submitting}
