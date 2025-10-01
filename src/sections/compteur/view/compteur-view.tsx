@@ -166,11 +166,11 @@ export function CompteurView() {
     }
   };
 
-  // Charger les utilisateurs
+  // Charger les utilisateurs avec rôle "owner"
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
-      const response = await apiClient.get(`/api/users/search/?page_size=100`);
+      const response = await apiClient.get(`/api/users/search/?role=owner&page_size=100`);
       setUsers(response.data.results || []);
     } catch (error) {
       console.error("Erreur lors du chargement des utilisateurs :", error);
@@ -179,7 +179,7 @@ export function CompteurView() {
     }
   };
 
-  // Recherche d'utilisateurs
+  // Recherche d'utilisateurs avec rôle "owner"
   const searchUsers = async (searchTerm: string) => {
     if (searchTerm.length < 2) {
       return;
@@ -187,7 +187,7 @@ export function CompteurView() {
 
     try {
       const response = await apiClient.get(
-        `/api/users/search/?search=${encodeURIComponent(searchTerm)}&page_size=10`
+        `/api/users/search/?search=${encodeURIComponent(searchTerm)}&role=owner&page_size=10`
       );
       setUsers(response.data.results || []);
     } catch (err) {
@@ -214,7 +214,11 @@ export function CompteurView() {
   // Recherche utilisateur avec debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      searchUsers(searchUser);
+      if (searchUser.trim() === "") {
+        fetchUsers(); // Recharger tous les owners si la recherche est vide
+      } else {
+        searchUsers(searchUser);
+      }
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchUser]);
@@ -332,6 +336,9 @@ export function CompteurView() {
     }
   }, [openDialog, formData.id, formData.user, users]);
 
+  // Filtrer les utilisateurs pour n'afficher que les owners dans les filtres
+  const ownerUsers = users.filter(user => user.role === "owner");
+
   return (
     <DashboardContent>
       {/* Titre et bouton d'ajout */}
@@ -418,7 +425,7 @@ export function CompteurView() {
               onChange={(e) => setUserFilter(e.target.value)}
             >
               <MenuItem value="">Tous les propriétaires</MenuItem>
-              {users.map((user) => (
+              {ownerUsers.map((user) => (
                 <MenuItem key={user.id} value={String(user.id)}>
                   {user.nom}
                 </MenuItem>
@@ -685,9 +692,9 @@ export function CompteurView() {
 
           {mode === "single" && (
             <>
-              {/* Sélection du propriétaire */}
+              {/* Sélection du propriétaire (uniquement owners) */}
               <Autocomplete
-                options={users}
+                options={ownerUsers}
                 getOptionLabel={(user) => `${user.nom} - ${user.email || user.telephone}`}
                 value={selectedUser}
                 onChange={(_, newValue) => {
@@ -704,8 +711,8 @@ export function CompteurView() {
                   <TextField
                     {...params}
                     label="Propriétaire du compteur"
-                    placeholder="Rechercher un utilisateur..."
-                    helperText="Laissez vide si le compteur n'a pas de propriétaire"
+                    placeholder="Rechercher un propriétaire..."
+                    helperText="Seuls les utilisateurs avec le rôle 'owner' sont affichés"
                   />
                 )}
                 loading={loadingUsers}
