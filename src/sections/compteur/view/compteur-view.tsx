@@ -81,9 +81,13 @@ export function CompteurView() {
   const [searchNom, setSearchNom] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [statutFilter, setStatutFilter] = useState<string>("");
-  const [siteForageFilter, setSiteForageFilter] = useState<string>("");
-  const [userFilter, setUserFilter] = useState<string>("");
+  const [selectedSiteForageFilter, setSelectedSiteForageFilter] = useState<SiteForage | null>(null);
+  const [selectedUserFilter, setSelectedUserFilter] = useState<User | null>(null);
   const [pageSize, setPageSize] = useState<number>(8);
+
+  // Recherche pour les filtres
+  const [searchSiteForageFilter, setSearchSiteForageFilter] = useState("");
+  const [searchUserFilter, setSearchUserFilter] = useState("");
 
   // Mode création : single | manual | auto
   const [mode, setMode] = useState<"single" | "manual" | "auto">("single");
@@ -135,8 +139,8 @@ export function CompteurView() {
       if (searchNom) params.append('search', searchNom);
       if (statusFilter) params.append('actif', statusFilter);
       if (statutFilter) params.append('statut', statutFilter);
-      if (siteForageFilter) params.append('siteforage', siteForageFilter);
-      if (userFilter) params.append('user_id', userFilter);
+      if (selectedSiteForageFilter) params.append('siteforage', selectedSiteForageFilter.id.toString());
+      if (selectedUserFilter) params.append('user_id', selectedUserFilter.id.toString());
 
       const response = await apiClient.get(`/api/compteur/list-compteur-pagination?${params}`);
       const data = response.data;
@@ -241,9 +245,9 @@ export function CompteurView() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchNom, statusFilter, statutFilter, siteForageFilter, userFilter, pageSize]);
+  }, [searchNom, statusFilter, statutFilter, selectedSiteForageFilter, selectedUserFilter, pageSize]);
 
-  // Recherche utilisateur avec debounce
+  // Recherche utilisateur avec debounce (pour le formulaire)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchUser.trim() === "") {
@@ -255,7 +259,7 @@ export function CompteurView() {
     return () => clearTimeout(timeoutId);
   }, [searchUser]);
 
-  // Recherche site forage avec debounce
+  // Recherche site forage avec debounce (pour le formulaire)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchSiteForage.trim() === "") {
@@ -266,6 +270,30 @@ export function CompteurView() {
     }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchSiteForage]);
+
+  // Recherche site forage avec debounce (pour les filtres)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchSiteForageFilter.trim() === "") {
+        fetchDefaultSitesForage();
+      } else {
+        searchSitesForage(searchSiteForageFilter);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchSiteForageFilter]);
+
+  // Recherche utilisateur avec debounce (pour les filtres)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchUserFilter.trim() === "") {
+        fetchDefaultUsers();
+      } else {
+        searchUsers(searchUserFilter);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchUserFilter]);
 
   // Lors de l'ouverture du dialog, charger le site forage sélectionné si en mode édition
   useEffect(() => {
@@ -386,8 +414,10 @@ export function CompteurView() {
     setSearchNom("");
     setStatusFilter("");
     setStatutFilter("");
-    setSiteForageFilter("");
-    setUserFilter("");
+    setSelectedSiteForageFilter(null);
+    setSelectedUserFilter(null);
+    setSearchSiteForageFilter("");
+    setSearchUserFilter("");
     setPageSize(8);
   };
 
@@ -454,37 +484,52 @@ export function CompteurView() {
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Site forage</InputLabel>
-            <Select
-              value={siteForageFilter}
-              label="Site forage"
-              onChange={(e) => setSiteForageFilter(e.target.value)}
-            >
-              <MenuItem value="">Tous les sites</MenuItem>
-              {sitesForage.map((site) => (
-                <MenuItem key={site.id} value={String(site.id)}>
-                  {site.nom}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {/* Filtre Site Forage avec Autocomplete */}
+          <Autocomplete
+            size="small"
+            options={sitesForage}
+            getOptionLabel={(site) => `${site.nom} - ${site.localisation}`}
+            value={selectedSiteForageFilter}
+            onChange={(_, newValue) => {
+              setSelectedSiteForageFilter(newValue);
+            }}
+            onInputChange={(_, newInputValue) => {
+              setSearchSiteForageFilter(newInputValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Site forage"
+                placeholder="Rechercher un site..."
+                sx={{ minWidth: 200 }}
+              />
+            )}
+            loading={loadingSites}
+          />
 
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Propriétaire</InputLabel>
-            <Select
-              value={userFilter}
-              label="Propriétaire"
-              onChange={(e) => setUserFilter(e.target.value)}
-            >
-              <MenuItem value="">Tous les propriétaires</MenuItem>
-              {users.map((user) => (
-                <MenuItem key={user.id} value={String(user.id)}>
-                  {user.nom}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {/* Filtre Propriétaire avec Autocomplete */}
+          <Autocomplete
+            size="small"
+            options={users}
+            getOptionLabel={(user) => `${user.nom} - ${user.email || user.telephone}`}
+            value={selectedUserFilter}
+            onChange={(_, newValue) => {
+              setSelectedUserFilter(newValue);
+            }}
+            onInputChange={(_, newInputValue) => {
+              setSearchUserFilter(newInputValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Propriétaire"
+                placeholder="Rechercher un propriétaire..."
+                sx={{ minWidth: 200 }}
+                helperText="Seuls les owners sont affichés"
+              />
+            )}
+            loading={loadingUsers}
+          />
 
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Par page</InputLabel>
