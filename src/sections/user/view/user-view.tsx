@@ -21,7 +21,9 @@ import {
   Grid,
   InputLabel,
   Alert,
-  Snackbar
+  Snackbar,
+  Chip,
+  Autocomplete
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -35,6 +37,14 @@ interface User {
   state: boolean;
 }
 
+interface PaginatedResponse {
+  count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: User[];
+}
+
 export function UserView() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,13 +52,16 @@ export function UserView() {
   const [successMessage, setSuccessMessage] = useState("");
 
   // Search + Filters
-  const [searchNom, setSearchNom] = useState("");
-  const [searchEmail, setSearchEmail] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Pagination
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Menu contextuel
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -59,14 +72,27 @@ export function UserView() {
   const [formData, setFormData] = useState<Partial<User & { password: string }>>({});
   const [saveLoading, setSaveLoading] = useState(false);
 
-  // Charger utilisateurs
-  const fetchUsers = async () => {
+  // Charger utilisateurs avec pagination et filtres
+  const fetchUsers = async (pageNum: number = 1) => {
     try {
       setLoading(true);
-      const res = await apiClient.get(
-        "/api/users/create-list/"
+      const params = new URLSearchParams({
+        page: pageNum.toString(),
+        page_size: pageSize.toString(),
+      });
+
+      if (searchTerm) params.append('search', searchTerm);
+      if (roleFilter) params.append('role', roleFilter);
+      if (stateFilter !== '') params.append('state', stateFilter);
+
+      const res = await apiClient.get<PaginatedResponse>(
+        `/api/users/list/?${params.toString()}`
       );
-      setUsers(res.data);
+      
+      setUsers(res.data.results);
+      setTotalCount(res.data.count);
+      setTotalPages(res.data.total_pages);
+      setPage(res.data.page);
     } catch (err) {
       console.error("Erreur lors du chargement des utilisateurs", err);
       setError("Erreur lors du chargement des utilisateurs");
@@ -76,22 +102,17 @@ export function UserView() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(1);
+  }, [pageSize, searchTerm, roleFilter, stateFilter]);
 
-  // Filtrage local
-  const filteredUsers = users.filter(
-    (u) =>
-      u.nom.toLowerCase().includes(searchNom.toLowerCase()) &&
-      u.email.toLowerCase().includes(searchEmail.toLowerCase()) &&
-      (roleFilter ? u.role.toLowerCase() === roleFilter.toLowerCase() : true)
-  );
+  // Recherche avec debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchUsers(1);
+    }, 500);
 
-  // Pagination locale
-  const paginatedData = filteredUsers.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, roleFilter, stateFilter, pageSize]);
 
   // Menu actions
   const handleMenuOpen = (
@@ -153,7 +174,7 @@ export function UserView() {
         setSuccessMessage("Utilisateur créé avec succès");
       }
       
-      fetchUsers();
+      fetchUsers(page);
       setOpenDialog(false);
       setFormData({});
     } catch (error: any) {
@@ -177,7 +198,7 @@ export function UserView() {
       );
       
       setSuccessMessage("Utilisateur désactivé avec succès");
-      fetchUsers();
+      fetchUsers(page);
       handleMenuClose();
     } catch (error: any) {
       console.error("Erreur lors de la suppression :", error);
@@ -198,7 +219,7 @@ export function UserView() {
       );
       
       setSuccessMessage(`Utilisateur ${newState ? "activé" : "désactivé"} avec succès`);
-      fetchUsers();
+      fetchUsers(page);
       handleMenuClose();
     } catch (error: any) {
       console.error("Erreur lors du changement de statut :", error);
@@ -206,12 +227,38 @@ export function UserView() {
     }
   };
 
+  // Réinitialiser tous les filtres
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setRoleFilter("");
+    setStateFilter("");
+    setPage(1);
+  };
+
+  // Changement de page
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+    fetchUsers(value);
+  };
+
+  // Obtenir le libellé du rôle
+  const getRoleLabel = (role: string) => {
+    const roles: { [key: string]: string } = {
+      'client': 'Client',
+      'admin': 'Administrateur',
+      'agent': 'Agent Commercial',
+      'gerant': 'Gérant',
+      'owner': 'Propriétaire'
+    };
+    return roles[role] || role;
+  };
+
   return (
     <DashboardContent>
       {/* Header */}
       <Box sx={{ mb: 5, display: "flex", alignItems: "center" }}>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          Utilisateurs
+          Utilisateurs ({totalCount})
         </Typography>
         <Button
           variant="contained"
@@ -227,51 +274,150 @@ export function UserView() {
         </Button>
       </Box>
 
-      {/* Filtres */}
+      {/* Filtres optimisés - Même modèle que CompteurView */}
       <Card sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          <TextField
-            label="Nom"
-            value={searchNom}
-            onChange={(e) => setSearchNom(e.target.value)}
-            size="small"
-          />
-          <TextField
-            label="Email"
-            value={searchEmail}
-            onChange={(e) => setSearchEmail(e.target.value)}
-            size="small"
-          />
-          <FormControl size="small">
-            <InputLabel id="role-filter-label">Rôle</InputLabel>
-            <Select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as string)}
-              displayEmpty
-              label="Rôle"
-              labelId="role-filter-label"
-              style={{ minWidth: 120 }}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Ligne principale - Filtres essentiels */}
+          <Box sx={{ 
+            display: "flex", 
+            gap: 2, 
+            flexWrap: "wrap", 
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}>
+            {/* Recherche principale */}
+            <TextField
+              label="Rechercher un utilisateur"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              placeholder="Nom, email, téléphone..."
+              sx={{ minWidth: 250, flexGrow: 1 }}
+            />
+            
+            {/* Filtres rapides */}
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Rôle</InputLabel>
+                <Select
+                  value={roleFilter}
+                  label="Rôle"
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                  <MenuItem value="">Tous</MenuItem>
+                  <MenuItem value="client">Client</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="agent">Agent</MenuItem>
+                  <MenuItem value="gerant">Gérant</MenuItem>
+                  <MenuItem value="owner">Propriétaire</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel>Statut</InputLabel>
+                <Select
+                  value={stateFilter}
+                  label="Statut"
+                  onChange={(e) => setStateFilter(e.target.value)}
+                >
+                  <MenuItem value="">Tous</MenuItem>
+                  <MenuItem value="true">Actif</MenuItem>
+                  <MenuItem value="false">Inactif</MenuItem>
+                </Select>
+              </FormControl>
+
+              {/* Bouton filtres avancés */}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon={showAdvancedFilters ? "mingcute:close-line" : "ic:round-filter-list"} />}
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                {showAdvancedFilters ? "Masquer" : "Plus de filtres"}
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleResetFilters}
+                startIcon={<Iconify icon="solar:restart-bold" />}
+              >
+                Réinitialiser
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Filtres avancés - conditionnel */}
+          {showAdvancedFilters && (
+            <Box 
+              sx={{ 
+                display: "flex", 
+                gap: 2, 
+                flexWrap: "wrap", 
+                alignItems: "center",
+                pt: 2,
+                borderTop: 1,
+                borderColor: 'divider'
+              }}
             >
-             
-              <MenuItem value="client">Client</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="agent">Agent</MenuItem>
-              <MenuItem value="gerant">Gérant</MenuItem>
-              <MenuItem value="owner">Propriétaire</MenuItem>
-            </Select>
-          </FormControl>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              setSearchNom("");
-              setSearchEmail("");
-              setRoleFilter("");
-            }}
-          >
-            Réinitialiser
-          </Button>
+              {/* Sélection du nombre d'éléments par page */}
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel>Par page</InputLabel>
+                <Select
+                  value={pageSize}
+                  label="Par page"
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={20}>20</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                  <MenuItem value={100}>100</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+
+          {/* Indicateur de filtres actifs */}
+          {(roleFilter || stateFilter) && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+              <Typography variant="body2" color="text.secondary">
+                Filtres actifs:
+              </Typography>
+              {roleFilter && (
+                <Chip 
+                  size="small"
+                  label={`Rôle: ${getRoleLabel(roleFilter)}`}
+                  onDelete={() => setRoleFilter("")}
+                />
+              )}
+              {stateFilter && (
+                <Chip 
+                  size="small"
+                  label={`Statut: ${stateFilter === "true" ? "Actif" : "Inactif"}`}
+                  onDelete={() => setStateFilter("")}
+                />
+              )}
+            </Box>
+          )}
         </Box>
       </Card>
+
+      {/* Pagination en haut */}
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Page {page} sur {totalPages} 
+            ({totalCount} utilisateurs au total)
+          </Typography>
+          <Pagination 
+            count={totalPages} 
+            page={page}
+            onChange={handlePageChange}
+            color="primary"
+          />
+        </Box>
+      )}
 
       {/* Tableau */}
       <Card>
@@ -285,35 +431,91 @@ export function UserView() {
               <table className="w-full border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-gray-100 text-left text-sm">
-                    <th className="p-2 border-b">Nom</th>
-                    <th className="p-2 border-b">Email</th>
-                    <th className="p-2 border-b">Téléphone</th>
-                    <th className="p-2 border-b">Rôle</th>
-                    <th className="p-2 border-b">Statut</th>
-                    <th className="p-2 border-b text-center">Actions</th>
+                    <th className="p-3 border-b font-semibold">Nom</th>
+                    <th className="p-3 border-b font-semibold">Email</th>
+                    <th className="p-3 border-b font-semibold">Téléphone</th>
+                    <th className="p-3 border-b font-semibold">Rôle</th>
+                    <th className="p-3 border-b font-semibold">Statut</th>
+                    <th className="p-3 border-b font-semibold text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedData.length > 0 ? (
-                    paginatedData.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="p-2 border-b">{user.nom}</td>
-                        <td className="p-2 border-b">{user.email}</td>
-                        <td className="p-2 border-b">{user.telephone}</td>
-                        <td className="p-2 border-b capitalize">{user.role}</td>
-                        <td className="p-2 border-b">
-                          {user.state ? (
-                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Actif
-                            </span>
+                  {users.length > 0 ? (
+                    users.map((user) => (
+                      <tr 
+                        key={user.id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => {
+                          setFormData(user);
+                          setOpenDialog(true);
+                          setError("");
+                        }}
+                      >
+                        <td className="p-3 border-b">
+                          <Box sx={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: 1
+                          }}>
+                            <Typography variant="body2" fontWeight="medium">
+                              {user.nom}
+                            </Typography>
+                          </Box>
+                        </td>
+                        <td className="p-3 border-b">
+                          <Typography variant="body2">
+                            {user.email}
+                          </Typography>
+                        </td>
+                        <td className="p-3 border-b">
+                          {user.telephone ? (
+                            <Typography variant="body2">
+                              {user.telephone}
+                            </Typography>
                           ) : (
-                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                              Inactif
-                            </span>
+                            <Typography variant="body2" color="text.secondary">
+                              -
+                            </Typography>
                           )}
                         </td>
-                        <td className="p-2 border-b text-center">
-                          <IconButton onClick={(e) => handleMenuOpen(e, user)}>
+                        <td className="p-3 border-b">
+                          <Chip 
+                            label={getRoleLabel(user.role)} 
+                            size="small" 
+                            variant="outlined"
+                            color={
+                              user.role === 'admin' ? 'error' :
+                              user.role === 'owner' ? 'warning' :
+                              user.role === 'agent' ? 'info' :
+                              user.role === 'gerant' ? 'secondary' : 'default'
+                            }
+                          />
+                        </td>
+                        <td className="p-3 border-b">
+                          {user.state ? (
+                            <Chip 
+                              label="Actif" 
+                              size="small"
+                              color="success"
+                              variant="filled"
+                            />
+                          ) : (
+                            <Chip 
+                              label="Inactif" 
+                              size="small"
+                              color="error"
+                              variant="filled"
+                            />
+                          )}
+                        </td>
+                        <td className="p-3 border-b text-center">
+                          <IconButton 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMenuOpen(e, user);
+                            }} 
+                            size="small"
+                          >
                             <Iconify icon="eva:more-vertical-fill" />
                           </IconButton>
                         </td>
@@ -322,14 +524,19 @@ export function UserView() {
                   ) : (
                     <tr>
                       <td colSpan={6} className="text-center text-gray-500 py-6">
-                        Aucun utilisateur trouvé
+                        <Typography variant="h6" color="text.secondary">
+                          Aucun utilisateur trouvé
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Essayez de modifier vos critères de recherche
+                        </Typography>
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
 
-              {/* Pagination */}
+              {/* Pagination en bas */}
               <Box
                 sx={{
                   display: "flex",
@@ -340,13 +547,13 @@ export function UserView() {
                   gap: 2,
                 }}
               >
-                <Typography variant="body2">
-                  {`Affichage de ${paginatedData.length} sur ${filteredUsers.length} utilisateurs`}
+                <Typography variant="body2" color="text.secondary">
+                  {`Affichage de ${users.length} sur ${totalCount} utilisateurs`}
                 </Typography>
                 <Pagination
-                  count={Math.ceil(filteredUsers.length / pageSize)}
+                  count={totalPages}
                   page={page}
-                  onChange={(_, value) => setPage(value)}
+                  onChange={handlePageChange}
                   color="primary"
                 />
               </Box>
