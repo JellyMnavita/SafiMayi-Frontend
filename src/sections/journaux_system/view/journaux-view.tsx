@@ -99,6 +99,8 @@ const isConsommation = (item: any): item is Consommation => {
   return item && 'compteur_nom' in item && 'litres' in item;
 };
 
+
+
 export function JournauxView() {
   const [activeTab, setActiveTab] = useState(0);
   const isMobile = useMediaQuery('(max-width:768px)');
@@ -108,7 +110,7 @@ export function JournauxView() {
   const [recharges, setRecharges] = useState<Recharge[]>([]);
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [consommations, setConsommations] = useState<Consommation[]>([]);
-  
+
   const [loadingRecharges, setLoadingRecharges] = useState<boolean>(true);
   const [loadingPaiements, setLoadingPaiements] = useState<boolean>(true);
   const [loadingConsommations, setLoadingConsommations] = useState<boolean>(true);
@@ -222,7 +224,7 @@ export function JournauxView() {
       const response = await apiClient.get<PaginatedResponse<Recharge>>(
         `/api/litrages/all-recharges/?${queryParams}`
       );
-      
+
       setRecharges(response.data.results);
       setTotalCount(response.data.count);
       setTotalPages(response.data.total_pages);
@@ -241,7 +243,7 @@ export function JournauxView() {
       const response = await apiClient.get<any>(
         `/api/paiements/all/?${queryParams}`
       );
-      
+
       setPaiements(response.data.results);
       setTotalCount(response.data.count);
       setTotalPages(response.data.total_pages);
@@ -261,7 +263,7 @@ export function JournauxView() {
       const response = await apiClient.get<any>(
         `/api/litrages/all-consommations/?${queryParams}`
       );
-      
+
       setConsommations(response.data.results);
       setTotalCount(response.data.count);
       setTotalPages(response.data.total_pages);
@@ -272,6 +274,8 @@ export function JournauxView() {
       setLoadingConsommations(false);
     }
   };
+
+
 
   // Charger les données quand les paramètres changent
   useEffect(() => {
@@ -391,27 +395,49 @@ export function JournauxView() {
     }
   };
 
-  // Composant pour afficher les taux utilisés
   const TauxDisplay = () => {
     if (!statsConsommations.taux_utilises) return null;
 
     return (
-      <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
-        <Typography variant="h6" gutterBottom>
-          Taux utilisés pour les calculs
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
-            <Typography variant="body2">
-              <strong>Prix par litre:</strong> {formatCurrency(statsConsommations.taux_utilises.prix_par_litre)} FC
-            </Typography>
-          </Grid>
-          <Grid sx={{ width: { xs: '100%', sm: '50%' } }}>
-            <Typography variant="body2">
-              <strong>Taux de commission:</strong> {statsConsommations.taux_utilises.taux_commission}%
-            </Typography>
-          </Grid>
-        </Grid>
+      <Paper sx={{
+        p: 1.5,
+        mb: 2,
+        bgcolor: 'background.default',
+        border: 1,
+        borderColor: 'divider'
+      }}>
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 1
+        }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Taux utilisés pour les calculs :
+          </Typography>
+
+          <Box sx={{
+            display: 'flex',
+            gap: 2,
+            alignItems: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <Chip
+              size="small"
+              label={`Prix: ${formatCurrency(statsConsommations.taux_utilises.prix_par_litre)} FC/L`}
+              color="primary"
+              variant="outlined"
+            />
+
+            <Chip
+              size="small"
+              label={`Commission: ${statsConsommations.taux_utilises.taux_commission}%`}
+              color="secondary"
+              variant="outlined"
+            />
+          </Box>
+        </Box>
       </Paper>
     );
   };
@@ -551,7 +577,7 @@ export function JournauxView() {
               Informations Utilisateur
             </Typography>
           </Grid>
-          
+
           <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
             <Typography variant="subtitle2" color="text.secondary">Nom</Typography>
             <Typography variant="body1" gutterBottom>{selectedItem.utilisateur_nom || "Anonyme"}</Typography>
@@ -639,8 +665,8 @@ export function JournauxView() {
 
       {/* Onglets */}
       <Card sx={{ mb: 3, overflow: 'auto' }}>
-        <Tabs 
-          value={activeTab} 
+        <Tabs
+          value={activeTab}
           onChange={handleTabChange}
           variant={isMobile ? "scrollable" : "standard"}
           scrollButtons={isMobile ? "auto" : false}
@@ -744,10 +770,10 @@ export function JournauxView() {
 
           {/* Filtres avancés */}
           {showAdvancedFilters && (
-            <Box sx={{ 
-              display: "flex", 
-              gap: 2, 
-              flexWrap: "wrap", 
+            <Box sx={{
+              display: "flex",
+              gap: 2,
+              flexWrap: "wrap",
               alignItems: "center",
               pt: 2,
               borderTop: 1,
@@ -934,8 +960,8 @@ export function JournauxView() {
                   <tbody>
                     {recharges.length > 0 ? (
                       recharges.map((item, index) => (
-                        <tr 
-                          key={index} 
+                        <tr
+                          key={index}
                           className="hover:bg-gray-50 cursor-pointer"
                           onClick={() => handleRowClick(item, 'recharge')}
                         >
@@ -983,8 +1009,8 @@ export function JournauxView() {
                   <tbody>
                     {paiements.length > 0 ? (
                       paiements.map((item) => (
-                        <tr 
-                          key={item.id} 
+                        <tr
+                          key={item.id}
                           className="hover:bg-gray-50 cursor-pointer"
                           onClick={() => handleRowClick(item, 'paiement')}
                         >
@@ -1039,8 +1065,8 @@ export function JournauxView() {
                   <tbody>
                     {consommations.length > 0 ? (
                       consommations.map((item) => (
-                        <tr 
-                          key={item.id} 
+                        <tr
+                          key={item.id}
                           className="hover:bg-gray-50 cursor-pointer"
                           onClick={() => handleRowClick(item, 'consommation')}
                         >
@@ -1128,28 +1154,28 @@ export function JournauxView() {
       </Menu>
 
       {/* Dialog Détails amélioré */}
-      <Dialog 
-        open={openDialog} 
-        onClose={() => setOpenDialog(false)} 
-        fullWidth 
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        fullWidth
         maxWidth="md"
         PaperProps={{
           sx: { borderRadius: 2 }
         }}
       >
-        <DialogTitle sx={{ 
-          borderBottom: 1, 
+        <DialogTitle sx={{
+          borderBottom: 1,
           borderColor: 'divider',
           bgcolor: 'primary.main',
           color: 'primary.contrastText'
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Iconify 
+            <Iconify
               icon={
                 itemType === 'recharge' ? "solar:restart-bold" :
-                itemType === 'paiement' ? "solar:cart-3-bold" :
-                "solar:shield-keyhole-bold-duotone"
-              } 
+                  itemType === 'paiement' ? "solar:cart-3-bold" :
+                    "solar:shield-keyhole-bold-duotone"
+              }
             />
             Détails {itemType === 'recharge' ? 'de la recharge' : itemType === 'paiement' ? 'du paiement' : 'de la consommation'}
           </Box>
@@ -1160,8 +1186,8 @@ export function JournauxView() {
         </DialogContent>
 
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-          <Button 
-            onClick={() => setOpenDialog(false)} 
+          <Button
+            onClick={() => setOpenDialog(false)}
             variant="contained"
             startIcon={<Iconify icon="mingcute:close-line" />}
           >

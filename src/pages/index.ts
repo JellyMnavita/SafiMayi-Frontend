@@ -13,3 +13,4 @@ export { default as RfidPage } from './rfid';
 export { default as VenteView } from './vente';
 export { default as JournauxView } from './journaux_system';
 export { default as SiteForageView } from './siteforage';
+export { default as Parametres } from './parametres';

@@ -24,6 +24,7 @@ export const RfidPage = lazy(() => import('../pages').then(m => ({ default: m.Rf
 export const VenteView = lazy(() => import('../pages').then(m => ({ default: m.VenteView })));
 export const JournauxView = lazy(() => import('../pages').then(m => ({ default: m.JournauxView })));
 export const SiteForageView = lazy(() => import('../pages').then(m => ({ default: m.SiteForageView })));
+export const Parametres = lazy(() => import('../pages').then(m => ({ default: m.Parametres })));
 
 const renderFallback = () => (
   <Box
@@ -66,7 +67,9 @@ export const routesSection: RouteObject[] = [
       { path: 'rfid', element: <RfidPage /> },
       { path: 'journaux', element: <JournauxView /> },
       { path: 'siteforage', element: <SiteForageView /> },
+      { path: 'parametres', element: <Parametres /> },
     ],
+
   },
   {
     path: '/',
