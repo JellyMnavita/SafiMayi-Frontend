@@ -8,7 +8,7 @@ import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Chip, Tabs, Tab,
-  Grid, Paper
+  Grid, Paper, FormControl, InputLabel, Autocomplete
 } from "@mui/material";
 
 import { DashboardContent } from "../../../layouts/dashboard";
@@ -76,6 +76,16 @@ interface StatsConsommations {
   };
 }
 
+interface PaginatedResponse<T> {
+  count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: T[];
+  stats?: any;
+  statistiques?: any;
+}
+
 // Fonctions de garde de type
 const isRecharge = (item: any): item is Recharge => {
   return item && 'Litre' in item && 'Moyen' in item;
@@ -94,21 +104,35 @@ export function JournauxView() {
   const isMobile = useMediaQuery('(max-width:768px)');
   const isTablet = useMediaQuery('(max-width:1200px)');
 
-  // États pour les recharges
-  const [allRecharges, setAllRecharges] = useState<Recharge[]>([]);
+  // États pour les données paginées
   const [recharges, setRecharges] = useState<Recharge[]>([]);
-  const [loadingRecharges, setLoadingRecharges] = useState<boolean>(true);
-
-  // États pour les paiements
-  const [allPaiements, setAllPaiements] = useState<Paiement[]>([]);
   const [paiements, setPaiements] = useState<Paiement[]>([]);
-  const [loadingPaiements, setLoadingPaiements] = useState<boolean>(true);
-  const [statsPaiements, setStatsPaiements] = useState<any>({});
-
-  // États pour les consommations
-  const [allConsommations, setAllConsommations] = useState<Consommation[]>([]);
   const [consommations, setConsommations] = useState<Consommation[]>([]);
+  
+  const [loadingRecharges, setLoadingRecharges] = useState<boolean>(true);
+  const [loadingPaiements, setLoadingPaiements] = useState<boolean>(true);
   const [loadingConsommations, setLoadingConsommations] = useState<boolean>(true);
+
+  // Pagination
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
+  // Filtres avec état pour la recherche avancée
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [dateDebut, setDateDebut] = useState<string>("");
+  const [dateFin, setDateFin] = useState<string>("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Filtres spécifiques
+  const [moyenFilter, setMoyenFilter] = useState<string>("");
+  const [statutFilter, setStatutFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [compteurFilter, setCompteurFilter] = useState<string>("");
+
+  // Stats
+  const [statsPaiements, setStatsPaiements] = useState<any>({});
   const [statsConsommations, setStatsConsommations] = useState<StatsConsommations>({
     total_consommations: 0,
     total_litres: 0,
@@ -116,33 +140,10 @@ export function JournauxView() {
     benefice_total: 0
   });
 
-  // Pagination
-  const [page, setPage] = useState<number>(1);
-  const [pageSize] = useState<number>(10);
-
-  // Filtres communs
-  const [searchUtilisateur, setSearchUtilisateur] = useState<string>("");
-  const [searchTelephone, setSearchTelephone] = useState<string>("");
-
-  // Filtres spécifiques aux recharges
-  const [moyenFilter, setMoyenFilter] = useState<string>("");
-
-  // Filtres spécifiques aux paiements
-  const [statutFilter, setStatutFilter] = useState<string>("");
-  const [operateurFilter, setOperateurFilter] = useState<string>("");
-  const [searchRFID, setSearchRFID] = useState<string>("");
-
-  // Filtres spécifiques aux consommations
-  const [typeFilter, setTypeFilter] = useState<string>("");
-  const [searchCompteur, setSearchCompteur] = useState<string>("");
-  const [searchAccessCode, setSearchAccessCode] = useState<string>("");
-
-  // Menu actions
+  // Menu et Dialog
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedItem, setSelectedItem] = useState<Recharge | Paiement | Consommation | null>(null);
   const [itemType, setItemType] = useState<'recharge' | 'paiement' | 'consommation' | null>(null);
-
-  // Dialog pour voir les détails
   const [openDialog, setOpenDialog] = useState(false);
 
   // Configuration du Slider responsive
@@ -191,21 +192,40 @@ export function JournauxView() {
     ],
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, item: Recharge | Paiement | Consommation, type: 'recharge' | 'paiement' | 'consommation') => {
-    setAnchorEl(event.currentTarget);
-    setSelectedItem(item);
-    setItemType(type);
+  // Construction des paramètres de requête
+  const buildQueryParams = () => {
+    const params: any = {
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    };
+
+    if (searchTerm) params.search = searchTerm;
+    if (dateDebut) params.date_debut = dateDebut;
+    if (dateFin) params.date_fin = dateFin;
+
+    // Filtres spécifiques
+    if (activeTab === 0 && moyenFilter) params.moyen = moyenFilter;
+    if (activeTab === 1 && statutFilter) params.statut = statutFilter;
+    if (activeTab === 2) {
+      if (typeFilter) params.type_consommation = typeFilter;
+      if (compteurFilter) params.compteur = compteurFilter;
+    }
+
+    return new URLSearchParams(params).toString();
   };
 
-  const handleMenuClose = () => setAnchorEl(null);
-
-  // Charger les recharges
+  // Charger les recharges avec pagination backend
   const fetchRecharges = async () => {
     try {
       setLoadingRecharges(true);
-      const response = await apiClient.get(`/api/litrages/all-recharges/`);
-      setAllRecharges(response.data);
-      setRecharges(response.data);
+      const queryParams = buildQueryParams();
+      const response = await apiClient.get<PaginatedResponse<Recharge>>(
+        `/api/litrages/all-recharges/?${queryParams}`
+      );
+      
+      setRecharges(response.data.results);
+      setTotalCount(response.data.count);
+      setTotalPages(response.data.total_pages);
     } catch (error) {
       console.error("Erreur lors du chargement des recharges :", error);
     } finally {
@@ -213,13 +233,18 @@ export function JournauxView() {
     }
   };
 
-  // Charger les paiements
+  // Charger les paiements avec pagination backend
   const fetchPaiements = async () => {
     try {
       setLoadingPaiements(true);
-      const response = await apiClient.get(`/api/paiements/all/`);
-      setAllPaiements(response.data.paiements);
-      setPaiements(response.data.paiements);
+      const queryParams = buildQueryParams();
+      const response = await apiClient.get<any>(
+        `/api/paiements/all/?${queryParams}`
+      );
+      
+      setPaiements(response.data.results);
+      setTotalCount(response.data.count);
+      setTotalPages(response.data.total_pages);
       setStatsPaiements(response.data.statistiques || {});
     } catch (error) {
       console.error("Erreur lors du chargement des paiements :", error);
@@ -228,36 +253,19 @@ export function JournauxView() {
     }
   };
 
-  // Charger les consommations
+  // Charger les consommations avec pagination backend
   const fetchConsommations = async () => {
     try {
       setLoadingConsommations(true);
-      const response = await apiClient.get(`/api/litrages/all-consommations/`);
+      const queryParams = buildQueryParams();
+      const response = await apiClient.get<any>(
+        `/api/litrages/all-consommations/?${queryParams}`
+      );
       
-      // Vérifier la structure de la réponse
-      if (response.data && response.data.consommations && response.data.stats) {
-        setAllConsommations(response.data.consommations);
-        setConsommations(response.data.consommations);
-        setStatsConsommations(response.data.stats);
-      } else {
-        // Fallback pour l'ancienne structure
-        setAllConsommations(response.data);
-        setConsommations(response.data);
-        
-        const totalConsommations = response.data.length;
-        const totalLitres = Math.round(
-          response.data.reduce((sum: number, c: Consommation) => sum + c.litres, 0)
-        );
-        const totalPrix = response.data.reduce((sum: number, c: Consommation) => sum + (c.prix || 0), 0);
-        const beneficeTotal = response.data.reduce((sum: number, c: Consommation) => sum + (c.commission || 0), 0);
-
-        setStatsConsommations({
-          total_consommations: totalConsommations,
-          total_litres: totalLitres,
-          total_prix: totalPrix,
-          benefice_total: beneficeTotal
-        });
-      }
+      setConsommations(response.data.results);
+      setTotalCount(response.data.count);
+      setTotalPages(response.data.total_pages);
+      setStatsConsommations(response.data.stats || {});
     } catch (error) {
       console.error("Erreur lors du chargement des consommations :", error);
     } finally {
@@ -265,121 +273,41 @@ export function JournauxView() {
     }
   };
 
+  // Charger les données quand les paramètres changent
   useEffect(() => {
-    if (activeTab === 0) {
-      fetchRecharges();
-    } else if (activeTab === 1) {
-      fetchPaiements();
-    } else if (activeTab === 2) {
-      fetchConsommations();
-    }
-  }, [activeTab]);
+    const fetchData = () => {
+      if (activeTab === 0) {
+        fetchRecharges();
+      } else if (activeTab === 1) {
+        fetchPaiements();
+      } else if (activeTab === 2) {
+        fetchConsommations();
+      }
+    };
 
-  // Filtrage local des recharges
+    // Debounce pour éviter trop de requêtes
+    const timeoutId = setTimeout(fetchData, 300);
+    return () => clearTimeout(timeoutId);
+  }, [activeTab, page, pageSize, searchTerm, dateDebut, dateFin, moyenFilter, statutFilter, typeFilter, compteurFilter]);
+
+  // Réinitialiser la page quand les filtres changent
   useEffect(() => {
-    let filtered = [...allRecharges];
-
-    if (searchUtilisateur) {
-      filtered = filtered.filter((r) =>
-        r.Utilisateur.toLowerCase().includes(searchUtilisateur.toLowerCase())
-      );
-    }
-    if (searchTelephone) {
-      filtered = filtered.filter((r) =>
-        r.Telephone.toLowerCase().includes(searchTelephone.toLowerCase())
-      );
-    }
-    if (moyenFilter) {
-      filtered = filtered.filter((r) =>
-        r.Moyen.toLowerCase() === moyenFilter.toLowerCase()
-      );
-    }
-
-    setRecharges(filtered);
     setPage(1);
-  }, [searchUtilisateur, searchTelephone, moyenFilter, allRecharges]);
+  }, [searchTerm, dateDebut, dateFin, moyenFilter, statutFilter, typeFilter, compteurFilter]);
 
-  // Filtrage local des paiements
-  useEffect(() => {
-    let filtered = [...allPaiements];
-
-    if (searchUtilisateur) {
-      filtered = filtered.filter((p) =>
-        p.utilisateur_nom && p.utilisateur_nom.toLowerCase().includes(searchUtilisateur.toLowerCase())
-      );
-    }
-    if (searchTelephone) {
-      filtered = filtered.filter((p) =>
-        p.telephone.toLowerCase().includes(searchTelephone.toLowerCase())
-      );
-    }
-    if (statutFilter) {
-      filtered = filtered.filter((p) => p.statut === statutFilter);
-    }
-    if (operateurFilter) {
-      filtered = filtered.filter((p) => p.operateur === operateurFilter);
-    }
-    if (searchRFID) {
-      filtered = filtered.filter((p) =>
-        p.rfid_uid && p.rfid_uid.toLowerCase().includes(searchRFID.toLowerCase())
-      );
-    }
-
-    setPaiements(filtered);
-    setPage(1);
-  }, [searchUtilisateur, searchTelephone, statutFilter, operateurFilter, searchRFID, allPaiements]);
-
-  // Filtrage local des consommations
-  useEffect(() => {
-    let filtered = [...allConsommations];
-
-    if (searchUtilisateur) {
-      filtered = filtered.filter((c) =>
-        c.utilisateur_nom && c.utilisateur_nom.toLowerCase().includes(searchUtilisateur.toLowerCase())
-      );
-    }
-    if (searchTelephone) {
-      filtered = filtered.filter((c) =>
-        c.utilisateur_telephone && c.utilisateur_telephone.includes(searchTelephone)
-      );
-    }
-    if (typeFilter) {
-      filtered = filtered.filter((c) => c.type === typeFilter);
-    }
-    if (searchCompteur) {
-      filtered = filtered.filter((c) =>
-        c.compteur_nom.toLowerCase().includes(searchCompteur.toLowerCase()) ||
-        c.compteur_code_serie.toLowerCase().includes(searchCompteur.toLowerCase())
-      );
-    }
-    if (searchRFID) {
-      filtered = filtered.filter((c) =>
-        c.rfid_uid && c.rfid_uid.toLowerCase().includes(searchRFID.toLowerCase())
-      );
-    }
-    if (searchAccessCode) {
-      filtered = filtered.filter((c) =>
-        c.access_code && c.access_code.toLowerCase().includes(searchAccessCode.toLowerCase())
-      );
-    }
-
-    setConsommations(filtered);
-    setPage(1);
-  }, [searchUtilisateur, searchTelephone, typeFilter, searchCompteur, searchRFID, searchAccessCode, allConsommations]);
-
-  // Pagination locale
-  const getPaginatedData = (): (Recharge | Paiement | Consommation)[] => {
-    if (activeTab === 0) {
-      return recharges.slice((page - 1) * pageSize, page * pageSize);
-    } else if (activeTab === 1) {
-      return paiements.slice((page - 1) * pageSize, page * pageSize);
-    } else {
-      return consommations.slice((page - 1) * pageSize, page * pageSize);
-    }
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, item: Recharge | Paiement | Consommation, type: 'recharge' | 'paiement' | 'consommation') => {
+    setAnchorEl(event.currentTarget);
+    setSelectedItem(item);
+    setItemType(type);
   };
 
-  const paginatedData = getPaginatedData();
-  const totalItems = activeTab === 0 ? recharges.length : activeTab === 1 ? paiements.length : consommations.length;
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleRowClick = (item: Recharge | Paiement | Consommation, type: 'recharge' | 'paiement' | 'consommation') => {
+    setSelectedItem(item);
+    setItemType(type);
+    setOpenDialog(true);
+  };
 
   // Formater la date pour l'affichage
   const formatDate = (dateString: string) => {
@@ -440,26 +368,17 @@ export function JournauxView() {
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     setPage(1);
-    // Réinitialiser les filtres spécifiques
-    setMoyenFilter("");
-    setStatutFilter("");
-    setOperateurFilter("");
-    setTypeFilter("");
-    setSearchRFID("");
-    setSearchAccessCode("");
-    setSearchCompteur("");
+    resetFilters();
   };
 
-  const resetAllFilters = () => {
-    setSearchUtilisateur("");
-    setSearchTelephone("");
+  const resetFilters = () => {
+    setSearchTerm("");
+    setDateDebut("");
+    setDateFin("");
     setMoyenFilter("");
     setStatutFilter("");
-    setOperateurFilter("");
     setTypeFilter("");
-    setSearchRFID("");
-    setSearchAccessCode("");
-    setSearchCompteur("");
+    setCompteurFilter("");
   };
 
   const refreshData = () => {
@@ -497,6 +416,211 @@ export function JournauxView() {
     );
   };
 
+  // Composant pour les détails d'un élément
+  const DetailContent = () => {
+    if (!selectedItem) return null;
+
+    if (itemType === 'recharge' && isRecharge(selectedItem)) {
+      return (
+        <Grid container spacing={2}>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Date</Typography>
+            <Typography variant="body1" gutterBottom>{formatDate(selectedItem.Date)}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Utilisateur</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.Utilisateur}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Téléphone</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.Telephone}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Carte RFID</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem["Carte RFID"] || "Non utilisée"}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Litres</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.Litre.toFixed(1)} L</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Moyen</Typography>
+            <Chip label={selectedItem.Moyen} color="primary" size="small" />
+          </Grid>
+        </Grid>
+      );
+    }
+
+    if (itemType === 'paiement' && isPaiement(selectedItem)) {
+      return (
+        <Grid container spacing={2}>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Date</Typography>
+            <Typography variant="body1" gutterBottom>{formatDate(selectedItem.created_at)}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Utilisateur</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.utilisateur_nom || 'N/A'}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Email</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.utilisateur_email || 'N/A'}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Téléphone</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.telephone}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Carte RFID</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.rfid_uid || 'Aucune'}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Opérateur</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.operateur}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Montant</Typography>
+            <Typography variant="body1" gutterBottom>{formatCurrency(selectedItem.montant)} FC</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Litres crédités</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.litres_credite} L</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Statut</Typography>
+            <Chip
+              label={getStatusText(selectedItem.statut)}
+              color={getStatusColor(selectedItem.statut) as any}
+              size="small"
+            />
+          </Grid>
+          <Grid sx={{ width: '100%' }}>
+            <Typography variant="subtitle2" color="text.secondary">ID Transaction</Typography>
+            <Typography variant="body1" gutterBottom style={{ wordBreak: 'break-all' }}>
+              {selectedItem.id_transaction_ext}
+            </Typography>
+          </Grid>
+        </Grid>
+      );
+    }
+
+    if (itemType === 'consommation' && isConsommation(selectedItem)) {
+      return (
+        <Grid container spacing={2}>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">ID</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.id}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Date</Typography>
+            <Typography variant="body1" gutterBottom>{formatDate(selectedItem.date)}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Compteur</Typography>
+            <Typography variant="body1" gutterBottom>
+              {selectedItem.compteur_nom}
+              <br />
+              <Typography variant="caption" color="text.secondary">
+                {selectedItem.compteur_code_serie}
+              </Typography>
+            </Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Litres</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.litres} L</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Prix</Typography>
+            <Typography variant="body1" gutterBottom>{formatCurrency(selectedItem.prix || 0)} FC</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Commission</Typography>
+            <Typography variant="body1" gutterBottom>{formatCurrency(selectedItem.commission || 0)} FC</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Type</Typography>
+            <Chip
+              label={selectedItem.type}
+              color={getTypeColor(selectedItem.type) as any}
+              size="small"
+            />
+          </Grid>
+
+          <Grid sx={{ width: '100%' }}>
+            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+              Informations Utilisateur
+            </Typography>
+          </Grid>
+          
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Nom</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.utilisateur_nom || "Anonyme"}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Email</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.utilisateur_email || "Non disponible"}</Typography>
+          </Grid>
+          <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Typography variant="subtitle2" color="text.secondary">Téléphone</Typography>
+            <Typography variant="body1" gutterBottom>{selectedItem.utilisateur_telephone || "Non disponible"}</Typography>
+          </Grid>
+
+          {selectedItem.type === "RFID" ? (
+            <>
+              <Grid sx={{ width: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Informations RFID
+                </Typography>
+              </Grid>
+              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Typography variant="subtitle2" color="text.secondary">UID RFID</Typography>
+                <Typography variant="body1" gutterBottom>{selectedItem.rfid_uid || "Non disponible"}</Typography>
+              </Grid>
+              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Typography variant="subtitle2" color="text.secondary">Téléphone RFID</Typography>
+                <Typography variant="body1" gutterBottom>{selectedItem.rfid_telephone || "Non disponible"}</Typography>
+              </Grid>
+            </>
+          ) : (
+            <>
+              <Grid sx={{ width: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Informations Code d'Accès
+                </Typography>
+              </Grid>
+              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Typography variant="subtitle2" color="text.secondary">Code</Typography>
+                <Typography variant="body1" gutterBottom>{selectedItem.access_code || "Non disponible"}</Typography>
+              </Grid>
+              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Typography variant="subtitle2" color="text.secondary">Statut</Typography>
+                <Typography variant="body1" gutterBottom>{selectedItem.access_code_status || "Non disponible"}</Typography>
+              </Grid>
+              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Typography variant="subtitle2" color="text.secondary">Litres demandés</Typography>
+                <Typography variant="body1" gutterBottom>{selectedItem.access_code_litres_demandes || 0} L</Typography>
+              </Grid>
+              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Typography variant="subtitle2" color="text.secondary">Créé le</Typography>
+                <Typography variant="body1" gutterBottom>
+                  {selectedItem.access_code_created_at ? formatDate(selectedItem.access_code_created_at) : "Non disponible"}
+                </Typography>
+              </Grid>
+              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Typography variant="subtitle2" color="text.secondary">Expire le</Typography>
+                <Typography variant="body1" gutterBottom>
+                  {selectedItem.access_code_expire_at ? formatDate(selectedItem.access_code_expire_at) : "Non disponible"}
+                </Typography>
+              </Grid>
+            </>
+          )}
+        </Grid>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <DashboardContent>
       <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
@@ -513,7 +637,7 @@ export function JournauxView() {
         </Button>
       </Box>
 
-      {/* Onglets avec style responsive */}
+      {/* Onglets */}
       <Card sx={{ mb: 3, overflow: 'auto' }}>
         <Tabs 
           value={activeTab} 
@@ -536,113 +660,144 @@ export function JournauxView() {
         </Tabs>
       </Card>
 
-      {/* Filtres */}
+      {/* Filtres optimisés */}
       <Card sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          <TextField
-            label="Utilisateur"
-            value={searchUtilisateur}
-            onChange={(e) => setSearchUtilisateur(e.target.value)}
-            size="small"
-            sx={{ minWidth: isMobile ? '100%' : 150 }}
-          />
-          <TextField
-            label="Téléphone"
-            value={searchTelephone}
-            onChange={(e) => setSearchTelephone(e.target.value)}
-            size="small"
-            sx={{ minWidth: isMobile ? '100%' : 150 }}
-          />
-
-          {activeTab === 0 ? (
-            <Select
-              value={moyenFilter}
-              onChange={(e) => setMoyenFilter(e.target.value)}
-              displayEmpty
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Ligne principale */}
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+            <TextField
+              label="Rechercher"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
-              sx={{ minWidth: isMobile ? '100%' : 150 }}
-            >
-              <MenuItem value="">Tous les moyens</MenuItem>
-              <MenuItem value="mobile">Mobile</MenuItem>
-            </Select>
-          ) : activeTab === 1 ? (
-            <>
-              <Select
-                value={statutFilter}
-                onChange={(e) => setStatutFilter(e.target.value)}
-                displayEmpty
-                size="small"
-                sx={{ minWidth: isMobile ? '100%' : 150 }}
-              >
-                <MenuItem value="">Tous les statuts</MenuItem>
-                <MenuItem value="success">Réussi</MenuItem>
-                <MenuItem value="pending">En attente</MenuItem>
-                <MenuItem value="failed">Échoué</MenuItem>
-              </Select>
-              <Select
-                value={operateurFilter}
-                onChange={(e) => setOperateurFilter(e.target.value)}
-                displayEmpty
-                size="small"
-                sx={{ minWidth: isMobile ? '100%' : 150 }}
-              >
-                <MenuItem value="">Tous les opérateurs</MenuItem>
-                <MenuItem value="mpesa">M-Pesa</MenuItem>
-                <MenuItem value="airtel">Airtel Money</MenuItem>
-                <MenuItem value="orange">Orange Money</MenuItem>
-              </Select>
-              <TextField
-                label="Carte RFID"
-                value={searchRFID}
-                onChange={(e) => setSearchRFID(e.target.value)}
-                size="small"
-                sx={{ minWidth: isMobile ? '100%' : 150 }}
-              />
-            </>
-          ) : (
-            <>
-              <Select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                displayEmpty
-                size="small"
-                sx={{ minWidth: isMobile ? '100%' : 150 }}
-              >
-                <MenuItem value="">Tous les types</MenuItem>
-                <MenuItem value="RFID">RFID</MenuItem>
-                <MenuItem value="Code d'accès">Code d'Accès</MenuItem>
-              </Select>
-              <TextField
-                label="Compteur"
-                value={searchCompteur}
-                onChange={(e) => setSearchCompteur(e.target.value)}
-                size="small"
-                sx={{ minWidth: isMobile ? '100%' : 150 }}
-              />
-              <TextField
-                label="Carte RFID"
-                value={searchRFID}
-                onChange={(e) => setSearchRFID(e.target.value)}
-                size="small"
-                sx={{ minWidth: isMobile ? '100%' : 150 }}
-              />
-              <TextField
-                label="Code d'Accès"
-                value={searchAccessCode}
-                onChange={(e) => setSearchAccessCode(e.target.value)}
-                size="small"
-                sx={{ minWidth: isMobile ? '100%' : 150 }}
-              />
-            </>
-          )}
+              placeholder="Nom, téléphone, RFID..."
+              sx={{ minWidth: isMobile ? '100%' : 250, flexGrow: 1 }}
+            />
 
-          <Button
-            variant="outlined"
-            onClick={resetAllFilters}
-            sx={{ minWidth: isMobile ? '100%' : 'auto' }}
-          >
-            Réinitialiser
-          </Button>
+            {/* Filtres rapides */}
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: 'wrap' }}>
+              {activeTab === 0 && (
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Moyen</InputLabel>
+                  <Select
+                    value={moyenFilter}
+                    label="Moyen"
+                    onChange={(e) => setMoyenFilter(e.target.value)}
+                  >
+                    <MenuItem value="">Tous</MenuItem>
+                    <MenuItem value="mobile">Mobile</MenuItem>
+                    <MenuItem value="rfid">RFID</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              {activeTab === 1 && (
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Statut</InputLabel>
+                  <Select
+                    value={statutFilter}
+                    label="Statut"
+                    onChange={(e) => setStatutFilter(e.target.value)}
+                  >
+                    <MenuItem value="">Tous</MenuItem>
+                    <MenuItem value="success">Réussi</MenuItem>
+                    <MenuItem value="pending">En attente</MenuItem>
+                    <MenuItem value="failed">Échoué</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              {activeTab === 2 && (
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <InputLabel>Type</InputLabel>
+                  <Select
+                    value={typeFilter}
+                    label="Type"
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <MenuItem value="">Tous</MenuItem>
+                    <MenuItem value="RFID">RFID</MenuItem>
+                    <MenuItem value="Code d'accès">Code d'Accès</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Iconify icon={showAdvancedFilters ? "mingcute:close-line" : "ic:round-filter-list"} />}
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              >
+                {showAdvancedFilters ? "Masquer" : "Plus de filtres"}
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={resetFilters}
+                startIcon={<Iconify icon="solar:restart-bold" />}
+              >
+                Réinitialiser
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Filtres avancés */}
+          {showAdvancedFilters && (
+            <Box sx={{ 
+              display: "flex", 
+              gap: 2, 
+              flexWrap: "wrap", 
+              alignItems: "center",
+              pt: 2,
+              borderTop: 1,
+              borderColor: 'divider'
+            }}>
+              <TextField
+                label="Date de début"
+                type="date"
+                value={dateDebut}
+                onChange={(e) => setDateDebut(e.target.value)}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                sx={{ minWidth: 150 }}
+              />
+              <TextField
+                label="Date de fin"
+                type="date"
+                value={dateFin}
+                onChange={(e) => setDateFin(e.target.value)}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                sx={{ minWidth: 150 }}
+              />
+
+              {activeTab === 2 && (
+                <TextField
+                  label="Compteur"
+                  value={compteurFilter}
+                  onChange={(e) => setCompteurFilter(e.target.value)}
+                  size="small"
+                  placeholder="Nom ou code série"
+                  sx={{ minWidth: 150 }}
+                />
+              )}
+
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel>Par page</InputLabel>
+                <Select
+                  value={pageSize}
+                  label="Par page"
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={20}>20</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                  <MenuItem value={100}>100</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
         </Box>
       </Card>
 
@@ -665,7 +820,6 @@ export function JournauxView() {
             width: '100%'
           }
         }}>
-
           {activeTab === 1 ? (
             <Slider {...sliderSettings}>
               <div>
@@ -752,7 +906,6 @@ export function JournauxView() {
               </div>
             </Slider>
           )}
-
         </Box>
       )}
 
@@ -779,32 +932,30 @@ export function JournauxView() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedData.length > 0 ? (
-                      paginatedData.map((item, index) => {
-                        if (isRecharge(item)) {
-                          const recharge = item;
-                          return (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="p-2 border-b">{formatDate(recharge.Date)}</td>
-                              <td className="p-2 border-b">{recharge.Utilisateur}</td>
-                              <td className="p-2 border-b">{recharge.Telephone}</td>
-                              <td className="p-2 border-b">{recharge["Carte RFID"] || "-"}</td>
-                              <td className="p-2 border-b">{recharge.Litre.toFixed(1)} L</td>
-                              <td className="p-2 border-b">
-                                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                                  {recharge.Moyen}
-                                </span>
-                              </td>
-                              <td className="p-2 border-b text-center">
-                                <IconButton onClick={(e) => handleMenuOpen(e, recharge, 'recharge')}>
-                                  <Iconify icon="eva:more-vertical-fill" />
-                                </IconButton>
-                              </td>
-                            </tr>
-                          );
-                        }
-                        return null;
-                      })
+                    {recharges.length > 0 ? (
+                      recharges.map((item, index) => (
+                        <tr 
+                          key={index} 
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleRowClick(item, 'recharge')}
+                        >
+                          <td className="p-2 border-b">{formatDate(item.Date)}</td>
+                          <td className="p-2 border-b">{item.Utilisateur}</td>
+                          <td className="p-2 border-b">{item.Telephone}</td>
+                          <td className="p-2 border-b">{item["Carte RFID"] || "-"}</td>
+                          <td className="p-2 border-b">{item.Litre.toFixed(1)} L</td>
+                          <td className="p-2 border-b">
+                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                              {item.Moyen}
+                            </span>
+                          </td>
+                          <td className="p-2 border-b text-center" onClick={(e) => e.stopPropagation()}>
+                            <IconButton onClick={(e) => handleMenuOpen(e, item, 'recharge')}>
+                              <Iconify icon="eva:more-vertical-fill" />
+                            </IconButton>
+                          </td>
+                        </tr>
+                      ))
                     ) : (
                       <tr>
                         <td colSpan={7} className="text-center text-gray-500 py-6">
@@ -826,50 +977,46 @@ export function JournauxView() {
                       <th className="p-2 border-b">Montant</th>
                       <th className="p-2 border-b">Litres</th>
                       <th className="p-2 border-b">Statut</th>
-                      <th className="p-2 border-b">Transaction ID</th>
                       <th className="p-2 border-b text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedData.length > 0 ? (
-                      paginatedData.map((item) => {
-                        if (isPaiement(item)) {
-                          const paiement = item;
-                          return (
-                            <tr key={paiement.id} className="hover:bg-gray-50">
-                              <td className="p-2 border-b">{formatDate(paiement.created_at)}</td>
-                              <td className="p-2 border-b">
-                                {paiement.utilisateur_nom || 'N/A'}
-                                {paiement.utilisateur_email && (
-                                  <div className="text-xs text-gray-500">{paiement.utilisateur_email}</div>
-                                )}
-                              </td>
-                              <td className="p-2 border-b">{paiement.telephone}</td>
-                              <td className="p-2 border-b">{paiement.rfid_uid || 'Aucune'}</td>
-                              <td className="p-2 border-b">{paiement.operateur}</td>
-                              <td className="p-2 border-b">{paiement.montant} FC</td>
-                              <td className="p-2 border-b">{paiement.litres_credite} L</td>
-                              <td className="p-2 border-b">
-                                <Chip
-                                  label={getStatusText(paiement.statut)}
-                                  color={getStatusColor(paiement.statut) as any}
-                                  size="small"
-                                />
-                              </td>
-                              <td className="p-2 border-b">{paiement.id_transaction_ext}</td>
-                              <td className="p-2 border-b text-center">
-                                <IconButton onClick={(e) => handleMenuOpen(e, paiement, 'paiement')}>
-                                  <Iconify icon="eva:more-vertical-fill" />
-                                </IconButton>
-                              </td>
-                            </tr>
-                          );
-                        }
-                        return null;
-                      })
+                    {paiements.length > 0 ? (
+                      paiements.map((item) => (
+                        <tr 
+                          key={item.id} 
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleRowClick(item, 'paiement')}
+                        >
+                          <td className="p-2 border-b">{formatDate(item.created_at)}</td>
+                          <td className="p-2 border-b">
+                            {item.utilisateur_nom || 'N/A'}
+                            {item.utilisateur_email && (
+                              <div className="text-xs text-gray-500">{item.utilisateur_email}</div>
+                            )}
+                          </td>
+                          <td className="p-2 border-b">{item.telephone}</td>
+                          <td className="p-2 border-b">{item.rfid_uid || 'Aucune'}</td>
+                          <td className="p-2 border-b">{item.operateur}</td>
+                          <td className="p-2 border-b">{item.montant} FC</td>
+                          <td className="p-2 border-b">{item.litres_credite} L</td>
+                          <td className="p-2 border-b">
+                            <Chip
+                              label={getStatusText(item.statut)}
+                              color={getStatusColor(item.statut) as any}
+                              size="small"
+                            />
+                          </td>
+                          <td className="p-2 border-b text-center" onClick={(e) => e.stopPropagation()}>
+                            <IconButton onClick={(e) => handleMenuOpen(e, item, 'paiement')}>
+                              <Iconify icon="eva:more-vertical-fill" />
+                            </IconButton>
+                          </td>
+                        </tr>
+                      ))
                     ) : (
                       <tr>
-                        <td colSpan={10} className="text-center text-gray-500 py-6">
+                        <td colSpan={9} className="text-center text-gray-500 py-6">
                           Aucun paiement trouvé
                         </td>
                       </tr>
@@ -877,78 +1024,56 @@ export function JournauxView() {
                   </tbody>
                 </table>
               ) : (
-                <table className="w-full border-collapse min-w-[1400px]">
+                <table className="w-full border-collapse min-w-[1200px]">
                   <thead>
                     <tr className="bg-gray-100 text-left text-sm">
-                      <th className="p-2 border-b">ID</th>
                       <th className="p-2 border-b">Date</th>
                       <th className="p-2 border-b">Compteur</th>
                       <th className="p-2 border-b">Litres</th>
                       <th className="p-2 border-b">Prix</th>
-                      <th className="p-2 border-b">Commission</th>
                       <th className="p-2 border-b">Type</th>
                       <th className="p-2 border-b">Utilisateur</th>
-                      <th className="p-2 border-b">Téléphone</th>
-                      <th className="p-2 border-b">Code Accès</th>
-                      <th className="p-2 border-b">UID RFID</th>
                       <th className="p-2 border-b text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedData.length > 0 ? (
-                      paginatedData.map((item) => {
-                        if (isConsommation(item)) {
-                          const consommation = item;
-                          return (
-                            <tr key={consommation.id} className="hover:bg-gray-50">
-                              <td className="p-2 border-b">{consommation.id}</td>
-                              <td className="p-2 border-b">{formatDate(consommation.date)}</td>
-                              <td className="p-2 border-b">
-                                {consommation.compteur_nom}
-                                <div className="text-xs text-gray-500">{consommation.compteur_code_serie}</div>
-                              </td>
-                              <td className="p-2 border-b">{consommation.litres} L</td>
-                              <td className="p-2 border-b">{formatCurrency(consommation.prix || 0)} FC</td>
-                              <td className="p-2 border-b">{formatCurrency(consommation.commission || 0)} FC</td>
-                              <td className="p-2 border-b">
-                                <Chip
-                                  label={consommation.type}
-                                  color={getTypeColor(consommation.type) as any}
-                                  size="small"
-                                />
-                              </td>
-                              <td className="p-2 border-b">
-                                {consommation.utilisateur_nom || "Anonyme"}
-                                {consommation.utilisateur_email && (
-                                  <div className="text-xs text-gray-500">{consommation.utilisateur_email}</div>
-                                )}
-                              </td>
-                              <td className="p-2 border-b">{consommation.utilisateur_telephone || "N/A"}</td>
-                              <td className="p-2 border-b">
-                                {consommation.access_code ? (
-                                  <Chip
-                                    label={consommation.access_code}
-                                    color={consommation.access_code_status === "valide" ? "success" : "default"}
-                                    size="small"
-                                  />
-                                ) : (
-                                  "N/A"
-                                )}
-                              </td>
-                              <td className="p-2 border-b">{consommation.rfid_uid || "N/A"}</td>
-                              <td className="p-2 border-b text-center">
-                                <IconButton onClick={(e) => handleMenuOpen(e, consommation, 'consommation')}>
-                                  <Iconify icon="eva:more-vertical-fill" />
-                                </IconButton>
-                              </td>
-                            </tr>
-                          );
-                        }
-                        return null;
-                      })
+                    {consommations.length > 0 ? (
+                      consommations.map((item) => (
+                        <tr 
+                          key={item.id} 
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleRowClick(item, 'consommation')}
+                        >
+                          <td className="p-2 border-b">{formatDate(item.date)}</td>
+                          <td className="p-2 border-b">
+                            {item.compteur_nom}
+                            <div className="text-xs text-gray-500">{item.compteur_code_serie}</div>
+                          </td>
+                          <td className="p-2 border-b">{item.litres} L</td>
+                          <td className="p-2 border-b">{formatCurrency(item.prix || 0)} FC</td>
+                          <td className="p-2 border-b">
+                            <Chip
+                              label={item.type}
+                              color={getTypeColor(item.type) as any}
+                              size="small"
+                            />
+                          </td>
+                          <td className="p-2 border-b">
+                            {item.utilisateur_nom || "Anonyme"}
+                            {item.utilisateur_telephone && (
+                              <div className="text-xs text-gray-500">{item.utilisateur_telephone}</div>
+                            )}
+                          </td>
+                          <td className="p-2 border-b text-center" onClick={(e) => e.stopPropagation()}>
+                            <IconButton onClick={(e) => handleMenuOpen(e, item, 'consommation')}>
+                              <Iconify icon="eva:more-vertical-fill" />
+                            </IconButton>
+                          </td>
+                        </tr>
+                      ))
                     ) : (
                       <tr>
-                        <td colSpan={12} className="text-center text-gray-500 py-6">
+                        <td colSpan={7} className="text-center text-gray-500 py-6">
                           Aucune consommation trouvée
                         </td>
                       </tr>
@@ -957,7 +1082,7 @@ export function JournauxView() {
                 </table>
               )}
 
-              {/* Pagination */}
+              {/* Pagination backend */}
               <Box
                 sx={{
                   display: "flex",
@@ -969,16 +1094,18 @@ export function JournauxView() {
                 }}
               >
                 <Typography variant="body2">
-                  {`Affichage de ${paginatedData.length} sur ${totalItems} ${activeTab === 0 ? 'recharges' :
+                  {`Affichage de ${recharges.length} sur ${totalCount} ${activeTab === 0 ? 'recharges' :
                     activeTab === 1 ? 'paiements' :
                       'consommations'
                     }`}
                 </Typography>
                 <Pagination
-                  count={Math.ceil(totalItems / pageSize)}
+                  count={totalPages}
                   page={page}
                   onChange={(_, value) => setPage(value)}
                   color="primary"
+                  showFirstButton
+                  showLastButton
                 />
               </Box>
             </>
@@ -1000,99 +1127,46 @@ export function JournauxView() {
         </MenuList>
       </Menu>
 
-      {/* Dialog Détails */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="md">
-        <DialogTitle>
-          Détails {itemType === 'recharge' ? 'de la recharge' : itemType === 'paiement' ? 'du paiement' : 'de la consommation'}
+      {/* Dialog Détails amélioré */}
+      <Dialog 
+        open={openDialog} 
+        onClose={() => setOpenDialog(false)} 
+        fullWidth 
+        maxWidth="md"
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Iconify 
+              icon={
+                itemType === 'recharge' ? "solar:restart-bold" :
+                itemType === 'paiement' ? "solar:cart-3-bold" :
+                "solar:shield-keyhole-bold-duotone"
+              } 
+            />
+            Détails {itemType === 'recharge' ? 'de la recharge' : itemType === 'paiement' ? 'du paiement' : 'de la consommation'}
+          </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          {selectedItem && itemType === 'recharge' && isRecharge(selectedItem) && (
-            <>
-              <Typography><strong>Date:</strong> {formatDate(selectedItem.Date)}</Typography>
-              <Typography><strong>Utilisateur:</strong> {selectedItem.Utilisateur}</Typography>
-              <Typography><strong>Téléphone:</strong> {selectedItem.Telephone}</Typography>
-              <Typography><strong>Carte RFID:</strong> {selectedItem["Carte RFID"] || "Non utilisée"}</Typography>
-              <Typography><strong>Litres:</strong> {selectedItem.Litre.toFixed(1)} L</Typography>
-              <Typography><strong>Moyen de paiement:</strong> {selectedItem.Moyen}</Typography>
-            </>
-          )}
-
-          {selectedItem && itemType === 'paiement' && isPaiement(selectedItem) && (
-            <>
-              <Typography><strong>Date:</strong> {formatDate(selectedItem.created_at)}</Typography>
-              <Typography><strong>Utilisateur:</strong> {selectedItem.utilisateur_nom || 'N/A'}</Typography>
-              <Typography><strong>Email:</strong> {selectedItem.utilisateur_email || 'N/A'}</Typography>
-              <Typography><strong>Téléphone utilisateur:</strong> {selectedItem.utilisateur_telephone || 'N/A'}</Typography>
-              <Typography><strong>Téléphone de paiement:</strong> {selectedItem.telephone}</Typography>
-              <Typography><strong>Carte RFID:</strong> {selectedItem.rfid_uid || 'Aucune carte'}</Typography>
-              <Typography><strong>Opérateur:</strong> {selectedItem.operateur}</Typography>
-              <Typography><strong>Montant:</strong> {selectedItem.montant} FC</Typography>
-              <Typography><strong>Litres crédités:</strong> {selectedItem.litres_credite} L</Typography>
-              <Typography><strong>Statut:</strong>
-                <Chip
-                  label={getStatusText(selectedItem.statut)}
-                  color={getStatusColor(selectedItem.statut) as any}
-                  size="small"
-                  sx={{ ml: 1 }}
-                />
-              </Typography>
-              <Typography><strong>ID Transaction:</strong> {selectedItem.id_transaction_ext}</Typography>
-              <Typography><strong>Réponse brute:</strong></Typography>
-              <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
-                <pre>{JSON.stringify(selectedItem.raw_response, null, 2)}</pre>
-              </Box>
-            </>
-          )}
-
-          {selectedItem && itemType === 'consommation' && isConsommation(selectedItem) && (
-            <>
-              <Typography><strong>ID:</strong> {selectedItem.id}</Typography>
-              <Typography><strong>Date:</strong> {formatDate(selectedItem.date)}</Typography>
-              <Typography><strong>Compteur:</strong> {selectedItem.compteur_nom} ({selectedItem.compteur_code_serie})</Typography>
-              <Typography><strong>Litres consommés:</strong> {selectedItem.litres} L</Typography>
-              <Typography><strong>Prix:</strong> {formatCurrency(selectedItem.prix || 0)} FC</Typography>
-              <Typography><strong>Commission:</strong> {formatCurrency(selectedItem.commission || 0)} FC</Typography>
-              <Typography><strong>Type:</strong>
-                <Chip
-                  label={selectedItem.type}
-                  color={getTypeColor(selectedItem.type) as any}
-                  size="small"
-                  sx={{ ml: 1 }}
-                />
-              </Typography>
-
-              <Typography variant="h6" sx={{ mt: 2 }}>Informations Utilisateur</Typography>
-              <Typography><strong>Nom:</strong> {selectedItem.utilisateur_nom || "Anonyme"}</Typography>
-              <Typography><strong>Email:</strong> {selectedItem.utilisateur_email || "Non disponible"}</Typography>
-              <Typography><strong>Téléphone:</strong> {selectedItem.utilisateur_telephone || "Non disponible"}</Typography>
-
-              {selectedItem.type === "RFID" ? (
-                <>
-                  <Typography variant="h6" sx={{ mt: 2 }}>Informations RFID</Typography>
-                  <Typography><strong>UID RFID:</strong> {selectedItem.rfid_uid || "Non disponible"}</Typography>
-                  <Typography><strong>Téléphone RFID:</strong> {selectedItem.rfid_telephone || "Non disponible"}</Typography>
-                </>
-              ) : (
-                <>
-                  <Typography variant="h6" sx={{ mt: 2 }}>Informations Code d'Accès</Typography>
-                  <Typography><strong>Code:</strong> {selectedItem.access_code || "Non disponible"}</Typography>
-                  <Typography><strong>Statut:</strong> {selectedItem.access_code_status || "Non disponible"}</Typography>
-                  <Typography><strong>Litres demandés:</strong> {selectedItem.access_code_litres_demandes || 0} L</Typography>
-                  <Typography><strong>Créé le:</strong> {selectedItem.access_code_created_at ? formatDate(selectedItem.access_code_created_at) : "Non disponible"}</Typography>
-                  <Typography><strong>Expire le:</strong> {selectedItem.access_code_expire_at ? formatDate(selectedItem.access_code_expire_at) : "Non disponible"}</Typography>
-
-                  {selectedItem.access_code_compteur_nom && (
-                    <Typography><strong>Compteur cible:</strong> {selectedItem.access_code_compteur_nom} ({selectedItem.access_code_compteur_code_serie})</Typography>
-                  )}
-                </>
-              )}
-            </>
-          )}
+        <DialogContent sx={{ p: 3, maxHeight: '70vh', overflow: 'auto' }}>
+          <DetailContent />
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Fermer</Button>
+        <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Button 
+            onClick={() => setOpenDialog(false)} 
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:close-line" />}
+          >
+            Fermer
+          </Button>
         </DialogActions>
       </Dialog>
     </DashboardContent>
