@@ -179,7 +179,7 @@ export function ParametresView() {
                 />
               </Grid>
 
-              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+              {/* <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
                 <TextField
                   fullWidth
                   label="Limite Recharge Journalière"
@@ -191,7 +191,7 @@ export function ParametresView() {
                   helperText="Limite maximale de recharge par utilisateur"
                   type="number"
                 />
-              </Grid>
+              </Grid> */}
             </Grid>
 
             <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
