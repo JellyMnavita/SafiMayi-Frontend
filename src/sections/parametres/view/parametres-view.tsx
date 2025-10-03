@@ -27,7 +27,6 @@ interface Taux {
 interface ParametresState {
   taux_litrage: string;
   taux_commission: string;
-  taux_postpay: string;
   limite_recharge_jour: string;
 }
 
@@ -39,7 +38,6 @@ export function ParametresView() {
   const [parametres, setParametres] = useState<ParametresState>({
     taux_litrage: '',
     taux_commission: '',
-    taux_postpay: '',
     limite_recharge_jour: '1000',
   });
 
@@ -59,9 +57,8 @@ export function ParametresView() {
           nouveauxParametres.taux_litrage = t.taux.toString();
         } else if (t.type_taux === 'commission') {
           nouveauxParametres.taux_commission = t.taux.toString();
-        } else if (t.type_taux === 'postpay') {
-          nouveauxParametres.taux_postpay = t.taux.toString();
         }
+        // On ignore le taux postpay
       });
       
       setParametres(nouveauxParametres);
@@ -95,7 +92,7 @@ export function ParametresView() {
       const donneesTaux: any = {};
       if (parametres.taux_litrage) donneesTaux.taux_litrage = parseFloat(parametres.taux_litrage);
       if (parametres.taux_commission) donneesTaux.taux_commission = parseFloat(parametres.taux_commission);
-      if (parametres.taux_postpay) donneesTaux.taux_postpay = parseFloat(parametres.taux_postpay);
+      // On n'envoie pas le taux postpay
 
       await apiClient.put('/api/paiements/parametres/taux/', donneesTaux);
       
@@ -185,20 +182,6 @@ export function ParametresView() {
               <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
                 <TextField
                   fullWidth
-                  label="Taux Postpay"
-                  value={parametres.taux_postpay}
-                  onChange={handleChange('taux_postpay')}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                  }}
-                  helperText="Taux pour les paiements différés"
-                  type="number"
-                />
-              </Grid>
-
-              <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
-                <TextField
-                  fullWidth
                   label="Limite Recharge Journalière"
                   value={parametres.limite_recharge_jour}
                   onChange={handleChange('limite_recharge_jour')}
@@ -240,8 +223,10 @@ export function ParametresView() {
             </Typography>
             
             <Grid container spacing={2}>
-              {taux.map((t) => (
-                <Grid key={t.id} sx={{ width: { xs: '100%', sm: '50%', md: '25%' } }}>
+              {taux
+                .filter(t => t.type_taux !== 'postpay') // Filtrer pour ne pas afficher le postpay
+                .map((t) => (
+                <Grid key={t.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.333%' } }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       {t.description}
