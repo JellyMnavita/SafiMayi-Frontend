@@ -48,7 +48,7 @@ export interface Consommation {
   compteur_nom: string;
   compteur_code_serie: string;
   litres: number;
-  prix: number;
+  prix_total: number;
   commission: number;
   type: string;
   access_code?: string;
@@ -557,7 +557,7 @@ export function JournauxView() {
           </Grid>
           <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
             <Typography variant="subtitle2" color="text.secondary">Prix</Typography>
-            <Typography variant="body1" gutterBottom>{formatCurrency(selectedItem.prix || 0)} FC</Typography>
+            <Typography variant="body1" gutterBottom>{formatCurrency(selectedItem.prix_total || 0)} FC</Typography>
           </Grid>
           <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
             <Typography variant="subtitle2" color="text.secondary">Commission</Typography>
@@ -1076,7 +1076,7 @@ export function JournauxView() {
                             <div className="text-xs text-gray-500">{item.compteur_code_serie}</div>
                           </td>
                           <td className="p-2 border-b">{item.litres} L</td>
-                          <td className="p-2 border-b">{formatCurrency(item.prix || 0)} FC</td>
+                          <td className="p-2 border-b">{formatCurrency(item.prix_total || 0)} FC</td>
                           <td className="p-2 border-b">
                             <Chip
                               label={item.type}
