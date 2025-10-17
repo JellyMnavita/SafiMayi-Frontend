@@ -10,7 +10,7 @@ import { Iconify } from "../../../components/iconify";
 import mapboxgl from "mapbox-gl";
 
 // Configuration Mapbox
-mapboxgl.accessToken = "pk.eyJ1IjoiamVsbHltYXdlamEiLCJhIjoiY21mcjB5ODgxMDQ3eTJpc2R6enJ6aDVuYSJ9.NqFe7j3ZcANujS0WCO8evw";
+mapboxgl.accessToken = "pk.eyJ1IjoiamVsbHltYXdlamEiLCJhIjoiY2tnN2tocmxmMDg4azJxbjQzOG8zMmZ2dyJ9.rymg4wRDPfBEsGwWK4ZFKA";
 
 interface SiteForage {
   id: number;
