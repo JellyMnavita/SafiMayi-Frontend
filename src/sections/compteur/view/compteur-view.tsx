@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import apiClient from "../../../utils/api";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
   Pagination, IconButton, Menu, MenuList, MenuItem as MenuItemMui,
   Dialog, DialogTitle, DialogContent, DialogActions, Tabs, Tab, FormControl, InputLabel,
-  Chip, Autocomplete
+  Chip, Autocomplete, SelectChangeEvent
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -127,7 +127,7 @@ export function CompteurView() {
   const handleMenuClose = () => setAnchorEl(null);
 
   // Charger les compteurs avec pagination et filtres
-  const fetchCompteurs = async (page: number = 1) => {
+  const fetchCompteurs = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       
@@ -160,7 +160,7 @@ export function CompteurView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchNom, statusFilter, statutFilter, selectedSiteForageFilter, selectedUserFilter, pageSize]);
 
   // Charger les sites de forage par défaut
   const fetchDefaultSitesForage = async () => {
@@ -177,7 +177,7 @@ export function CompteurView() {
   };
 
   // Recherche de sites de forage avec debounce
-  const searchSitesForage = async (searchTerm: string) => {
+  const searchSitesForage = useCallback(async (searchTerm: string) => {
     if (searchTerm.length < 2) {
       fetchDefaultSitesForage();
       return;
@@ -195,7 +195,7 @@ export function CompteurView() {
     } finally {
       setLoadingSites(false);
     }
-  };
+  }, []);
 
   // Charger les utilisateurs "owner" par défaut
   const fetchDefaultUsers = async () => {
@@ -212,7 +212,7 @@ export function CompteurView() {
   };
 
   // Recherche d'utilisateurs "owner" avec debounce
-  const searchUsers = async (searchTerm: string) => {
+  const searchUsers = useCallback(async (searchTerm: string) => {
     if (searchTerm.length < 2) {
       fetchDefaultUsers();
       return;
@@ -230,14 +230,14 @@ export function CompteurView() {
     } finally {
       setLoadingUsers(false);
     }
-  };
+  }, []);
 
   // Chargement initial
   useEffect(() => {
     fetchCompteurs(1);
     fetchDefaultSitesForage();
     fetchDefaultUsers();
-  }, []);
+  }, [fetchCompteurs]);
 
   // Recherche avec debounce
   useEffect(() => {
@@ -246,7 +246,7 @@ export function CompteurView() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchNom, statusFilter, statutFilter, selectedSiteForageFilter, selectedUserFilter, pageSize]);
+  }, [searchNom, statusFilter, statutFilter, selectedSiteForageFilter, selectedUserFilter, pageSize, fetchCompteurs]);
 
   // Recherche utilisateur avec debounce (pour le formulaire)
   useEffect(() => {
@@ -258,7 +258,7 @@ export function CompteurView() {
       }
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchUser]);
+  }, [searchUser, searchUsers]);
 
   // Recherche site forage avec debounce (pour le formulaire)
   useEffect(() => {
@@ -270,7 +270,7 @@ export function CompteurView() {
       }
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchSiteForage]);
+  }, [searchSiteForage, searchSitesForage]);
 
   // Recherche site forage avec debounce (pour les filtres)
   useEffect(() => {
@@ -282,7 +282,7 @@ export function CompteurView() {
       }
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchSiteForageFilter]);
+  }, [searchSiteForageFilter, searchSitesForage]);
 
   // Recherche utilisateur avec debounce (pour les filtres)
   useEffect(() => {
@@ -294,7 +294,7 @@ export function CompteurView() {
       }
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchUserFilter]);
+  }, [searchUserFilter, searchUsers]);
 
   // Lors de l'ouverture du dialog, charger le site forage sélectionné si en mode édition
   useEffect(() => {
@@ -322,8 +322,8 @@ export function CompteurView() {
   };
 
   // Changement de la taille de page
-  const handlePageSizeChange = (event: any) => {
-    const newSize = parseInt(event.target.value);
+  const handlePageSizeChange = (event: SelectChangeEvent<number>) => {
+    const newSize = typeof event.target.value === 'string' ? parseInt(event.target.value) : event.target.value;
     setPageSize(newSize);
   };
 

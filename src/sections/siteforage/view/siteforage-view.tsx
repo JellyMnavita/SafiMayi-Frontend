@@ -8,9 +8,10 @@ import {
 } from "@mui/material";
 import { Iconify } from "../../../components/iconify";
 import mapboxgl from "mapbox-gl";
+import { MAPBOX_CONFIG, validateMapboxToken } from "../../../config/mapbox";
 
 // Configuration Mapbox
-mapboxgl.accessToken = "pk.eyJ1IjoiamVsbHltYXdlamEiLCJhIjoiY2tnN2tocmxmMDg4azJxbjQzOG8zMmZ2dyJ9.rymg4wRDPfBEsGwWK4ZFKA";
+mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
 
 interface SiteForage {
   id: number;
@@ -34,6 +35,7 @@ export function SiteForageView() {
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Filtres
   const [searchNom, setSearchNom] = useState<string>("");
@@ -53,19 +55,39 @@ export function SiteForageView() {
   // Initialisation de la carte - exécutée une seule fois
   useEffect(() => {
     if (mapContainer.current && !map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v11",
-        center: [15.3319, -4.3289], // Centre sur Kinshasa
-        zoom: 10
-      });
+      console.log("Initializing map...");
+      console.log("Mapbox access token:", mapboxgl.accessToken ? "Set" : "Not set");
+      
+      // Vérifier la clé API
+      if (!validateMapboxToken()) {
+        setMapError("Clé API Mapbox invalide ou manquante");
+        setMapLoaded(false);
+        return;
+      }
+      
+      try {
+        // Vérifier que le conteneur existe et a une taille
+        if (!mapContainer.current.offsetWidth || !mapContainer.current.offsetHeight) {
+          console.warn("Map container has no size, delaying initialization");
+          setTimeout(() => {
+            if (mapContainer.current && !map.current) {
+              initializeMap();
+            }
+          }, 100);
+          return;
+        }
 
-      map.current.on("load", () => {
-        setMapLoaded(true);
-      });
+        initializeMap();
+
+      } catch (error) {
+        console.error("Error initializing map:", error);
+        setMapLoaded(false);
+        setMapError("Erreur lors de l'initialisation de la carte");
+      }
 
       return () => {
         if (map.current) {
+          console.log("Cleaning up map");
           map.current.remove();
           map.current = null;
         }
@@ -73,53 +95,129 @@ export function SiteForageView() {
     }
   }, []); // Dépendances vides pour s'exécuter une seule fois
 
+  const initializeMap = () => {
+    if (!mapContainer.current || map.current) return;
+    
+    try {
+      console.log("Creating mapbox map...");
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: MAPBOX_CONFIG.defaultStyle,
+        center: MAPBOX_CONFIG.defaultCenter,
+        zoom: MAPBOX_CONFIG.defaultZoom,
+        attributionControl: false // Désactiver l'attribution par défaut
+      });
+
+      // Ajouter un contrôle d'attribution personnalisé
+      map.current.addControl(new mapboxgl.AttributionControl({
+        compact: true
+      }));
+
+      map.current.on("load", () => {
+        console.log("Map loaded successfully");
+        setMapLoaded(true);
+        setMapError(null);
+      });
+
+      map.current.on("error", (e) => {
+        console.error("Map error:", e);
+        console.error("Error details:", {
+          error: e.error,
+          type: e.type,
+          target: e.target
+        });
+        setMapLoaded(false);
+        setMapError(`Erreur de chargement: ${e.error?.message || 'Erreur inconnue'}`);
+      });
+
+      map.current.on("sourcedata", (e) => {
+        if (e.isSourceLoaded) {
+          console.log("Source loaded:", e.sourceId);
+        }
+      });
+
+      map.current.on("style.load", () => {
+        console.log("Map style loaded");
+      });
+
+      map.current.on("idle", () => {
+        console.log("Map is idle");
+      });
+
+    } catch (error) {
+      console.error("Error creating mapbox map:", error);
+      setMapLoaded(false);
+    }
+  };
+
   // Ajout des marqueurs sur la carte
   useEffect(() => {
     if (map.current && mapLoaded && filteredSites.length > 0) {
+      console.log("Adding markers for", filteredSites.length, "sites");
+
       // Supprimer les anciens marqueurs
       markers.current.forEach(marker => marker.remove());
       markers.current = [];
-      
-      filteredSites.map(site => {
-        // Créer un élément HTML personnalisé pour le marqueur
-        const el = document.createElement('div');
-        el.className = 'custom-marker';
-        el.style.backgroundColor = getStatusColor(site.statut);
-        el.style.width = '20px';
-        el.style.height = '20px';
-        el.style.borderRadius = '50%';
-        el.style.cursor = 'pointer';
-        el.style.border = '2px solid white';
-        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-        
-        // Ajouter un événement click
-        el.addEventListener('click', () => {
-          setFormData(site);
-          setDialogMode("view");
-          setOpenDialog(true);
-        });
 
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([parseFloat(site.longitude), parseFloat(site.latitude)])
-          .addTo(map.current!);
-        
-        markers.current.push(marker);
-        return marker;
+      filteredSites.forEach(site => {
+        try {
+          // Créer un élément HTML personnalisé pour le marqueur
+          const el = document.createElement('div');
+          el.className = 'custom-marker';
+          el.style.backgroundColor = getStatusColor(site.statut);
+          el.style.width = '20px';
+          el.style.height = '20px';
+          el.style.borderRadius = '50%';
+          el.style.cursor = 'pointer';
+          el.style.border = '2px solid white';
+          el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+
+          // Ajouter un événement click
+          el.addEventListener('click', () => {
+            setFormData(site);
+            setDialogMode("view");
+            setOpenDialog(true);
+          });
+
+          const lng = parseFloat(site.longitude);
+          const lat = parseFloat(site.latitude);
+
+          if (isNaN(lng) || isNaN(lat)) {
+            console.warn("Invalid coordinates for site:", site.nom, site.longitude, site.latitude);
+            return;
+          }
+
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([lng, lat])
+            .addTo(map.current!);
+
+          markers.current.push(marker);
+        } catch (error) {
+          console.error("Error creating marker for site:", site.nom, error);
+        }
       });
-      
+
       // Ajuster la vue de la carte pour afficher tous les marqueurs
       if (filteredSites.length > 0) {
-        const bounds = new mapboxgl.LngLatBounds();
-        filteredSites.forEach(site => {
-          bounds.extend([parseFloat(site.longitude), parseFloat(site.latitude)]);
-        });
-        
-        // Attendre un peu pour que la carte soit complètement chargée
-        setTimeout(() => {
-          if (map.current) {
-            map.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
-          }
-        }, 100);
+        try {
+          const bounds = new mapboxgl.LngLatBounds();
+          filteredSites.forEach(site => {
+            const lng = parseFloat(site.longitude);
+            const lat = parseFloat(site.latitude);
+            if (!isNaN(lng) && !isNaN(lat)) {
+              bounds.extend([lng, lat]);
+            }
+          });
+
+          // Attendre un peu pour que la carte soit complètement chargée
+          setTimeout(() => {
+            if (map.current) {
+              map.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+            }
+          }, 100);
+        } catch (error) {
+          console.error("Error fitting bounds:", error);
+        }
       }
     }
   }, [mapLoaded, filteredSites]);
@@ -333,12 +431,55 @@ export function SiteForageView() {
                 right: 0,
                 bottom: 0,
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                zIndex: 10,
+                p: 2,
               }}
             >
-              <CircularProgress />
+              {!mapError ? (
+                <>
+                  <CircularProgress size={40} />
+                  <Typography variant="body2" sx={{ mt: 1, color: "text.secondary", textAlign: "center" }}>
+                    Chargement de la carte...
+                  </Typography>
+                  <Typography variant="caption" sx={{ mt: 1, color: "text.secondary", textAlign: "center", maxWidth: "300px" }}>
+                    Si la carte ne se charge pas, vérifiez votre connexion Internet et les paramètres WebGL de votre navigateur.
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Iconify icon="eva:alert-triangle-outline" width={40} sx={{ color: "error.main" }} />
+                  <Typography variant="body2" sx={{ mt: 1, color: "error.main", textAlign: "center" }}>
+                    {mapError}
+                  </Typography>
+                  <Typography variant="caption" sx={{ mt: 1, color: "text.secondary", textAlign: "center", maxWidth: "300px" }}>
+                    Vérifiez votre connexion Internet et les paramètres de votre navigateur.
+                  </Typography>
+                </>
+              )}
+              <Button 
+                variant="outlined" 
+                size="small" 
+                sx={{ mt: 2 }}
+                onClick={() => {
+                  setMapError(null);
+                  if (map.current) {
+                    map.current.remove();
+                    map.current = null;
+                    setMapLoaded(false);
+                    setTimeout(() => {
+                      if (mapContainer.current) {
+                        initializeMap();
+                      }
+                    }, 100);
+                  }
+                }}
+              >
+                Réessayer
+              </Button>
             </Box>
           )}
         </Card>
