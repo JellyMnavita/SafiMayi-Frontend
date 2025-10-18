@@ -52,193 +52,180 @@ export function SiteForageView() {
   const [dialogMode, setDialogMode] = useState<"view" | "edit" | "create">("view");
   const [formData, setFormData] = useState<Partial<SiteForage>>({});
 
+  // Référence pour suivre si l'initialisation est en cours
+  const initializingMap = useRef(false);
+
   // Initialisation de la carte - exécutée une seule fois
-   useEffect(() => {
-     if (mapContainer.current && !map.current) {
-       console.log("Initializing map...");
-       console.log("Mapbox access token:", mapboxgl.accessToken ? "Set" : "Not set");
+  useEffect(() => {
+    if (mapContainer.current && !map.current && !initializingMap.current) {
+      console.log("Initializing map...");
+      initializingMap.current = true;
 
-       // Vérifier la clé API
-       if (!validateMapboxToken()) {
-         setMapError("Clé API Mapbox invalide ou manquante");
-         setMapLoaded(false);
-         return;
-       }
-
-       try {
-         // Vérifier que le conteneur existe et a une taille
-         if (!mapContainer.current.offsetWidth || !mapContainer.current.offsetHeight) {
-           console.warn("Map container has no size, delaying initialization");
-           setTimeout(() => {
-             if (mapContainer.current && !map.current) {
-               initializeMap();
-             }
-           }, 100);
-           return;
-         }
-
-         initializeMap();
-
-       } catch (error) {
-         console.error("Error initializing map:", error);
-         setMapLoaded(false);
-         setMapError("Erreur lors de l'initialisation de la carte");
-       }
-
-       return () => {
-         if (map.current) {
-           console.log("Cleaning up map");
-           map.current.remove();
-           map.current = null;
-         }
-       };
-     }
-   }, []); // Dépendances vides pour s'exécuter une seule fois
-
-   // Forcer le re-render de la carte quand les données changent
-   useEffect(() => {
-     if (map.current && mapLoaded) {
-       console.log("Forcing map resize after data load");
-       setTimeout(() => {
-         if (map.current) {
-           map.current.resize();
-         }
-       }, 200);
-     }
-   }, [filteredSites, mapLoaded]);
-
-  const initializeMap = () => {
-    if (!mapContainer.current || map.current) return;
-    
-    try {
-      console.log("Creating mapbox map...");
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: MAPBOX_CONFIG.defaultStyle,
-        center: MAPBOX_CONFIG.defaultCenter,
-        zoom: MAPBOX_CONFIG.defaultZoom,
-        attributionControl: false // Désactiver l'attribution par défaut
-      });
-
-      // Ajouter un contrôle d'attribution personnalisé
-      map.current.addControl(new mapboxgl.AttributionControl({
-        compact: true
-      }));
-
-      map.current.on("load", () => {
-        console.log("Map loaded successfully");
-        setMapLoaded(true);
-        setMapError(null);
-        // Forcer un re-render après le chargement
-        setTimeout(() => {
-          if (map.current) {
-            map.current.resize();
-          }
-        }, 100);
-      });
-
-      map.current.on("error", (e) => {
-        console.error("Map error:", e);
-        console.error("Error details:", {
-          error: e.error,
-          type: e.type,
-          target: e.target
-        });
+      // Vérifier la clé API
+      if (!validateMapboxToken()) {
+        setMapError("Clé API Mapbox invalide ou manquante");
         setMapLoaded(false);
-        setMapError(`Erreur de chargement: ${e.error?.message || 'Erreur inconnue'}`);
-      });
+        initializingMap.current = false;
+        return;
+      }
 
-      map.current.on("sourcedata", (e) => {
-        if (e.isSourceLoaded) {
-          console.log("Source loaded:", e.sourceId);
+      const initializeMapWithRetry = () => {
+        try {
+          // Vérifier que le conteneur existe et a une taille
+          if (!mapContainer.current?.offsetWidth || !mapContainer.current?.offsetHeight) {
+            console.warn("Map container has no size, retrying...");
+            setTimeout(initializeMapWithRetry, 100);
+            return;
+          }
+
+          console.log("Creating mapbox map...");
+          map.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: MAPBOX_CONFIG.defaultStyle,
+            center: MAPBOX_CONFIG.defaultCenter,
+            zoom: MAPBOX_CONFIG.defaultZoom,
+            attributionControl: false
+          });
+
+          // Ajouter un contrôle d'attribution personnalisé
+          map.current.addControl(new mapboxgl.AttributionControl({
+            compact: true
+          }));
+
+          map.current.on("load", () => {
+            console.log("Map loaded successfully");
+            setMapLoaded(true);
+            setMapError(null);
+            initializingMap.current = false;
+          });
+
+          map.current.on("error", (e) => {
+            console.error("Map error:", e);
+            setMapLoaded(false);
+            setMapError(`Erreur de chargement: ${e.error?.message || 'Erreur inconnue'}`);
+            initializingMap.current = false;
+          });
+
+          map.current.on("render", () => {
+            // La carte est en cours de rendu, on peut considérer qu'elle est prête
+            if (!mapLoaded) {
+              setMapLoaded(true);
+              setMapError(null);
+            }
+          });
+
+        } catch (error) {
+          console.error("Error creating mapbox map:", error);
+          setMapLoaded(false);
+          setMapError("Erreur lors de l'initialisation de la carte");
+          initializingMap.current = false;
         }
-      });
+      };
 
-      map.current.on("style.load", () => {
-        console.log("Map style loaded");
-      });
-
-      map.current.on("idle", () => {
-        console.log("Map is idle");
-      });
-
-    } catch (error) {
-      console.error("Error creating mapbox map:", error);
-      setMapLoaded(false);
+      initializeMapWithRetry();
     }
-  };
 
-  // Ajout des marqueurs sur la carte
-   useEffect(() => {
-     if (map.current && mapLoaded && filteredSites.length > 0) {
-       console.log("Adding markers for", filteredSites.length, "sites");
+    return () => {
+      if (map.current) {
+        console.log("Cleaning up map");
+        map.current.remove();
+        map.current = null;
+        initializingMap.current = false;
+      }
+    };
+  }, []);
 
-       // Supprimer les anciens marqueurs
-       markers.current.forEach(marker => marker.remove());
-       markers.current = [];
+  // Ajout des marqueurs sur la carte - SEULEMENT quand la carte ET les données sont prêtes
+  useEffect(() => {
+    if (map.current && mapLoaded && filteredSites.length > 0) {
+      console.log("Adding markers for", filteredSites.length, "sites");
+      
+      // Attendre que la carte soit complètement rendue
+      const addMarkers = () => {
+        // Supprimer les anciens marqueurs
+        markers.current.forEach(marker => marker.remove());
+        markers.current = [];
 
-       filteredSites.forEach(site => {
-         try {
-           // Créer un élément HTML personnalisé pour le marqueur
-           const el = document.createElement('div');
-           el.className = 'custom-marker';
-           el.style.backgroundColor = getStatusColor(site.statut);
-           el.style.width = '20px';
-           el.style.height = '20px';
-           el.style.borderRadius = '50%';
-           el.style.cursor = 'pointer';
-           el.style.border = '2px solid white';
-           el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        const validSites = filteredSites.filter(site => {
+          const lng = parseFloat(site.longitude);
+          const lat = parseFloat(site.latitude);
+          return !isNaN(lng) && !isNaN(lat);
+        });
 
-           // Ajouter un événement click
-           el.addEventListener('click', () => {
-             setFormData(site);
-             setDialogMode("view");
-             setOpenDialog(true);
-           });
+        if (validSites.length === 0) {
+          console.warn("No valid coordinates found for markers");
+          return;
+        }
 
-           const lng = parseFloat(site.longitude);
-           const lat = parseFloat(site.latitude);
+        validSites.forEach(site => {
+          try {
+            const el = document.createElement('div');
+            el.className = 'custom-marker';
+            el.style.backgroundColor = getStatusColor(site.statut);
+            el.style.width = '20px';
+            el.style.height = '20px';
+            el.style.borderRadius = '50%';
+            el.style.cursor = 'pointer';
+            el.style.border = '2px solid white';
+            el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
 
-           if (isNaN(lng) || isNaN(lat)) {
-             console.warn("Invalid coordinates for site:", site.nom, site.longitude, site.latitude);
-             return;
-           }
+            el.addEventListener('click', () => {
+              setFormData(site);
+              setDialogMode("view");
+              setOpenDialog(true);
+            });
 
-           const marker = new mapboxgl.Marker(el)
-             .setLngLat([lng, lat])
-             .addTo(map.current!);
+            const lng = parseFloat(site.longitude);
+            const lat = parseFloat(site.latitude);
 
-           markers.current.push(marker);
-         } catch (error) {
-           console.error("Error creating marker for site:", site.nom, error);
-         }
-       });
+            const marker = new mapboxgl.Marker(el)
+              .setLngLat([lng, lat])
+              .addTo(map.current!);
 
-       // Ajuster la vue de la carte pour afficher tous les marqueurs
-       if (filteredSites.length > 0) {
-         try {
-           const bounds = new mapboxgl.LngLatBounds();
-           filteredSites.forEach(site => {
-             const lng = parseFloat(site.longitude);
-             const lat = parseFloat(site.latitude);
-             if (!isNaN(lng) && !isNaN(lat)) {
-               bounds.extend([lng, lat]);
-             }
-           });
+            markers.current.push(marker);
+          } catch (error) {
+            console.error("Error creating marker for site:", site.nom, error);
+          }
+        });
 
-           // Attendre un peu pour que la carte soit complètement chargée
-           setTimeout(() => {
-             if (map.current) {
-               map.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
-             }
-           }, 500); // Augmenter le délai pour s'assurer que la carte est prête
-         } catch (error) {
-           console.error("Error fitting bounds:", error);
-         }
-       }
-     }
-   }, [mapLoaded, filteredSites]);
+        // Ajuster la vue de la carte pour afficher tous les marqueurs
+        try {
+          const bounds = new mapboxgl.LngLatBounds();
+          validSites.forEach(site => {
+            const lng = parseFloat(site.longitude);
+            const lat = parseFloat(site.latitude);
+            bounds.extend([lng, lat]);
+          });
+
+          // Utiliser flyTo pour un mouvement plus fluide
+          map.current!.fitBounds(bounds, { 
+            padding: 50, 
+            maxZoom: 15,
+            duration: 1000 // Animation de 1 seconde
+          });
+        } catch (error) {
+          console.error("Error fitting bounds:", error);
+        }
+      };
+
+      // S'assurer que la carte est complètement chargée avant d'ajouter les marqueurs
+      if (map.current.isStyleLoaded()) {
+        addMarkers();
+      } else {
+        map.current.once('idle', addMarkers);
+      }
+    }
+  }, [mapLoaded, filteredSites]);
+
+  // Redimensionner la carte quand elle est chargée et quand les données changent
+  useEffect(() => {
+    if (map.current && mapLoaded) {
+      // Petit délai pour s'assurer que le DOM est mis à jour
+      setTimeout(() => {
+        map.current?.resize();
+      }, 100);
+    }
+  }, [mapLoaded, filteredSites]);
 
   // Charger les sites de forage
   const fetchSites = async () => {
@@ -246,8 +233,16 @@ export function SiteForageView() {
       setLoading(true);
       const response = await apiClient.get("/api/siteforage/siteforages/");
       const data = response.data;
-      setSites(data);
-      setFilteredSites(data);
+      
+      // Valider les données reçues
+      const validatedData = data.map((site: SiteForage) => ({
+        ...site,
+        latitude: site.latitude || "0",
+        longitude: site.longitude || "0"
+      }));
+      
+      setSites(validatedData);
+      setFilteredSites(validatedData);
     } catch (error) {
       console.error("Erreur lors du chargement :", error);
     } finally {
@@ -440,7 +435,12 @@ export function SiteForageView() {
         }}>
           <div
             ref={mapContainer}
-            style={{ width: "100%", height: "100%", minHeight: '300px' }}
+            style={{ 
+              width: "100%", 
+              height: "100%", 
+              minHeight: '300px',
+              visibility: mapLoaded ? 'visible' : 'hidden'
+            }}
           />
           {!mapLoaded && (
             <Box
@@ -465,41 +465,36 @@ export function SiteForageView() {
                   <Typography variant="body2" sx={{ mt: 1, color: "text.secondary", textAlign: "center" }}>
                     Chargement de la carte...
                   </Typography>
-                  <Typography variant="caption" sx={{ mt: 1, color: "text.secondary", textAlign: "center", maxWidth: "300px" }}>
-                    Si la carte ne se charge pas, vérifiez votre connexion Internet et les paramètres WebGL de votre navigateur.
-                  </Typography>
                 </>
               ) : (
                 <>
-                  
                   <Typography variant="body2" sx={{ mt: 1, color: "error.main", textAlign: "center" }}>
                     {mapError}
                   </Typography>
-                  <Typography variant="caption" sx={{ mt: 1, color: "text.secondary", textAlign: "center", maxWidth: "300px" }}>
-                    Vérifiez votre connexion Internet et les paramètres de votre navigateur.
-                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    sx={{ mt: 2 }}
+                    onClick={() => {
+                      setMapError(null);
+                      setMapLoaded(false);
+                      initializingMap.current = false;
+                      if (map.current) {
+                        map.current.remove();
+                        map.current = null;
+                      }
+                      // Réinitialiser après un court délai
+                      setTimeout(() => {
+                        if (mapContainer.current) {
+                          // Le useEffect d'initialisation se déclenchera automatiquement
+                        }
+                      }, 500);
+                    }}
+                  >
+                    Réessayer
+                  </Button>
                 </>
               )}
-              <Button 
-                variant="outlined" 
-                size="small" 
-                sx={{ mt: 2 }}
-                onClick={() => {
-                  setMapError(null);
-                  if (map.current) {
-                    map.current.remove();
-                    map.current = null;
-                    setMapLoaded(false);
-                    setTimeout(() => {
-                      if (mapContainer.current) {
-                        initializeMap();
-                      }
-                    }, 100);
-                  }
-                }}
-              >
-                Réessayer
-              </Button>
             </Box>
           )}
         </Card>
