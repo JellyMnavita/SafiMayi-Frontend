@@ -345,7 +345,7 @@ export function SiteForageView() {
       {/* Titre et bouton d'ajout */}
       <Box sx={{ mb: 3, display: "flex", alignItems: "center", flexWrap: 'wrap' }}>
         <Typography variant="h4" sx={{ flexGrow: 1, mb: { xs: 2, sm: 0 } }}>
-          Sites de Forage
+          Sites de Forages
         </Typography>
       {/*   <Button
           variant="contained"
