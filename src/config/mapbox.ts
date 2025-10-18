@@ -4,7 +4,7 @@ export const MAPBOX_CONFIG = {
   accessToken: "pk.eyJ1IjoiamVsbHltYXdlamEiLCJhIjoiY2tnN2tocmxmMDg4azJxbjQzOG8zMmZ2dyJ9.rymg4wRDPfBEsGwWK4ZFKA",
   
   // Style par défaut de la carte
-  defaultStyle: "mapbox://styles/mapbox/streets-v11",
+  defaultStyle: "mapbox://styles/mapbox/streets-v12",
   
   // Centre par défaut (Kinshasa, RD Congo)
   defaultCenter: [15.3319, -4.3289] as [number, number],

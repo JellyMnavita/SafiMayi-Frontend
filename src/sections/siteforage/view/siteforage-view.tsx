@@ -53,47 +53,59 @@ export function SiteForageView() {
   const [formData, setFormData] = useState<Partial<SiteForage>>({});
 
   // Initialisation de la carte - exécutée une seule fois
-  useEffect(() => {
-    if (mapContainer.current && !map.current) {
-      console.log("Initializing map...");
-      console.log("Mapbox access token:", mapboxgl.accessToken ? "Set" : "Not set");
-      
-      // Vérifier la clé API
-      if (!validateMapboxToken()) {
-        setMapError("Clé API Mapbox invalide ou manquante");
-        setMapLoaded(false);
-        return;
-      }
-      
-      try {
-        // Vérifier que le conteneur existe et a une taille
-        if (!mapContainer.current.offsetWidth || !mapContainer.current.offsetHeight) {
-          console.warn("Map container has no size, delaying initialization");
-          setTimeout(() => {
-            if (mapContainer.current && !map.current) {
-              initializeMap();
-            }
-          }, 100);
-          return;
-        }
+   useEffect(() => {
+     if (mapContainer.current && !map.current) {
+       console.log("Initializing map...");
+       console.log("Mapbox access token:", mapboxgl.accessToken ? "Set" : "Not set");
 
-        initializeMap();
+       // Vérifier la clé API
+       if (!validateMapboxToken()) {
+         setMapError("Clé API Mapbox invalide ou manquante");
+         setMapLoaded(false);
+         return;
+       }
 
-      } catch (error) {
-        console.error("Error initializing map:", error);
-        setMapLoaded(false);
-        setMapError("Erreur lors de l'initialisation de la carte");
-      }
+       try {
+         // Vérifier que le conteneur existe et a une taille
+         if (!mapContainer.current.offsetWidth || !mapContainer.current.offsetHeight) {
+           console.warn("Map container has no size, delaying initialization");
+           setTimeout(() => {
+             if (mapContainer.current && !map.current) {
+               initializeMap();
+             }
+           }, 100);
+           return;
+         }
 
-      return () => {
-        if (map.current) {
-          console.log("Cleaning up map");
-          map.current.remove();
-          map.current = null;
-        }
-      };
-    }
-  }, []); // Dépendances vides pour s'exécuter une seule fois
+         initializeMap();
+
+       } catch (error) {
+         console.error("Error initializing map:", error);
+         setMapLoaded(false);
+         setMapError("Erreur lors de l'initialisation de la carte");
+       }
+
+       return () => {
+         if (map.current) {
+           console.log("Cleaning up map");
+           map.current.remove();
+           map.current = null;
+         }
+       };
+     }
+   }, []); // Dépendances vides pour s'exécuter une seule fois
+
+   // Forcer le re-render de la carte quand les données changent
+   useEffect(() => {
+     if (map.current && mapLoaded) {
+       console.log("Forcing map resize after data load");
+       setTimeout(() => {
+         if (map.current) {
+           map.current.resize();
+         }
+       }, 200);
+     }
+   }, [filteredSites, mapLoaded]);
 
   const initializeMap = () => {
     if (!mapContainer.current || map.current) return;
@@ -117,6 +129,12 @@ export function SiteForageView() {
         console.log("Map loaded successfully");
         setMapLoaded(true);
         setMapError(null);
+        // Forcer un re-render après le chargement
+        setTimeout(() => {
+          if (map.current) {
+            map.current.resize();
+          }
+        }, 100);
       });
 
       map.current.on("error", (e) => {
@@ -151,76 +169,76 @@ export function SiteForageView() {
   };
 
   // Ajout des marqueurs sur la carte
-  useEffect(() => {
-    if (map.current && mapLoaded && filteredSites.length > 0) {
-      console.log("Adding markers for", filteredSites.length, "sites");
+   useEffect(() => {
+     if (map.current && mapLoaded && filteredSites.length > 0) {
+       console.log("Adding markers for", filteredSites.length, "sites");
 
-      // Supprimer les anciens marqueurs
-      markers.current.forEach(marker => marker.remove());
-      markers.current = [];
+       // Supprimer les anciens marqueurs
+       markers.current.forEach(marker => marker.remove());
+       markers.current = [];
 
-      filteredSites.forEach(site => {
-        try {
-          // Créer un élément HTML personnalisé pour le marqueur
-          const el = document.createElement('div');
-          el.className = 'custom-marker';
-          el.style.backgroundColor = getStatusColor(site.statut);
-          el.style.width = '20px';
-          el.style.height = '20px';
-          el.style.borderRadius = '50%';
-          el.style.cursor = 'pointer';
-          el.style.border = '2px solid white';
-          el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+       filteredSites.forEach(site => {
+         try {
+           // Créer un élément HTML personnalisé pour le marqueur
+           const el = document.createElement('div');
+           el.className = 'custom-marker';
+           el.style.backgroundColor = getStatusColor(site.statut);
+           el.style.width = '20px';
+           el.style.height = '20px';
+           el.style.borderRadius = '50%';
+           el.style.cursor = 'pointer';
+           el.style.border = '2px solid white';
+           el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
 
-          // Ajouter un événement click
-          el.addEventListener('click', () => {
-            setFormData(site);
-            setDialogMode("view");
-            setOpenDialog(true);
-          });
+           // Ajouter un événement click
+           el.addEventListener('click', () => {
+             setFormData(site);
+             setDialogMode("view");
+             setOpenDialog(true);
+           });
 
-          const lng = parseFloat(site.longitude);
-          const lat = parseFloat(site.latitude);
+           const lng = parseFloat(site.longitude);
+           const lat = parseFloat(site.latitude);
 
-          if (isNaN(lng) || isNaN(lat)) {
-            console.warn("Invalid coordinates for site:", site.nom, site.longitude, site.latitude);
-            return;
-          }
+           if (isNaN(lng) || isNaN(lat)) {
+             console.warn("Invalid coordinates for site:", site.nom, site.longitude, site.latitude);
+             return;
+           }
 
-          const marker = new mapboxgl.Marker(el)
-            .setLngLat([lng, lat])
-            .addTo(map.current!);
+           const marker = new mapboxgl.Marker(el)
+             .setLngLat([lng, lat])
+             .addTo(map.current!);
 
-          markers.current.push(marker);
-        } catch (error) {
-          console.error("Error creating marker for site:", site.nom, error);
-        }
-      });
+           markers.current.push(marker);
+         } catch (error) {
+           console.error("Error creating marker for site:", site.nom, error);
+         }
+       });
 
-      // Ajuster la vue de la carte pour afficher tous les marqueurs
-      if (filteredSites.length > 0) {
-        try {
-          const bounds = new mapboxgl.LngLatBounds();
-          filteredSites.forEach(site => {
-            const lng = parseFloat(site.longitude);
-            const lat = parseFloat(site.latitude);
-            if (!isNaN(lng) && !isNaN(lat)) {
-              bounds.extend([lng, lat]);
-            }
-          });
+       // Ajuster la vue de la carte pour afficher tous les marqueurs
+       if (filteredSites.length > 0) {
+         try {
+           const bounds = new mapboxgl.LngLatBounds();
+           filteredSites.forEach(site => {
+             const lng = parseFloat(site.longitude);
+             const lat = parseFloat(site.latitude);
+             if (!isNaN(lng) && !isNaN(lat)) {
+               bounds.extend([lng, lat]);
+             }
+           });
 
-          // Attendre un peu pour que la carte soit complètement chargée
-          setTimeout(() => {
-            if (map.current) {
-              map.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
-            }
-          }, 100);
-        } catch (error) {
-          console.error("Error fitting bounds:", error);
-        }
-      }
-    }
-  }, [mapLoaded, filteredSites]);
+           // Attendre un peu pour que la carte soit complètement chargée
+           setTimeout(() => {
+             if (map.current) {
+               map.current.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+             }
+           }, 500); // Augmenter le délai pour s'assurer que la carte est prête
+         } catch (error) {
+           console.error("Error fitting bounds:", error);
+         }
+       }
+     }
+   }, [mapLoaded, filteredSites]);
 
   // Charger les sites de forage
   const fetchSites = async () => {
@@ -406,21 +424,23 @@ export function SiteForageView() {
       </Card>
 
       {/* Carte et liste */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', md: 'row' }, 
-        gap: 3, 
-        height: '70vh' 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 3,
+        height: 'calc(100vh - 200px)',
+        minHeight: '500px'
       }}>
         {/* Carte */}
-        <Card sx={{ 
-          flex: { xs: '1', md: '2' }, 
+        <Card sx={{
+          flex: { xs: '1', md: '2' },
           position: 'relative',
-          minHeight: { xs: '300px', md: 'auto' }
+          minHeight: { xs: '300px', md: 'auto' },
+          height: '100%'
         }}>
-          <div 
-            ref={mapContainer} 
-            style={{ width: "100%", height: "100%", minHeight: '300px' }} 
+          <div
+            ref={mapContainer}
+            style={{ width: "100%", height: "100%", minHeight: '300px' }}
           />
           {!mapLoaded && (
             <Box
@@ -451,7 +471,7 @@ export function SiteForageView() {
                 </>
               ) : (
                 <>
-                  <Iconify icon="eva:alert-triangle-outline" width={40} sx={{ color: "error.main" }} />
+                  
                   <Typography variant="body2" sx={{ mt: 1, color: "error.main", textAlign: "center" }}>
                     {mapError}
                   </Typography>
@@ -485,17 +505,19 @@ export function SiteForageView() {
         </Card>
 
         {/* Liste des sites */}
-        <Card sx={{ 
-          flex: { xs: '1', md: '1' }, 
-          p: 2, 
-          overflow: 'auto',
-          maxHeight: '100%'
-        }}>
+         <Card sx={{
+           flex: { xs: '1', md: '1' },
+           p: 2,
+           overflow: 'auto',
+           height: '100%',
+           display: 'flex',
+           flexDirection: 'column'
+         }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             {filteredSites.length} site(s) trouvé(s)
           </Typography>
           
-          <Box sx={{ maxHeight: 'calc(100% - 50px)', overflow: 'auto' }}>
+          <Box sx={{ flex: 1, overflow: 'auto' }}>
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
                 <CircularProgress />
