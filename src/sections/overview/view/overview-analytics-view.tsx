@@ -81,7 +81,7 @@ export function OverviewAnalyticsView() {
         { params }
       );
       setStats(res.data);
-      console.log('Stats récupérées:', res.data);
+      
     } catch (error) {
       console.error('Erreur lors de la récupération des stats:', error);
     } finally {

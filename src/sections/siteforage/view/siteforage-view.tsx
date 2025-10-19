@@ -233,7 +233,6 @@ export function SiteForageView() {
       setLoading(true);
       const response = await apiClient.get("/api/siteforage/siteforages/");
       const data = response.data;
-      
       // Valider les données reçues
       const validatedData = data.map((site: SiteForage) => ({
         ...site,
@@ -345,7 +344,7 @@ export function SiteForageView() {
       {/* Titre et bouton d'ajout */}
       <Box sx={{ mb: 3, display: "flex", alignItems: "center", flexWrap: 'wrap' }}>
         <Typography variant="h4" sx={{ flexGrow: 1, mb: { xs: 2, sm: 0 } }}>
-          Sites de Forages
+          Sites de Forage
         </Typography>
       {/*   <Button
           variant="contained"
