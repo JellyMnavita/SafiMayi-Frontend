@@ -12,7 +12,19 @@ export type NavItem = {
   info?: React.ReactNode;
 };
 
-export const navData = [
+// Récupérer l'utilisateur depuis localStorage sans planter
+const storedUser = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}');
+  } catch {
+    return {};
+  }
+})();
+
+const isAgent = storedUser?.role === 'agent';
+
+// Exemple de configuration brute (garde ta configuration réelle ici)
+const rawNavConfig = [
   {
     title: 'Dashboard',
     path: '/dashboard',
@@ -38,7 +50,6 @@ export const navData = [
     path: '/siteforage',
     icon: icon('ic-location'),
   },
-
   {
     title: 'Utilisateurs',
     path: '/user',
@@ -48,23 +59,27 @@ export const navData = [
     title: 'Journaux',
     path: '/journaux',
     icon: icon('ic-journaux'),
-  }
-  ,
+  },
   {
     title: 'Paramètres',
     path: '/parametres',
     icon: icon('ic-parametre'),
-  }
-  /*   {
-    title: 'Logout',
-    path: '/',
-    icon: icon('ic-logout'),
-  }, */
-
-
-  /*   {
-      title: 'Not found',
-      path: '/404',
-      icon: icon('ic-disabled'),
-    }, */
+  },
 ];
+
+// Chemins interdits pour le rôle "agent"
+const forbiddenPathsForAgent = new Set([
+  '/users',
+  '/user',
+  '/settings',
+  '/parametres',
+  '/parameters'
+]);
+
+// Filtrer sans dépendre d'une propriété `id` inexistante
+export const navConfig = rawNavConfig.filter((item) => {
+  if (isAgent && forbiddenPathsForAgent.has(item.path)) {
+    return false;
+  }
+  return true;
+});
