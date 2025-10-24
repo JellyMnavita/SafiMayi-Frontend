@@ -18,5 +18,5 @@ export function ForbiddenView() {
                             width: 320,
                             height: 'auto',
                             my: { xs: 5, sm: 10 },
-                        } }), _jsxs(Box, { sx: { display: 'flex', gap: 2 }, children: [_jsx(Button, { component: RouterLink, href: "/", size: "large", variant: "contained", color: "inherit", children: "Page d'accueil" }), _jsx(Button, { component: RouterLink, href: "/contact", size: "large", variant: "outlined", color: "primary", children: "Contacter le support" })] })] })] }));
+                        } }), _jsxs(Box, { sx: { display: 'flex', gap: 2 }, children: [_jsx(Button, { component: RouterLink, href: "/", size: "large", variant: "contained", color: "inherit", children: "Page d'accueil" }), _jsx(Button, { component: "a", href: "mailto:safimayi0@gmail.com", size: "large", variant: "outlined", color: "primary", children: "Contacter le support" })] })] })] }));
 }

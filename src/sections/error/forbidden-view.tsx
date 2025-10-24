@@ -28,7 +28,7 @@ export function ForbiddenView() {
         </Typography>
 
         <Typography sx={{ color: 'text.secondary', maxWidth: 480, textAlign: 'center' }}>
-          Désolé, vous n'avez pas les autorisations nécessaires pour accéder à cette page. 
+          Désolé, vous n'avez pas les autorisations nécessaires pour accéder à cette page.
           Veuillez contacter votre administrateur si vous pensez qu'il s'agit d'une erreur.
         </Typography>
 
@@ -46,11 +46,11 @@ export function ForbiddenView() {
           <Button component={RouterLink} href="/" size="large" variant="contained" color="inherit">
             Page d'accueil
           </Button>
-          <Button 
-            component={RouterLink} 
-            href="/contact" 
-            size="large" 
-            variant="outlined" 
+          <Button
+            component="a"
+            href="mailto:safimayi0@gmail.com"
+            size="large"
+            variant="outlined"
             color="primary"
           >
             Contacter le support
