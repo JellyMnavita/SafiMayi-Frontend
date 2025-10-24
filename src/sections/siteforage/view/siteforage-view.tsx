@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import apiClient from "../../../utils/api";
 import {
   Box, Card, Button, Typography, TextField, Select, MenuItem, CircularProgress,
-  IconButton, Menu, MenuList, MenuItem as MenuItemMui, Chip, Dialog, 
+  IconButton, Menu, MenuList, MenuItem as MenuItemMui, Chip, Dialog,
   DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import { Iconify } from "../../../components/iconify";
@@ -112,7 +112,7 @@ export function SiteForageView() {
   // Charger les sites visibles dans la zone affichée
   const fetchSitesInView = async () => {
     if (!map.current) return;
-   
+
     const bounds = map.current.getBounds();
     if (!bounds) return;
     const minLat = bounds.getSouth();
@@ -123,13 +123,26 @@ export function SiteForageView() {
     try {
       setLoading(true);
       // Charger de nouveaux sites visibles sur cette zone
-      // Option : côté backend, filtre sur /siteforages-pagination/?min_lat=...&max_lat=...&min_lng=...&max_lng=...
       const response = await apiClient.get(`/api/siteforage/siteforages-pagination/`, {
         params: { min_lat: minLat, max_lat: maxLat, min_lng: minLng, max_lng: maxLng },
       });
 
-      const data = response.data;
-      const validatedData = data.map((site: SiteForage) => ({
+      // Accepter plusieurs formes de réponse (array | { results: [...] } | { data: [...] })
+      const raw = response.data;
+      let items: SiteForage[] = [];
+
+      if (Array.isArray(raw)) {
+        items = raw;
+      } else if (Array.isArray((raw as any).results)) {
+        items = (raw as any).results;
+      } else if (Array.isArray((raw as any).data)) {
+        items = (raw as any).data;
+      } else {
+        console.warn('Unexpected response shape for siteforages:', raw);
+        items = [];
+      }
+
+      const validatedData = items.map((site: SiteForage) => ({
         ...site,
         latitude: site.latitude || "0",
         longitude: site.longitude || "0",

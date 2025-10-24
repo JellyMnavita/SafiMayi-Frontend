@@ -91,12 +91,26 @@ export function SiteForageView() {
         try {
             setLoading(true);
             // Charger de nouveaux sites visibles sur cette zone
-            // Option : côté backend, filtre sur /siteforages-pagination/?min_lat=...&max_lat=...&min_lng=...&max_lng=...
             const response = await apiClient.get(`/api/siteforage/siteforages-pagination/`, {
                 params: { min_lat: minLat, max_lat: maxLat, min_lng: minLng, max_lng: maxLng },
             });
-            const data = response.data;
-            const validatedData = data.map((site) => ({
+            // Accepter plusieurs formes de réponse (array | { results: [...] } | { data: [...] })
+            const raw = response.data;
+            let items = [];
+            if (Array.isArray(raw)) {
+                items = raw;
+            }
+            else if (Array.isArray(raw.results)) {
+                items = raw.results;
+            }
+            else if (Array.isArray(raw.data)) {
+                items = raw.data;
+            }
+            else {
+                console.warn('Unexpected response shape for siteforages:', raw);
+                items = [];
+            }
+            const validatedData = items.map((site) => ({
                 ...site,
                 latitude: site.latitude || "0",
                 longitude: site.longitude || "0",
