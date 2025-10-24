@@ -37,6 +37,12 @@ export function SiteForageView() {
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
   const [mapError, setMapError] = useState<string | null>(null);
 
+  // Pagination / méta renvoyées par l'API
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [pageSizeServer, setPageSizeServer] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
   // Filtres
   const [searchNom, setSearchNom] = useState<string>("");
   const [searchLocalisation, setSearchLocalisation] = useState<string>("");
@@ -131,10 +137,16 @@ export function SiteForageView() {
       const raw = response.data;
       let items: SiteForage[] = [];
 
+      // response peut être une simple liste ou un objet paginé
       if (Array.isArray(raw)) {
         items = raw;
       } else if (Array.isArray((raw as any).results)) {
         items = (raw as any).results;
+        // récupérer les métadonnées si présentes
+        setTotalCount((raw as any).count || 0);
+        setPageSizeServer((raw as any).page_size || pageSizeServer);
+        setCurrentPage((raw as any).current_page || 1);
+        setTotalPages((raw as any).total_pages || Math.ceil(((raw as any).count || items.length) / pageSizeServer));
       } else if (Array.isArray((raw as any).data)) {
         items = (raw as any).data;
       } else {
@@ -344,7 +356,7 @@ export function SiteForageView() {
         {/* Liste des sites */}
         <Card sx={{ flex: { xs: "1", md: "1" }, p: 2, overflow: "auto", height: "100%" }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            {filteredSites.length} site(s) trouvé(s)
+            {totalCount > 0 ? `${totalCount} site(s) trouvé(s)` : `${filteredSites.length} site(s) trouvé(s)`}
           </Typography>
           <Box sx={{ flex: 1, overflow: "auto" }}>
             {loading ? (
