@@ -25,13 +25,11 @@ const Login = () => {
             else {
                 localStorage.setItem('token', response.data.access);
                 localStorage.setItem('refresh', response.data.refresh);
+                // sauvegarder user dans localStorage
                 localStorage.setItem('user', JSON.stringify(response.data.user));
-                if (response.data.solde_litres !== undefined) {
-                    localStorage.setItem('solde_litres', response.data.solde_litres.toString());
-                }
-                if (response.data.id_litrage !== undefined) {
-                    localStorage.setItem('id_litrage', response.data.id_litrage.toString());
-                }
+                // notifier la page courante (même onglet) que l'utilisateur a changé
+                window.dispatchEvent(new Event('user-changed'));
+                // navigation classique sans forcer reload
                 navigate('/dashboard');
             }
         }

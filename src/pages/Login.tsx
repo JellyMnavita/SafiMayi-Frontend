@@ -21,19 +21,17 @@ const Login = () => {
         email,
         password,
       });
-  
+
       if (response.data.user.role !== "agent" && response.data.user.role !== "admin") {
         navigate('/404');
       } else {
         localStorage.setItem('token', response.data.access);
         localStorage.setItem('refresh', response.data.refresh);
+        // sauvegarder user dans localStorage
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        if (response.data.solde_litres !== undefined) {
-          localStorage.setItem('solde_litres', response.data.solde_litres.toString());
-        }
-        if (response.data.id_litrage !== undefined) {
-          localStorage.setItem('id_litrage', response.data.id_litrage.toString());
-        }
+        // notifier la page courante (même onglet) que l'utilisateur a changé
+        window.dispatchEvent(new Event('user-changed'));
+        // navigation classique sans forcer reload
         navigate('/dashboard');
       }
 
@@ -54,9 +52,9 @@ const Login = () => {
         flexDirection: 'column',
       }}
     >
-      <img src={logo}   alt="SafiMayi Logo" width={180} style={{ marginBottom: '20px',marginTop: '90px' }} />
+      <img src={logo} alt="SafiMayi Logo" width={180} style={{ marginBottom: '20px', marginTop: '90px' }} />
 
-      <Container sx={{mt: 0}} maxWidth="sm">
+      <Container sx={{ mt: 0 }} maxWidth="sm">
         <Paper elevation={6} sx={{ p: 4, backgroundColor: '#fff', borderRadius: 2 }}>
           <Typography variant="h4" gutterBottom align="center">
             Connexion

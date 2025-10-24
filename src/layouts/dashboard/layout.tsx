@@ -13,7 +13,7 @@ import { NavMobile, NavDesktop } from './nav';
 import { layoutClasses } from '../core/classes';
 import { _account } from '../nav-config-account';
 import { dashboardLayoutVars } from './css-vars';
-import { navConfig } from '../nav-config-dashboard';
+import { useNavConfig } from '../nav-config-dashboard';
 import { MainSection } from '../core/main-section';
 import { Searchbar } from '../components/searchbar';
 import { _workspaces } from '../nav-config-workspace';
@@ -51,6 +51,9 @@ export function DashboardLayout({
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
+  // get reactive nav items (updates on 'user-changed' or localStorage changes)
+  const navItems = useNavConfig();
+
   const renderHeader = () => {
     const headerSlotProps: HeaderSectionProps['slotProps'] = {
       container: {
@@ -71,7 +74,7 @@ export function DashboardLayout({
             onClick={onOpen}
             sx={{ mr: 1, ml: -1, [theme.breakpoints.up(layoutQuery)]: { display: 'none' } }}
           />
-          <NavMobile data={navConfig} open={open} onClose={onClose} workspaces={_workspaces} />
+          <NavMobile data={navItems} open={open} onClose={onClose} workspaces={_workspaces} />
         </>
       ),
       rightArea: (
@@ -117,7 +120,7 @@ export function DashboardLayout({
        * @Sidebar
        *************************************** */
       sidebarSection={
-        <NavDesktop data={navConfig} layoutQuery={layoutQuery} workspaces={_workspaces} />
+        <NavDesktop data={navItems} layoutQuery={layoutQuery} workspaces={_workspaces} />
       }
       /** **************************************
        * @Footer

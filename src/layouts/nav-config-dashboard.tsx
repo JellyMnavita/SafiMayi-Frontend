@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import { Label } from '../components/label';
 import { SvgColor } from '../components/svg-color';
 
@@ -12,62 +13,27 @@ export type NavItem = {
   info?: React.ReactNode;
 };
 
-// Récupérer l'utilisateur depuis localStorage sans planter
-const storedUser = (() => {
+const readStoredUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('user') || '{}');
+    const raw = localStorage.getItem('user');
+    if (!raw) return null;
+    return JSON.parse(raw);
   } catch {
-    return {};
+    return null;
   }
-})();
+};
 
-const isAgent = storedUser?.role === 'agent';
+const buildRawNav = (): NavItem[] => ([
+  { title: 'Dashboard', path: '/dashboard', icon: icon('ic-analytics') },
+  { title: 'Ventes', path: '/ventes', icon: icon('ic-vente') },
+  { title: 'Carte RFID', path: '/rfid', icon: icon('ic-cart') },
+  { title: 'Compteur', path: '/compteur', icon: icon('ic-counter') },
+  { title: 'Site Forage', path: '/siteforage', icon: icon('ic-location') },
+  { title: 'Utilisateurs', path: '/user', icon: icon('ic-user') },
+  { title: 'Journaux', path: '/journaux', icon: icon('ic-journaux') },
+  { title: 'Paramètres', path: '/parametres', icon: icon('ic-parametre') },
+]);
 
-// Exemple de configuration brute (garde ta configuration réelle ici)
-const rawNavConfig = [
-  {
-    title: 'Dashboard',
-    path: '/dashboard',
-    icon: icon('ic-analytics'),
-  },
-  {
-    title: 'Ventes',
-    path: '/ventes',
-    icon: icon('ic-vente'),
-  },
-  {
-    title: 'Carte RFID',
-    path: '/rfid',
-    icon: icon('ic-cart'),
-  },
-  {
-    title: 'Compteur',
-    path: '/compteur',
-    icon: icon('ic-counter'),
-  },
-  {
-    title: 'Site Forage',
-    path: '/siteforage',
-    icon: icon('ic-location'),
-  },
-  {
-    title: 'Utilisateurs',
-    path: '/user',
-    icon: icon('ic-user'),
-  },
-  {
-    title: 'Journaux',
-    path: '/journaux',
-    icon: icon('ic-journaux'),
-  },
-  {
-    title: 'Paramètres',
-    path: '/parametres',
-    icon: icon('ic-parametre'),
-  },
-];
-
-// Chemins interdits pour le rôle "agent"
 const forbiddenPathsForAgent = new Set([
   '/users',
   '/user',
@@ -76,10 +42,33 @@ const forbiddenPathsForAgent = new Set([
   '/parameters'
 ]);
 
-// Filtrer sans dépendre d'une propriété `id` inexistante
-export const navConfig = rawNavConfig.filter((item) => {
-  if (isAgent && forbiddenPathsForAgent.has(item.path)) {
-    return false;
-  }
-  return true;
-});
+export const getNavConfig = (user: any | null = null): NavItem[] => {
+  const isAgent = user?.role === 'agent';
+  const raw = buildRawNav();
+  return raw.filter((item) => {
+    if (isAgent && forbiddenPathsForAgent.has(item.path)) return false;
+    return true;
+  });
+};
+
+/**
+ * Hook to get nav config and update when user changes.
+ * Listens to localStorage 'storage' (cross-tab) and custom 'user-changed' (same tab).
+ */
+export const useNavConfig = (): NavItem[] => {
+  const [user, setUser] = useState<any | null>(() => readStoredUser());
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'user') setUser(readStoredUser());
+    };
+    const onUserChanged = () => setUser(readStoredUser());
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('user-changed', onUserChanged);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('user-changed', onUserChanged);
+    };
+  }, []);
+  return getNavConfig(user);
+};

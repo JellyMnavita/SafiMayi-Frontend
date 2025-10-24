@@ -8,7 +8,7 @@ import { NavMobile, NavDesktop } from './nav';
 import { layoutClasses } from '../core/classes';
 import { _account } from '../nav-config-account';
 import { dashboardLayoutVars } from './css-vars';
-import { navConfig } from '../nav-config-dashboard';
+import { useNavConfig } from '../nav-config-dashboard';
 import { MainSection } from '../core/main-section';
 import { _workspaces } from '../nav-config-workspace';
 import { MenuButton } from '../components/menu-button';
@@ -18,6 +18,8 @@ import { AccountPopover } from '../components/account-popover';
 export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery = 'lg', }) {
     const theme = useTheme();
     const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
+    // get reactive nav items (updates on 'user-changed' or localStorage changes)
+    const navItems = useNavConfig();
     const renderHeader = () => {
         const headerSlotProps = {
             container: {
@@ -26,7 +28,7 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
         };
         const headerSlots = {
             topArea: (_jsx(Alert, { severity: "info", sx: { display: 'none', borderRadius: 0 }, children: "This is an info Alert." })),
-            leftArea: (_jsxs(_Fragment, { children: [_jsx(MenuButton, { onClick: onOpen, sx: { mr: 1, ml: -1, [theme.breakpoints.up(layoutQuery)]: { display: 'none' } } }), _jsx(NavMobile, { data: navConfig, open: open, onClose: onClose, workspaces: _workspaces })] })),
+            leftArea: (_jsxs(_Fragment, { children: [_jsx(MenuButton, { onClick: onOpen, sx: { mr: 1, ml: -1, [theme.breakpoints.up(layoutQuery)]: { display: 'none' } } }), _jsx(NavMobile, { data: navItems, open: open, onClose: onClose, workspaces: _workspaces })] })),
             rightArea: (_jsx(Box, { sx: { display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }, children: _jsx(AccountPopover, { data: _account }) })),
         };
         return (_jsx(HeaderSection, { disableElevation: true, layoutQuery: layoutQuery, ...slotProps?.header, slots: { ...headerSlots, ...slotProps?.header?.slots }, slotProps: merge(headerSlotProps, slotProps?.header?.slotProps ?? {}), sx: slotProps?.header?.sx }));
@@ -45,7 +47,7 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
         /** **************************************
          * @Sidebar
          *************************************** */
-        sidebarSection: _jsx(NavDesktop, { data: navConfig, layoutQuery: layoutQuery, workspaces: _workspaces }), 
+        sidebarSection: _jsx(NavDesktop, { data: navItems, layoutQuery: layoutQuery, workspaces: _workspaces }), 
         /** **************************************
          * @Footer
          *************************************** */
