@@ -99,8 +99,6 @@ const isConsommation = (item: any): item is Consommation => {
   return item && 'compteur_nom' in item && 'litres' in item;
 };
 
-
-
 export function JournauxView() {
   const [activeTab, setActiveTab] = useState(0);
   const isMobile = useMediaQuery('(max-width:768px)');
@@ -274,8 +272,6 @@ export function JournauxView() {
       setLoadingConsommations(false);
     }
   };
-
-
 
   // Charger les données quand les paramètres changent
   useEffect(() => {
@@ -935,178 +931,182 @@ export function JournauxView() {
         </Box>
       )}
 
-      {/* Tableau */}
+      {/* Tableau - VERSION RESPONSIVE CORRIGÉE */}
       <Card>
-        <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
+        <Box sx={{ width: '100%', overflow: 'hidden' }}>
           {((activeTab === 0 && loadingRecharges) || (activeTab === 1 && loadingPaiements) || (activeTab === 2 && loadingConsommations)) ? (
-            <div className="flex justify-center items-center py-10">
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
               <CircularProgress />
-            </div>
+            </Box>
           ) : (
             <>
-              {activeTab === 0 ? (
-                <table className="w-full border-collapse min-w-[800px]">
-                  <thead>
-                    <tr className="bg-gray-100 text-left text-sm">
-                      <th className="p-2 border-b">Date</th>
-                      <th className="p-2 border-b">Utilisateur</th>
-                      <th className="p-2 border-b">Téléphone</th>
-                      <th className="p-2 border-b">Carte RFID</th>
-                      <th className="p-2 border-b">Litres</th>
-                      <th className="p-2 border-b">Moyen</th>
-                      <th className="p-2 border-b text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recharges.length > 0 ? (
-                      recharges.map((item, index) => (
-                        <tr
-                          key={index}
-                          className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() => handleRowClick(item, 'recharge')}
-                        >
-                          <td className="p-2 border-b">{formatDate(item.Date)}</td>
-                          <td className="p-2 border-b">{item.Utilisateur}</td>
-                          <td className="p-2 border-b">{item.Telephone}</td>
-                          <td className="p-2 border-b">{item["Carte RFID"] || "-"}</td>
-                          <td className="p-2 border-b">{item.Litre.toFixed(1)} L</td>
-                          <td className="p-2 border-b">
-                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                              {item.Moyen}
-                            </span>
-                          </td>
-                          <td className="p-2 border-b text-center" onClick={(e) => e.stopPropagation()}>
-                            <IconButton onClick={(e) => handleMenuOpen(e, item, 'recharge')}>
-                              <Iconify icon="eva:more-vertical-fill" />
-                            </IconButton>
-                          </td>
+              {/* Conteneur scrollable pour les petits écrans */}
+              <Box sx={{ overflowX: 'auto', width: '100%' }}>
+                {activeTab === 0 ? (
+                  <Box sx={{ minWidth: 800 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Date</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Utilisateur</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Téléphone</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Carte RFID</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Litres</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Moyen</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600, textAlign: 'center' }}>Actions</th>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="text-center text-gray-500 py-6">
-                          Aucune recharge trouvée
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              ) : activeTab === 1 ? (
-                <table className="w-full border-collapse min-w-[1100px]">
-                  <thead>
-                    <tr className="bg-gray-100 text-left text-sm">
-                      <th className="p-2 border-b">Date</th>
-                      <th className="p-2 border-b">Utilisateur</th>
-                      <th className="p-2 border-b">Téléphone</th>
-                      <th className="p-2 border-b">Carte RFID</th>
-                      <th className="p-2 border-b">Opérateur</th>
-                      <th className="p-2 border-b">Montant</th>
-                      <th className="p-2 border-b">Litres</th>
-                      <th className="p-2 border-b">Statut</th>
-                      <th className="p-2 border-b text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paiements.length > 0 ? (
-                      paiements.map((item) => (
-                        <tr
-                          key={item.id}
-                          className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() => handleRowClick(item, 'paiement')}
-                        >
-                          <td className="p-2 border-b">{formatDate(item.created_at)}</td>
-                          <td className="p-2 border-b">
-                            {item.utilisateur_nom || 'N/A'}
-                            {item.utilisateur_email && (
-                              <div className="text-xs text-gray-500">{item.utilisateur_email}</div>
-                            )}
-                          </td>
-                          <td className="p-2 border-b">{item.telephone}</td>
-                          <td className="p-2 border-b">{item.rfid_uid || 'Aucune'}</td>
-                          <td className="p-2 border-b">{item.operateur}</td>
-                          <td className="p-2 border-b">{item.montant} FC</td>
-                          <td className="p-2 border-b">{item.litres_credite} L</td>
-                          <td className="p-2 border-b">
-                            <Chip
-                              label={getStatusText(item.statut)}
-                              color={getStatusColor(item.statut) as any}
-                              size="small"
-                            />
-                          </td>
-                          <td className="p-2 border-b text-center" onClick={(e) => e.stopPropagation()}>
-                            <IconButton onClick={(e) => handleMenuOpen(e, item, 'paiement')}>
-                              <Iconify icon="eva:more-vertical-fill" />
-                            </IconButton>
-                          </td>
+                      </thead>
+                      <tbody>
+                        {recharges.length > 0 ? (
+                          recharges.map((item, index) => (
+                            <tr
+                              key={index}
+                              className="table-row"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => handleRowClick(item, 'recharge')}
+                            >
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{formatDate(item.Date)}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.Utilisateur}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.Telephone}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item["Carte RFID"] || "-"}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.Litre.toFixed(1)} L</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                                <Chip label={item.Moyen} color="primary" size="small" variant="filled" />
+                              </td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <IconButton onClick={(e) => handleMenuOpen(e, item, 'recharge')}>
+                                  <Iconify icon="eva:more-vertical-fill" />
+                                </IconButton>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} style={{ textAlign: 'center', color: '#6b7280', padding: '24px' }}>
+                              <Typography variant="h6" color="text.secondary">
+                                Aucune recharge trouvée
+                              </Typography>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </Box>
+                ) : activeTab === 1 ? (
+                  <Box sx={{ minWidth: 1100 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Date</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Utilisateur</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Téléphone</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Carte RFID</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Opérateur</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Montant</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Litres</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Statut</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600, textAlign: 'center' }}>Actions</th>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={9} className="text-center text-gray-500 py-6">
-                          Aucun paiement trouvé
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              ) : (
-                <table className="w-full border-collapse min-w-[1200px]">
-                  <thead>
-                    <tr className="bg-gray-100 text-left text-sm">
-                      <th className="p-2 border-b">Date</th>
-                      <th className="p-2 border-b">Compteur</th>
-                      <th className="p-2 border-b">Litres</th>
-                      <th className="p-2 border-b">Prix</th>
-                      <th className="p-2 border-b">Type</th>
-                      <th className="p-2 border-b">Utilisateur</th>
-                      <th className="p-2 border-b text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {consommations.length > 0 ? (
-                      consommations.map((item) => (
-                        <tr
-                          key={item.id}
-                          className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() => handleRowClick(item, 'consommation')}
-                        >
-                          <td className="p-2 border-b">{formatDate(item.date)}</td>
-                          <td className="p-2 border-b">
-                            {item.compteur_nom}
-                            <div className="text-xs text-gray-500">{item.compteur_code_serie}</div>
-                          </td>
-                          <td className="p-2 border-b">{item.litres} L</td>
-                          <td className="p-2 border-b">{formatCurrency(item.prix_total || 0)} FC</td>
-                          <td className="p-2 border-b">
-                            <Chip
-                              label={item.type}
-                              color={getTypeColor(item.type) as any}
-                              size="small"
-                            />
-                          </td>
-                          <td className="p-2 border-b">
-                            {item.utilisateur_nom || "Anonyme"}
-                            {item.utilisateur_telephone && (
-                              <div className="text-xs text-gray-500">{item.utilisateur_telephone}</div>
-                            )}
-                          </td>
-                          <td className="p-2 border-b text-center" onClick={(e) => e.stopPropagation()}>
-                            <IconButton onClick={(e) => handleMenuOpen(e, item, 'consommation')}>
-                              <Iconify icon="eva:more-vertical-fill" />
-                            </IconButton>
-                          </td>
+                      </thead>
+                      <tbody>
+                        {paiements.length > 0 ? (
+                          paiements.map((item) => (
+                            <tr
+                              key={item.id}
+                              className="table-row"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => handleRowClick(item, 'paiement')}
+                            >
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{formatDate(item.created_at)}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                                {item.utilisateur_nom || 'N/A'}
+                                {item.utilisateur_email && (<Box sx={{ fontSize: '0.75rem', color: '#6b7280' }}>{item.utilisateur_email}</Box>)}
+                              </td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.telephone}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.rfid_uid || 'Aucune'}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.operateur}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.montant} FC</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.litres_credite} L</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                                <Chip label={getStatusText(item.statut)} color={getStatusColor(item.statut) as any} size="small" />
+                              </td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <IconButton onClick={(e) => handleMenuOpen(e, item, 'paiement')}>
+                                  <Iconify icon="eva:more-vertical-fill" />
+                                </IconButton>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={9} style={{ textAlign: 'center', color: '#6b7280', padding: '24px' }}>
+                              <Typography variant="h6" color="text.secondary">
+                                Aucun paiement trouvé
+                              </Typography>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </Box>
+                ) : (
+                  <Box sx={{ minWidth: 1200 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Date</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Compteur</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Litres</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Prix</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Type</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Utilisateur</th>
+                          <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600, textAlign: 'center' }}>Actions</th>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="text-center text-gray-500 py-6">
-                          Aucune consommation trouvée
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
+                      </thead>
+                      <tbody>
+                        {consommations.length > 0 ? (
+                          consommations.map((item) => (
+                            <tr
+                              key={item.id}
+                              className="table-row"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => handleRowClick(item, 'consommation')}
+                            >
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{formatDate(item.date)}</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                                {item.compteur_nom}
+                                <Box sx={{ fontSize: '0.75rem', color: '#6b7280' }}>{item.compteur_code_serie}</Box>
+                              </td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{item.litres} L</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>{formatCurrency(item.prix_total || 0)} FC</td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                                <Chip label={item.type} color={getTypeColor(item.type) as any} size="small" />
+                              </td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                                {item.utilisateur_nom || "Anonyme"}
+                                {item.utilisateur_telephone && (<Box sx={{ fontSize: '0.75rem', color: '#6b7280' }}>{item.utilisateur_telephone}</Box>)}
+                              </td>
+                              <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <IconButton onClick={(e) => handleMenuOpen(e, item, 'consommation')}>
+                                  <Iconify icon="eva:more-vertical-fill" />
+                                </IconButton>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} style={{ textAlign: 'center', color: '#6b7280', padding: '24px' }}>
+                              <Typography variant="h6" color="text.secondary">
+                                Aucune consommation trouvée
+                              </Typography>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </Box>
+                )}
+              </Box>
 
               {/* Pagination backend */}
               <Box
@@ -1114,12 +1114,14 @@ export function JournauxView() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  mt: 2,
+                  p: 2,
                   flexWrap: "wrap",
                   gap: 2,
+                  borderTop: 1,
+                  borderColor: 'divider'
                 }}
               >
-                <Typography variant="body2">
+                <Typography variant="body2" color="text.secondary">
                   {`Affichage de ${recharges.length} sur ${totalCount} ${activeTab === 0 ? 'recharges' :
                     activeTab === 1 ? 'paiements' :
                       'consommations'
@@ -1136,7 +1138,7 @@ export function JournauxView() {
               </Box>
             </>
           )}
-        </div>
+        </Box>
       </Card>
 
       {/* Menu contextuel */}

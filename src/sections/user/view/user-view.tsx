@@ -22,8 +22,7 @@ import {
   InputLabel,
   Alert,
   Snackbar,
-  Chip,
-  Autocomplete
+  Chip
 } from "@mui/material";
 import { DashboardContent } from "../../../layouts/dashboard";
 import { Iconify } from "../../../components/iconify";
@@ -88,7 +87,7 @@ export function UserView() {
       const res = await apiClient.get<PaginatedResponse>(
         `/api/users/list/?${params.toString()}`
       );
-      
+
       setUsers(res.data.results);
       setTotalCount(res.data.count);
       setTotalPages(res.data.total_pages);
@@ -173,15 +172,15 @@ export function UserView() {
         );
         setSuccessMessage("Utilisateur créé avec succès");
       }
-      
+
       fetchUsers(page);
       setOpenDialog(false);
       setFormData({});
     } catch (error: any) {
       console.error("Erreur lors de la sauvegarde :", error);
-      const errorMessage = error.response?.data?.detail || 
-                          error.response?.data?.message || 
-                          "Erreur lors de la sauvegarde";
+      const errorMessage = error.response?.data?.detail ||
+        error.response?.data?.message ||
+        "Erreur lors de la sauvegarde";
       setError(errorMessage);
     } finally {
       setSaveLoading(false);
@@ -192,11 +191,11 @@ export function UserView() {
   const handleDelete = async () => {
     try {
       if (!selectedUser) return;
-      
+
       await apiClient.delete(
         `/api/users/${selectedUser.id}/`
       );
-      
+
       setSuccessMessage("Utilisateur désactivé avec succès");
       fetchUsers(page);
       handleMenuClose();
@@ -210,14 +209,14 @@ export function UserView() {
   const handleToggleStatus = async () => {
     try {
       if (!selectedUser) return;
-      
+
       const newState = !selectedUser.state;
-      
+
       await apiClient.patch(
         `/api/users/${selectedUser.id}/`,
         { state: newState }
       );
-      
+
       setSuccessMessage(`Utilisateur ${newState ? "activé" : "désactivé"} avec succès`);
       fetchUsers(page);
       handleMenuClose();
@@ -274,14 +273,14 @@ export function UserView() {
         </Button>
       </Box>
 
-      {/* Filtres optimisés - Même modèle que CompteurView */}
+      {/* Filtres optimisés */}
       <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Ligne principale - Filtres essentiels */}
-          <Box sx={{ 
-            display: "flex", 
-            gap: 2, 
-            flexWrap: "wrap", 
+          <Box sx={{
+            display: "flex",
+            gap: 2,
+            flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "space-between"
           }}>
@@ -294,7 +293,7 @@ export function UserView() {
               placeholder="Nom, email, téléphone..."
               sx={{ minWidth: 250, flexGrow: 1 }}
             />
-            
+
             {/* Filtres rapides */}
             <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
               <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -350,11 +349,11 @@ export function UserView() {
 
           {/* Filtres avancés - conditionnel */}
           {showAdvancedFilters && (
-            <Box 
-              sx={{ 
-                display: "flex", 
-                gap: 2, 
-                flexWrap: "wrap", 
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
                 alignItems: "center",
                 pt: 2,
                 borderTop: 1,
@@ -385,14 +384,14 @@ export function UserView() {
                 Filtres actifs:
               </Typography>
               {roleFilter && (
-                <Chip 
+                <Chip
                   size="small"
                   label={`Rôle: ${getRoleLabel(roleFilter)}`}
                   onDelete={() => setRoleFilter("")}
                 />
               )}
               {stateFilter && (
-                <Chip 
+                <Chip
                   size="small"
                   label={`Statut: ${stateFilter === "true" ? "Actif" : "Inactif"}`}
                   onDelete={() => setStateFilter("")}
@@ -407,11 +406,11 @@ export function UserView() {
       {totalPages > 1 && (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Page {page} sur {totalPages} 
+            Page {page} sur {totalPages}
             ({totalCount} utilisateurs au total)
           </Typography>
-          <Pagination 
-            count={totalPages} 
+          <Pagination
+            count={totalPages}
             page={page}
             onChange={handlePageChange}
             color="primary"
@@ -419,122 +418,127 @@ export function UserView() {
         </Box>
       )}
 
-      {/* Tableau */}
+      {/* Tableau - VERSION RESPONSIVE CORRIGÉE */}
       <Card>
-        <div className="p-4 bg-white shadow-md rounded-md overflow-x-auto">
+        <Box sx={{ width: '100%', overflow: 'hidden' }}>
           {loading ? (
-            <div className="flex justify-center items-center py-10">
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
               <CircularProgress />
-            </div>
+            </Box>
           ) : (
             <>
-              <table className="w-full border-collapse min-w-[700px]">
-                <thead>
-                  <tr className="bg-gray-100 text-left text-sm">
-                    <th className="p-3 border-b font-semibold">Nom</th>
-                    <th className="p-3 border-b font-semibold">Email</th>
-                    <th className="p-3 border-b font-semibold">Téléphone</th>
-                    <th className="p-3 border-b font-semibold">Rôle</th>
-                    <th className="p-3 border-b font-semibold">Statut</th>
-                    <th className="p-3 border-b font-semibold text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.length > 0 ? (
-                    users.map((user) => (
-                      <tr 
-                        key={user.id} 
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => {
-                          setFormData(user);
-                          setOpenDialog(true);
-                          setError("");
-                        }}
-                      >
-                        <td className="p-3 border-b">
-                          <Box sx={{ 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            gap: 1
-                          }}>
-                            <Typography variant="body2" fontWeight="medium">
-                              {user.nom}
-                            </Typography>
-                          </Box>
-                        </td>
-                        <td className="p-3 border-b">
-                          <Typography variant="body2">
-                            {user.email}
-                          </Typography>
-                        </td>
-                        <td className="p-3 border-b">
-                          {user.telephone ? (
-                            <Typography variant="body2">
-                              {user.telephone}
-                            </Typography>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              -
-                            </Typography>
-                          )}
-                        </td>
-                        <td className="p-3 border-b">
-                          <Chip 
-                            label={getRoleLabel(user.role)} 
-                            size="small" 
-                            variant="outlined"
-                            color={
-                              user.role === 'admin' ? 'error' :
-                              user.role === 'owner' ? 'warning' :
-                              user.role === 'agent' ? 'info' :
-                              user.role === 'gerant' ? 'secondary' : 'default'
-                            }
-                          />
-                        </td>
-                        <td className="p-3 border-b">
-                          {user.state ? (
-                            <Chip 
-                              label="Actif" 
-                              size="small"
-                              color="success"
-                              variant="filled"
-                            />
-                          ) : (
-                            <Chip 
-                              label="Inactif" 
-                              size="small"
-                              color="error"
-                              variant="filled"
-                            />
-                          )}
-                        </td>
-                        <td className="p-3 border-b text-center">
-                          <IconButton 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMenuOpen(e, user);
-                            }} 
-                            size="small"
-                          >
-                            <Iconify icon="eva:more-vertical-fill" />
-                          </IconButton>
-                        </td>
+              {/* Conteneur scrollable pour les petits écrans */}
+              <Box sx={{ overflowX: 'auto', width: '100%' }}>
+                <Box sx={{ minWidth: 700 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f8f9fa', textAlign: 'left' }}>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Nom</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Email</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Téléphone</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Rôle</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>Statut</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', fontWeight: 600, textAlign: 'center' }}>Actions</th>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="text-center text-gray-500 py-6">
-                        <Typography variant="h6" color="text.secondary">
-                          Aucun utilisateur trouvé
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                          Essayez de modifier vos critères de recherche
-                        </Typography>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {users.length > 0 ? (
+                        users.map((user) => (
+                          <tr
+                            key={user.id}
+                            className="table-row"
+                            onClick={() => {
+                              setFormData(user);
+                              setOpenDialog(true);
+                              setError("");
+                            }}
+                          >
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              <Box sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 1
+                              }}>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {user.nom}
+                                </Typography>
+                              </Box>
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              <Typography variant="body2">
+                                {user.email}
+                              </Typography>
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              {user.telephone ? (
+                                <Typography variant="body2">
+                                  {user.telephone}
+                                </Typography>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                  -
+                                </Typography>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              <Chip
+                                label={getRoleLabel(user.role)}
+                                size="small"
+                                variant="outlined"
+                                color={
+                                  user.role === 'admin' ? 'error' :
+                                    user.role === 'owner' ? 'warning' :
+                                      user.role === 'agent' ? 'info' :
+                                        user.role === 'gerant' ? 'secondary' : 'default'
+                                }
+                              />
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              {user.state ? (
+                                <Chip
+                                  label="Actif"
+                                  size="small"
+                                  color="success"
+                                  variant="filled"
+                                />
+                              ) : (
+                                <Chip
+                                  label="Inactif"
+                                  size="small"
+                                  color="error"
+                                  variant="filled"
+                                />
+                              )}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0', textAlign: 'center' }}>
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMenuOpen(e, user);
+                                }}
+                                size="small"
+                              >
+                                <Iconify icon="eva:more-vertical-fill" />
+                              </IconButton>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', color: '#6b7280', padding: '24px' }}>
+                            <Typography variant="h6" color="text.secondary">
+                              Aucun utilisateur trouvé
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                              Essayez de modifier vos critères de recherche
+                            </Typography>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </Box>
+              </Box>
 
               {/* Pagination en bas */}
               <Box
@@ -542,9 +546,11 @@ export function UserView() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  mt: 2,
+                  p: 2,
                   flexWrap: "wrap",
                   gap: 2,
+                  borderTop: '1px solid',
+                  borderColor: 'divider'
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
@@ -559,7 +565,7 @@ export function UserView() {
               </Box>
             </>
           )}
-        </div>
+        </Box>
       </Card>
 
       {/* Menu contextuel */}
@@ -596,9 +602,9 @@ export function UserView() {
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          
+
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid sx={{width: '100%'}}>
+            <Grid sx={{ width: '100%' }}>
               <TextField
                 label="Nom complet"
                 name="nom"
@@ -608,7 +614,7 @@ export function UserView() {
                 required
               />
             </Grid>
-            <Grid sx={{width: '100%'}}>
+            <Grid sx={{ width: '100%' }}>
               <TextField
                 label="Email"
                 name="email"
@@ -619,7 +625,7 @@ export function UserView() {
                 required
               />
             </Grid>
-            <Grid sx={{width: '100%'}}>
+            <Grid sx={{ width: '100%' }}>
               <TextField
                 label="Téléphone"
                 name="telephone"
@@ -630,7 +636,7 @@ export function UserView() {
               />
             </Grid>
             {!formData.id && (
-              <Grid sx={{width: '100%'}} >
+              <Grid sx={{ width: '100%' }} >
                 <TextField
                   label="Mot de passe"
                   name="password"
@@ -642,7 +648,7 @@ export function UserView() {
                 />
               </Grid>
             )}
-            <Grid sx={{width: '100%'}} >
+            <Grid sx={{ width: '100%' }} >
               <FormControl fullWidth>
                 <InputLabel>Rôle</InputLabel>
                 <Select
@@ -666,8 +672,8 @@ export function UserView() {
           <Button onClick={() => setOpenDialog(false)} disabled={saveLoading}>
             Annuler
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleSave}
             disabled={saveLoading}
             startIcon={saveLoading ? <CircularProgress size={16} /> : null}
